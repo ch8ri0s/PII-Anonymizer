@@ -244,11 +244,13 @@ async function anonymizeText(text) {
     const fuzzyRegex = buildFuzzyRegex(entityText);
 
     if (!fuzzyRegex) {
-      console.log(`Skipping invalid pattern for "${entityText}"`);
+      // ✅ SECURITY: Don't log PII - only log entity type
+      console.log(`Skipping invalid pattern for ${entityType} entity`);
       continue;
     }
 
-    console.log(`Mapping "${entityText}" (${entityType}) to "${pseudonym}"`);
+    // ✅ SECURITY: Don't log actual PII values - only log entity types and pseudonyms
+    console.log(`Mapped ${entityType} → ${pseudonym}`);
     patterns.push(fuzzyRegex.source);
     replacements.set(fuzzyRegex.source, pseudonym);
   }
@@ -310,6 +312,37 @@ async function anonymizeMarkdown(markdown) {
  * Main file processing class
  */
 export class FileProcessor {
+  /**
+   * ✅ SECURITY: Validate output path to prevent path traversal
+   */
+  static validateOutputPath(outputPath) {
+    if (!outputPath || typeof outputPath !== 'string') {
+      throw new Error('Invalid output path: must be a non-empty string');
+    }
+
+    // Normalize and resolve path
+    const normalizedPath = path.normalize(outputPath);
+    const resolvedPath = path.resolve(normalizedPath);
+
+    // Prevent path traversal
+    if (resolvedPath.includes('..')) {
+      throw new Error('Invalid output path: path traversal detected');
+    }
+
+    // Ensure path is absolute
+    if (!path.isAbsolute(resolvedPath)) {
+      throw new Error('Invalid output path: must be absolute');
+    }
+
+    // Check that parent directory exists
+    const parentDir = path.dirname(resolvedPath);
+    if (!fs.existsSync(parentDir)) {
+      throw new Error('Invalid output path: parent directory does not exist');
+    }
+
+    return resolvedPath;
+  }
+
   static async processFile(filePath, outputPath) {
     const ext = path.extname(filePath).toLowerCase();
     const converter = converters[ext];
@@ -333,13 +366,16 @@ export class FileProcessor {
       const { anonymised, mapping } = await anonymizeMarkdown(markdown);
       console.log(`✓ Anonymisation complete`);
 
+      // ✅ SECURITY: Validate output paths before writing
+      const validatedOutputPath = this.validateOutputPath(outputPath);
+
       // Step 3: Write Markdown output
-      const mdOutputPath = outputPath.replace(/\.[^.]+$/, '.md');
+      const mdOutputPath = validatedOutputPath.replace(/\.[^.]+$/, '.md');
       fs.writeFileSync(mdOutputPath, anonymised, 'utf8');
       console.log(`✓ Saved: ${path.basename(mdOutputPath)}`);
 
       // Step 4: Write mapping JSON (ALWAYS)
-      const mappingPath = outputPath.replace(/\.[^.]+$/, '-mapping.json');
+      const mappingPath = validatedOutputPath.replace(/\.[^.]+$/, '-mapping.json');
       fs.writeFileSync(
         mappingPath,
         JSON.stringify(mapping, null, 2),
@@ -355,7 +391,8 @@ export class FileProcessor {
       };
 
     } catch (error) {
-      console.error(`✗ Error processing ${filePath}:`, error);
+      // ✅ SECURITY: Log full error to console, but sanitize for throwing
+      console.error(`✗ Error processing file:`, error);
       throw error;
     }
   }

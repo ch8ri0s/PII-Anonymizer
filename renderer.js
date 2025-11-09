@@ -1,8 +1,9 @@
 /***** renderer.js *****/
-const { ipcRenderer } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+// ✅ SECURITY: Use contextBridge APIs instead of direct Node.js requires
+const ipcRenderer = window.electronAPI;
+const fs = window.fsAPI;
+const path = window.pathAPI;
+const os = window.osAPI;
 
 // DOM elements
 let selectedFiles = [];
@@ -35,7 +36,7 @@ if (storedOutput) {
   outputDirInput.value = storedOutput;
   outputLinkDiv.classList.remove('hidden');
   openOutputFolderLink.onclick = async () => {
-    await ipcRenderer.invoke('open-folder', outputDirectory);
+    await ipcRenderer.openFolder(outputDirectory);
   };
 }
 
@@ -68,7 +69,7 @@ dropZone.addEventListener('drop', async (e) => {
 });
 
 selectFolderBtn.addEventListener('click', async () => {
-  const folderPath = await ipcRenderer.invoke('select-input-directory');
+  const folderPath = await ipcRenderer.selectInputDirectory();
   if (folderPath) {
     const filesFromFolder = await getFilesFromDirectory(folderPath);
     if (filesFromFolder.length === 0) {
@@ -84,13 +85,13 @@ selectFolderBtn.addEventListener('click', async () => {
 clearFilesBtn.addEventListener('click', clearState);
 
 selectOutputBtn.addEventListener('click', async () => {
-  outputDirectory = await ipcRenderer.invoke('select-output-directory');
+  outputDirectory = await ipcRenderer.selectOutputDirectory();
   if (outputDirectory) {
     outputDirInput.value = outputDirectory;
     localStorage.setItem('outputDirectory', outputDirectory);
     outputLinkDiv.classList.remove('hidden');
     openOutputFolderLink.onclick = async () => {
-      await ipcRenderer.invoke('open-folder', outputDirectory);
+      await ipcRenderer.openFolder(outputDirectory);
     };
   }
   updateProcessButton();
@@ -112,7 +113,7 @@ async function processFiles() {
 
   for (let i = 0; i < total; i++) {
     const file = selectedFiles[i];
-    const result = await ipcRenderer.invoke('process-file', {
+    const result = await ipcRenderer.processFile({
       filePath: file.path,
       outputDir: outputDirectory
     });
@@ -137,7 +138,7 @@ async function processFiles() {
   if (outputDirectory) {
     outputLinkDiv.classList.remove('hidden');
     openOutputFolderLink.onclick = async () => {
-      await ipcRenderer.invoke('open-folder', outputDirectory);
+      await ipcRenderer.openFolder(outputDirectory);
     };
   }
 
@@ -159,7 +160,7 @@ async function handleInputItems(fileList) {
       if (!fileItem) continue;
     }
     try {
-      const stats = await fs.promises.lstat(fileItem.path);
+      const stats = await fs.lstat(fileItem.path);
       if (stats.isDirectory()) {
         const filesFromFolder = await getFilesFromDirectory(fileItem.path);
         filesFromFolder.forEach((f) => addFile(f));
@@ -202,13 +203,13 @@ function createTempFile(fileItem) {
 async function getFilesFromDirectory(dirPath) {
   let results = [];
   try {
-    const list = await fs.promises.readdir(dirPath);
+    const list = await fs.readdir(dirPath);
 
     // Process files in parallel for better performance
     const filePromises = list.map(async (file) => {
       const filePath = path.join(dirPath, file);
       try {
-        const stat = await fs.promises.stat(filePath);
+        const stat = await fs.stat(filePath);
         if (stat && stat.isDirectory()) {
           return await getFilesFromDirectory(filePath);
         } else {
@@ -275,7 +276,7 @@ function showStatus(message, type) {
 }
 
 // Logs from main -> renderer
-ipcRenderer.on('log-message', (event, msg) => {
+ipcRenderer.onLogMessage((msg) => {
   logArea.classList.remove('hidden');
   logMessages.textContent = `Status: ${msg}`;
 });
