@@ -108,6 +108,7 @@ function escapeRegexChars(str) {
 
 /**
  * Builds a fuzzy regex that matches the merged string ignoring spacing/punctuation.
+ * Uses bounded repetition to prevent ReDoS attacks.
  */
 function buildFuzzyRegex(mergedString) {
   let noPunc = mergedString.replace(/[^\w]/g, '');
@@ -117,7 +118,8 @@ function buildFuzzyRegex(mergedString) {
 
   let pattern = '';
   for (const char of noPunc) {
-    pattern += `${char}[^a-zA-Z0-9]*`;
+    // Limit repetition to prevent catastrophic backtracking (ReDoS protection)
+    pattern += `${char}[^a-zA-Z0-9]{0,3}`;
   }
 
   if (!pattern) return null;
@@ -163,14 +165,16 @@ function extractCodeBlocks(markdown) {
 }
 
 /**
- * Restore code blocks after anonymization
+ * Restore code blocks after anonymization (optimized single-pass)
  */
 function restoreCodeBlocks(text, codeBlocks) {
-  let result = text;
-  codeBlocks.forEach((block, index) => {
-    result = result.replace(`<<<CODE_BLOCK_${index}>>>`, block);
+  if (codeBlocks.length === 0) return text;
+
+  // Single-pass replacement using regex with capture group
+  return text.replace(/<<<CODE_BLOCK_(\d+)>>>/g, (match, index) => {
+    const blockIndex = parseInt(index, 10);
+    return codeBlocks[blockIndex] || match;
   });
-  return result;
 }
 
 /**
@@ -192,14 +196,16 @@ function extractInlineCode(text) {
 }
 
 /**
- * Restore inline code after anonymization
+ * Restore inline code after anonymization (optimized single-pass)
  */
 function restoreInlineCode(text, inlineCode) {
-  let result = text;
-  inlineCode.forEach((code, index) => {
-    result = result.replace(`<<<INLINE_${index}>>>`, code);
+  if (inlineCode.length === 0) return text;
+
+  // Single-pass replacement using regex with capture group
+  return text.replace(/<<<INLINE_(\d+)>>>/g, (match, index) => {
+    const codeIndex = parseInt(index, 10);
+    return inlineCode[codeIndex] || match;
   });
-  return result;
 }
 
 /**
@@ -224,7 +230,10 @@ async function anonymizeText(text) {
   // Step 3: Merge all entities
   const allEntities = [...mlEntities, ...swissEuEntities];
 
-  // Step 4: Replace entities with pseudonyms
+  // Step 4: Build replacement map and patterns (single-pass optimization)
+  const replacements = new Map();
+  const patterns = [];
+
   for (const entity of allEntities) {
     const entityType = entity.type;
     const entityText = entity.text;
@@ -239,8 +248,24 @@ async function anonymizeText(text) {
       continue;
     }
 
-    console.log(`Replacing "${entityText}" (${entityType}) with "${pseudonym}"`);
-    processedText = processedText.replace(fuzzyRegex, pseudonym);
+    console.log(`Mapping "${entityText}" (${entityType}) to "${pseudonym}"`);
+    patterns.push(fuzzyRegex.source);
+    replacements.set(fuzzyRegex.source, pseudonym);
+  }
+
+  // Step 5: Single-pass replacement using combined regex
+  if (patterns.length > 0) {
+    const combinedPattern = new RegExp(patterns.join('|'), 'ig');
+    processedText = processedText.replace(combinedPattern, (match) => {
+      // Find which pattern matched
+      for (const [pattern, pseudonym] of replacements) {
+        const regex = new RegExp(pattern, 'ig');
+        if (regex.test(match)) {
+          return pseudonym;
+        }
+      }
+      return match;
+    });
   }
 
   return processedText;

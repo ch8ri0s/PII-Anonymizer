@@ -70,7 +70,7 @@ dropZone.addEventListener('drop', async (e) => {
 selectFolderBtn.addEventListener('click', async () => {
   const folderPath = await ipcRenderer.invoke('select-input-directory');
   if (folderPath) {
-    const filesFromFolder = getFilesFromDirectory(folderPath);
+    const filesFromFolder = await getFilesFromDirectory(folderPath);
     if (filesFromFolder.length === 0) {
       showStatus('No supported files found in the selected folder.', 'error');
     } else {
@@ -159,9 +159,9 @@ async function handleInputItems(fileList) {
       if (!fileItem) continue;
     }
     try {
-      const stats = fs.lstatSync(fileItem.path);
+      const stats = await fs.promises.lstat(fileItem.path);
       if (stats.isDirectory()) {
-        const filesFromFolder = getFilesFromDirectory(fileItem.path);
+        const filesFromFolder = await getFilesFromDirectory(fileItem.path);
         filesFromFolder.forEach((f) => addFile(f));
       } else {
         addFile({ path: fileItem.path, name: fileItem.name });
@@ -199,22 +199,32 @@ function createTempFile(fileItem) {
   });
 }
 
-function getFilesFromDirectory(dirPath) {
+async function getFilesFromDirectory(dirPath) {
   let results = [];
   try {
-    const list = fs.readdirSync(dirPath);
-    list.forEach((file) => {
+    const list = await fs.promises.readdir(dirPath);
+
+    // Process files in parallel for better performance
+    const filePromises = list.map(async (file) => {
       const filePath = path.join(dirPath, file);
-      const stat = fs.statSync(filePath);
-      if (stat && stat.isDirectory()) {
-        results = results.concat(getFilesFromDirectory(filePath));
-      } else {
-        const ext = path.extname(file).toLowerCase();
-        if (['.doc','.docx','.xls','.xlsx','.csv','.pdf','.txt'].includes(ext)) {
-          results.push({ path: filePath, name: file });
+      try {
+        const stat = await fs.promises.stat(filePath);
+        if (stat && stat.isDirectory()) {
+          return await getFilesFromDirectory(filePath);
+        } else {
+          const ext = path.extname(file).toLowerCase();
+          if (['.doc','.docx','.xls','.xlsx','.csv','.pdf','.txt'].includes(ext)) {
+            return [{ path: filePath, name: file }];
+          }
         }
+      } catch (err) {
+        console.error(`Error reading ${filePath}: ${err.message}`);
       }
+      return [];
     });
+
+    const nestedResults = await Promise.all(filePromises);
+    results = nestedResults.flat();
   } catch (err) {
     console.error(`Error reading directory ${dirPath}: ${err.message}`);
   }
