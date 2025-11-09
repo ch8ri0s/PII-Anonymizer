@@ -4,25 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Global userState
-let userState = {
-  deviceID: null,
-  isPro: false,
-  dailyCount: 0,
-  dailyDate: null
-};
-let autoUpdate= false;
-
-// Simple hash for your local testing
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return hash.toString(16);
-}
-
 // DOM elements
 let selectedFiles = [];
 let outputDirectory = null;
@@ -47,30 +28,6 @@ const openOutputFolderLink = document.getElementById('open-output-folder');
 const logArea = document.getElementById('log-area');
 const logMessages = document.getElementById('log-messages');
 
-// Pro container
-const proContainer = document.getElementById('pro-container');
-const proButton = document.getElementById('pro-button');
-const proInfoLink = document.getElementById('pro-info-link');
-
-// Upgrade modal
-const upgradeModal = document.getElementById('upgrade-modal');
-const upgradeClose = document.getElementById('upgrade-close');
-const deviceIdField = document.getElementById('device-id-field');
-const copyDeviceIdBtn = document.getElementById('copy-device-id');
-const proKeyInput = document.getElementById('pro-key-input');
-const validateKeyBtn = document.getElementById('validate-key-button');
-const upgradeStoreBtn = document.getElementById('upgrade-store-btn');
-const keyMessageDiv = document.getElementById('key-message'); // for invalid/success messages
-
-// Info modal
-const infoModal = document.getElementById('info-modal');
-const infoClose = document.getElementById('info-close');
-
-// Manage Plan modal
-const manageModal = document.getElementById('manage-modal');
-const manageClose = document.getElementById('manage-close');
-const downgradeBtn = document.getElementById('downgrade-btn');
-
 // On load: restore output dir
 const storedOutput = localStorage.getItem('outputDirectory');
 if (storedOutput) {
@@ -82,56 +39,7 @@ if (storedOutput) {
   };
 }
 
-// Load userState
-function loadUserState() {
-  const saved = localStorage.getItem('userState');
-  if (saved) {
-    userState = JSON.parse(saved);
-  } else {
-    userState = {
-      deviceID: null,
-      isPro: false,
-      dailyCount: 0,
-      dailyDate: null
-    };
-  }
-  if (!userState.deviceID) {
-    userState.deviceID = generateDeviceID(10);
-    saveUserState();
-  }
-  checkDailyReset();
-}
-
-function saveUserState() {
-  localStorage.setItem('userState', JSON.stringify(userState));
-}
-
-function generateDeviceID(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-function checkDailyReset() {
-  const today = getLocalDateString();
-  if (userState.dailyDate !== today) {
-    userState.dailyDate = today;
-    userState.dailyCount = 0;
-    saveUserState();
-  }
-}
-
-function getLocalDateString() {
-  const now = new Date();
-  return now.toLocaleDateString('en-CA'); 
-}
-
-loadUserState();
-updateProUI();
-
+// Event Listeners
 dropZone.addEventListener('click', () => {
   const now = Date.now();
   if (now - lastDialogTime < 1000) return;
@@ -148,9 +56,11 @@ dropZone.addEventListener('dragover', (e) => {
   e.preventDefault();
   dropZone.style.borderColor = 'var(--accent)';
 });
+
 dropZone.addEventListener('dragleave', () => {
   dropZone.style.borderColor = 'var(--text-secondary)';
 });
+
 dropZone.addEventListener('drop', async (e) => {
   e.preventDefault();
   dropZone.style.borderColor = 'var(--text-secondary)';
@@ -172,6 +82,7 @@ selectFolderBtn.addEventListener('click', async () => {
 });
 
 clearFilesBtn.addEventListener('click', clearState);
+
 selectOutputBtn.addEventListener('click', async () => {
   outputDirectory = await ipcRenderer.invoke('select-output-directory');
   if (outputDirectory) {
@@ -187,49 +98,38 @@ selectOutputBtn.addEventListener('click', async () => {
 
 processButton.addEventListener('click', processFiles);
 
+// Process Files Function (Simplified - No Pro/Limits)
 async function processFiles() {
   if (selectedFiles.length === 0) return;
 
-  if (!userState.isPro) {
-    checkDailyReset();
-    if (userState.dailyCount >= 100) {
-      showStatus(`You've reached your 100-file daily limit. Upgrade to Pro or wait until midnight for a limit reset.`, 'error');
-      return;
-    }
-  }
-
   processButton.disabled = true;
   const oldButtonText = processButton.innerHTML;
-  processButton.innerHTML = `<i class="fas fa-cog"></i> Anonymizing...`;
+  processButton.innerHTML = `<i class="fas fa-cog fa-spin"></i> Converting to Markdown...`;
 
   progress.classList.remove('hidden');
   let total = selectedFiles.length;
   let processedCount = 0;
 
   for (let i = 0; i < total; i++) {
-    if (!userState.isPro) {
-      userState.dailyCount++;
-      saveUserState();
-      if (userState.dailyCount > 100) {
-        showStatus(`You've reached your 100-file daily limit mid-batch.`, 'error');
-        break;
-      }
-    }
     const file = selectedFiles[i];
     const result = await ipcRenderer.invoke('process-file', {
       filePath: file.path,
       outputDir: outputDirectory
     });
+
     if (!result.success) {
       showStatus(`Error processing ${file.name}: ${result.error}`, 'error');
+    } else {
+      console.log(`Converted ${file.name} → ${path.basename(result.outputPath)}`);
     }
+
     processedCount++;
     let percentage = Math.floor((processedCount / total) * 100);
     progressBar.style.width = `${percentage}%`;
   }
 
   progressBar.style.width = '100%';
-  showStatus(`Files processed successfully!`, 'success');
+  showStatus(`Successfully converted ${processedCount} file(s) to Markdown!`, 'success');
 
   processButton.disabled = false;
   processButton.innerHTML = oldButtonText;
@@ -250,7 +150,7 @@ async function processFiles() {
   }, 1500);
 }
 
-// Basic file logic
+// File Handling Functions
 async function handleInputItems(fileList) {
   for (let i = 0; i < fileList.length; i++) {
     let fileItem = fileList[i];
@@ -369,115 +269,3 @@ ipcRenderer.on('log-message', (event, msg) => {
   logArea.classList.remove('hidden');
   logMessages.textContent = `Status: ${msg}`;
 });
-
-
-
-// PRO Upgrade UI & Logic
-proButton.addEventListener('click', () => {
-  if (userState.isPro) {
-    showManageModal();
-  } else {
-    showUpgradeModal();
-  }
-});
-
-proInfoLink.addEventListener('click', () => {
-  if (userState.isPro) {
-    showManageModal();
-  } else {
-    showInfoModal();
-  }
-});
-
-// Upgrade modal
-upgradeClose.addEventListener('click', hideUpgradeModal);
-copyDeviceIdBtn.addEventListener('click', () => {
-  deviceIdField.select();
-  document.execCommand('copy');
-  showStatus('Device ID copied to clipboard!', 'success');
-});
-
-// White wide button => open external store
-upgradeStoreBtn.addEventListener('click', () => {
-  require('electron').shell.openExternal('https://amicus5.com/store/PA');
-});
-
-// Validate key => show message in #key-message
-validateKeyBtn.addEventListener('click', () => {
-  const key = proKeyInput.value.trim();
-  if (!key) {
-    showKeyMessage('Please enter a key.', 'error');
-    return;
-  }
-  if (validateProKey(key)) {
-    userState.isPro = true;
-    saveUserState();
-    hideUpgradeModal();
-    showStatus('Pro activated! Enjoy unlimited usage.', 'success');
-    updateProUI();
-  } else {
-    showKeyMessage('Invalid key.', 'error');
-  }
-});
-
-// Manage Plan modal
-manageClose.addEventListener('click', hideManageModal);
-downgradeBtn.addEventListener('click', () => {
-  userState.isPro = false;
-  saveUserState();
-  hideManageModal();
-  showStatus('You have been downgraded to free plan.', 'success');
-  updateProUI();
-});
-
-// Info modal
-infoClose.addEventListener('click', hideInfoModal);
-
-// Simple validation
-function validateProKey(key) {
-  // e.g. "MASTERTESTKEY" or check simpleHash(userState.deviceID)
-  // Return true if matches
-  return (key === 'MASTERTESTKEY');
-}
-
-function showUpgradeModal() {
-  deviceIdField.value = userState.deviceID;
-  keyMessageDiv.classList.add('hidden'); // hide old messages
-  upgradeModal.classList.add('show');
-}
-function hideUpgradeModal() {
-  upgradeModal.classList.remove('show');
-}
-function showInfoModal() {
-  infoModal.classList.add('show');
-}
-function hideInfoModal() {
-  infoModal.classList.remove('show');
-}
-function showManageModal() {
-  manageModal.classList.add('show');
-}
-function hideManageModal() {
-  manageModal.classList.remove('show');
-}
-
-function showKeyMessage(msg, type) {
-  keyMessageDiv.textContent = msg;
-  keyMessageDiv.className = 'key-message'; // reset
-  keyMessageDiv.classList.add(type === 'error' ? 'error' : 'success');
-  keyMessageDiv.classList.remove('hidden');
-}
-
-function updateProUI() {
-  if (userState.isPro) {
-    proButton.textContent = 'Pro Version';
-    proButton.classList.remove('pro-upgrade');
-    proButton.classList.add('pro-active');
-    proInfoLink.textContent = 'Manage Plan';
-  } else {
-    proButton.innerHTML = `<i class="fas fa-gem"></i> Upgrade to Pro`;
-    proButton.classList.remove('pro-active');
-    proButton.classList.add('pro-upgrade');
-    proInfoLink.textContent = "What's Included in Pro?";
-  }
-}

@@ -339,3 +339,40 @@
     font-size: 0.9rem;
   }
   
+/* Subtitle under title */
+.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: -20px;
+  margin-bottom: 30px;
+}
+
+/* Info Box for license and output information */
+.info-box {
+  background: var(--bg-secondary);
+  border-left: 4px solid var(--accent);
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 6px;
+}
+
+.info-box p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.info-box strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.info-box a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.info-box a:hover {
+  text-decoration: underline;
+}

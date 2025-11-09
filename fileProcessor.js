@@ -1,13 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import ExcelJS from 'exceljs';
-import mammoth from 'mammoth';
-import { Document, Packer, Paragraph } from 'docx';
-import pdfParse from 'pdf-parse';
-import { PDFDocument } from 'pdf-lib';
-
 import { pipeline, env } from '@xenova/transformers';
 import { fileURLToPath } from 'url';
+
+// Import converters
+import { TextToMarkdown } from './src/converters/TextToMarkdown.js';
+import { CsvToMarkdown } from './src/converters/CsvToMarkdown.js';
+import { DocxToMarkdown } from './src/converters/DocxToMarkdown.js';
+import { ExcelToMarkdown } from './src/converters/ExcelToMarkdown.js';
+import { PdfToMarkdown } from './src/converters/PdfToMarkdown.js';
+
+// Import Swiss/EU PII detector
+import { SwissEuDetector } from './src/pii/SwissEuDetector.js';
 
 // ES module paths
 const __filename = fileURLToPath(import.meta.url);
@@ -18,35 +22,52 @@ env.localModelPath = path.join(__dirname, 'models');
 env.allowRemoteModels = false;
 env.quantized = false;
 
-// Toggle whether we use LLM-based anonymization
-const useLLM = true;
+// Model configuration
+const MODEL_NAME = 'betterdataai/PII_DETECTION_MODEL';
 
 // Pipeline reference
 let nerPipeline = null;
+
+// Swiss/EU detector instance
+const swissEuDetector = new SwissEuDetector();
 
 // Pseudonym counters/mappings
 const pseudonymCounters = {};
 const pseudonymMapping = {};
 
+// Initialize converters with model name
+const converters = {
+  '.txt': new TextToMarkdown({ modelName: MODEL_NAME }),
+  '.csv': new CsvToMarkdown({ modelName: MODEL_NAME }),
+  '.docx': new DocxToMarkdown({ modelName: MODEL_NAME }),
+  '.xlsx': new ExcelToMarkdown({ modelName: MODEL_NAME }),
+  '.xls': new ExcelToMarkdown({ modelName: MODEL_NAME }),
+  '.pdf': new PdfToMarkdown({ modelName: MODEL_NAME })
+};
+
 /**
  * Returns a consistent pseudonym for a given entity text + type.
  */
 function getPseudonym(entityText, entityType) {
+  // Check if we already have a mapping
   if (pseudonymMapping[entityText]) {
     return pseudonymMapping[entityText];
   }
+
+  // Initialize counter for this type if needed
   if (!pseudonymCounters[entityType]) {
     pseudonymCounters[entityType] = 1;
   }
+
+  // Generate pseudonym
   const pseudonym = `${entityType}_${pseudonymCounters[entityType]++}`;
   pseudonymMapping[entityText] = pseudonym;
+
   return pseudonym;
 }
 
 /**
- * Aggressively merges consecutive tokens of the same entity type,
- * removing whitespace/punctuation from each token, then concatenating.
- * e.g. “Bay,” + “ona,” + “Wil” + “ber” => “BayonaWilber”
+ * Aggressively merges consecutive tokens of the same entity type.
  */
 function aggressiveMergeTokens(predictions) {
   if (!predictions || predictions.length === 0) return [];
@@ -56,25 +77,25 @@ function aggressiveMergeTokens(predictions) {
 
   for (const pred of predictions) {
     const type = pred.entity.replace(/^(B-|I-)/, '');
-    // Remove whitespace/punctuation from each token
     let word = pred.word.replace(/\s+/g, '').replace(/[^\w\s.,'-]/g, '');
     word = word.trim();
+
     if (!word) continue;
 
     if (!current) {
       current = { type, text: word };
     } else if (current.type === type) {
-      // Same entity => unify
       current.text += word;
     } else {
-      // Different entity => push old one, start new
       merged.push(current);
       current = { type, text: word };
     }
   }
+
   if (current) {
     merged.push(current);
   }
+
   return merged;
 }
 
@@ -86,28 +107,20 @@ function escapeRegexChars(str) {
 }
 
 /**
- * Builds a fuzzy regex (with 'g' + 'i') that matches the merged string ignoring spacing/punctuation.
+ * Builds a fuzzy regex that matches the merged string ignoring spacing/punctuation.
  */
 function buildFuzzyRegex(mergedString) {
-  // Remove punctuation from mergedString
   let noPunc = mergedString.replace(/[^\w]/g, '');
-  if (!noPunc) {
-    return null;
-  }
+  if (!noPunc) return null;
 
-  // Escape special regex chars
   noPunc = escapeRegexChars(noPunc);
 
-  // Build a pattern that allows any non-alphanumeric between letters
   let pattern = '';
   for (const char of noPunc) {
     pattern += `${char}[^a-zA-Z0-9]*`;
   }
-  // No trailing slice, to avoid bracket issues.
 
-  if (!pattern) {
-    return null;
-  }
+  if (!pattern) return null;
 
   try {
     return new RegExp(pattern, 'ig');
@@ -118,167 +131,213 @@ function buildFuzzyRegex(mergedString) {
 }
 
 /**
- * Loads the PII detection model from local files, if not already loaded.
+ * Loads the PII detection model from local files.
  */
 async function loadNERModel() {
   if (!nerPipeline) {
-    console.log("Loading PII detection model from local files...");
-    nerPipeline = await pipeline('token-classification', 'protectai/lakshyakh93-deberta_finetuned_pii-onnx');
-    console.log("Model loaded.");
+    console.log(`Loading PII detection model: ${MODEL_NAME}...`);
+    nerPipeline = await pipeline('token-classification', MODEL_NAME);
+    console.log("Model loaded successfully.");
   }
   return nerPipeline;
 }
 
 /**
- * The main anonymization function. 
- * 1) Runs the pipeline
- * 2) Merges partial tokens
- * 3) Uses a fuzzy global regex to replace each merged token with a pseudonym
+ * Extract code blocks from Markdown to protect them during anonymization
+ */
+function extractCodeBlocks(markdown) {
+  const codeBlocks = [];
+  const placeholder = '<<<CODE_BLOCK_{}>>>';
+
+  // Match fenced code blocks (```...```)
+  const regex = /```[\s\S]*?```/g;
+  let match;
+  let index = 0;
+
+  const textWithoutCode = markdown.replace(regex, (matched) => {
+    codeBlocks.push(matched);
+    return placeholder.replace('{}', index++);
+  });
+
+  return { textWithoutCode, codeBlocks };
+}
+
+/**
+ * Restore code blocks after anonymization
+ */
+function restoreCodeBlocks(text, codeBlocks) {
+  let result = text;
+  codeBlocks.forEach((block, index) => {
+    result = result.replace(`<<<CODE_BLOCK_${index}>>>`, block);
+  });
+  return result;
+}
+
+/**
+ * Extract inline code to protect during anonymization
+ */
+function extractInlineCode(text) {
+  const inlineCode = [];
+  const placeholder = '<<<INLINE_{}>>>';
+
+  const regex = /`[^`]+`/g;
+  let index = 0;
+
+  const textWithoutInline = text.replace(regex, (matched) => {
+    inlineCode.push(matched);
+    return placeholder.replace('{}', index++);
+  });
+
+  return { textWithoutInline, inlineCode };
+}
+
+/**
+ * Restore inline code after anonymization
+ */
+function restoreInlineCode(text, inlineCode) {
+  let result = text;
+  inlineCode.forEach((code, index) => {
+    result = result.replace(`<<<INLINE_${index}>>>`, code);
+  });
+  return result;
+}
+
+/**
+ * Main anonymization function using both ML model and Swiss/EU rules.
  */
 async function anonymizeText(text) {
   let processedText = String(text);
 
+  // Step 1: ML-based detection
   const ner = await loadNERModel();
-  console.log("Internal LLM processing...");
+  console.log("Running ML-based PII detection...");
   const predictions = await ner(processedText);
-  console.log("Raw predicted tokens:", predictions);
 
-  const merged = aggressiveMergeTokens(predictions);
-  console.log("Aggressively merged tokens:", merged);
+  const mlEntities = aggressiveMergeTokens(predictions);
+  console.log(`ML detected ${mlEntities.length} entities`);
 
-  for (const obj of merged) {
-    const entityType = obj.type;
-    const mergedString = obj.text;
-    if (!mergedString) continue;
+  // Step 2: Rule-based Swiss/EU detection
+  console.log("Running Swiss/EU rule-based PII detection...");
+  const swissEuEntities = swissEuDetector.detect(processedText);
+  console.log(`Swiss/EU detected ${swissEuEntities.length} entities`);
 
-    const pseudonym = getPseudonym(mergedString, entityType);
-    const fuzzyRegex = buildFuzzyRegex(mergedString);
+  // Step 3: Merge all entities
+  const allEntities = [...mlEntities, ...swissEuEntities];
+
+  // Step 4: Replace entities with pseudonyms
+  for (const entity of allEntities) {
+    const entityType = entity.type;
+    const entityText = entity.text;
+
+    if (!entityText) continue;
+
+    const pseudonym = getPseudonym(entityText, entityType);
+    const fuzzyRegex = buildFuzzyRegex(entityText);
+
     if (!fuzzyRegex) {
-      console.log(`Skipping zero-length or invalid pattern for mergedString="${mergedString}"`);
+      console.log(`Skipping invalid pattern for "${entityText}"`);
       continue;
     }
 
-    console.log(`Replacing fuzzy match of "${mergedString}" => regex ${fuzzyRegex} with "${pseudonym}"`);
-
-    // Single-pass global replace
+    console.log(`Replacing "${entityText}" (${entityType}) with "${pseudonym}"`);
     processedText = processedText.replace(fuzzyRegex, pseudonym);
   }
 
-  console.log("LLM processing complete.");
   return processedText;
 }
 
+/**
+ * Anonymize Markdown while preserving syntax (code blocks, inline code)
+ */
+async function anonymizeMarkdown(markdown) {
+  console.log("Anonymizing Markdown (preserving code blocks)...");
+
+  // Step 1: Extract and protect code blocks
+  const { textWithoutCode, codeBlocks } = extractCodeBlocks(markdown);
+
+  // Step 2: Extract and protect inline code
+  const { textWithoutInline, inlineCode } = extractInlineCode(textWithoutCode);
+
+  // Step 3: Anonymize the remaining text
+  const anonymizedText = await anonymizeText(textWithoutInline);
+
+  // Step 4: Restore inline code
+  let result = restoreInlineCode(anonymizedText, inlineCode);
+
+  // Step 5: Restore code blocks
+  result = restoreCodeBlocks(result, codeBlocks);
+
+  // Step 6: Create mapping export
+  const mapping = {
+    version: '2.0',
+    timestamp: new Date().toISOString(),
+    model: MODEL_NAME,
+    detectionMethods: ['ML (transformers)', 'Rule-based (Swiss/EU)'],
+    entities: { ...pseudonymMapping }
+  };
+
+  console.log(`Total entities anonymised: ${Object.keys(pseudonymMapping).length}`);
+
+  return { anonymised: result, mapping };
+}
+
+/**
+ * Main file processing class
+ */
 export class FileProcessor {
   static async processFile(filePath, outputPath) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const ext = path.extname(filePath).toLowerCase();
-        console.log(`Processing file: ${filePath}`);
+    const ext = path.extname(filePath).toLowerCase();
+    const converter = converters[ext];
 
-        if (ext === '.txt' || ext === '.csv') {
-          // Text-based approach
-          console.log(`Processing text file: ${filePath}`);
-          const content = fs.readFileSync(filePath, 'utf8');
-          let newContent;
-          if (useLLM) {
-            console.log("LLM anonymization enabled. Processing text...");
-            const anonymizedText = await anonymizeText(content);
-            newContent = "Anonymized\n\n" + anonymizedText;
-          } else {
-            console.log("LLM anonymization disabled. Using default processing.");
-            newContent = "Anonymized\n\n" + content;
-          }
-          fs.writeFileSync(outputPath, newContent, 'utf8');
-          console.log(`Text file processed and saved to: ${outputPath}`);
-          resolve(true);
+    if (!converter) {
+      throw new Error(`Unsupported file type: ${ext}`);
+    }
 
-        } else if (ext === '.xlsx') {
-          // Excel partial coverage
-          console.log(`Processing Excel file: ${filePath}`);
-          const workbook = new ExcelJS.Workbook();
-          await workbook.xlsx.readFile(filePath);
+    try {
+      console.log(`\n========================================`);
+      console.log(`Processing: ${path.basename(filePath)}`);
+      console.log(`========================================`);
 
-          for (const worksheet of workbook.worksheets) {
-            for (let i = 1; i <= worksheet.rowCount; i++) {
-              const row = worksheet.getRow(i);
-              for (let j = 1; j <= row.cellCount; j++) {
-                const cell = row.getCell(j);
-                if (typeof cell.value === 'string') {
-                  console.log(`Anonymizing cell [Row ${i}, Col ${j}] with value: ${cell.value}`);
-                  cell.value = await anonymizeText(cell.value);
-                }
-              }
-            }
-          }
+      // Step 1: Convert to Markdown
+      console.log("Step 1: Converting to Markdown...");
+      const markdown = await converter.convert(filePath);
+      console.log(`✓ Converted to Markdown (${markdown.length} characters)`);
 
-          await workbook.xlsx.writeFile(outputPath);
-          console.log(`Excel file processed and saved to: ${outputPath}`);
-          resolve(true);
+      // Step 2: Anonymise Markdown
+      console.log("Step 2: Anonymising content...");
+      const { anonymised, mapping } = await anonymizeMarkdown(markdown);
+      console.log(`✓ Anonymisation complete`);
 
-        } else if (ext === '.docx') {
-          // DOCX: mammoth + docx approach
-          console.log(`Processing DOCX file: ${filePath}`);
-          const { value: docxText } = await mammoth.extractRawText({ path: filePath });
-          console.log("Extracted DOCX text:", docxText);
+      // Step 3: Write Markdown output
+      const mdOutputPath = outputPath.replace(/\.[^.]+$/, '.md');
+      fs.writeFileSync(mdOutputPath, anonymised, 'utf8');
+      console.log(`✓ Saved: ${path.basename(mdOutputPath)}`);
 
-          let anonymizedDocxText = docxText;
-          if (useLLM) {
-            anonymizedDocxText = await anonymizeText(docxText);
-          }
+      // Step 4: Write mapping JSON (ALWAYS)
+      const mappingPath = outputPath.replace(/\.[^.]+$/, '-mapping.json');
+      fs.writeFileSync(
+        mappingPath,
+        JSON.stringify(mapping, null, 2),
+        'utf8'
+      );
+      console.log(`✓ Saved: ${path.basename(mappingPath)}`);
+      console.log(`========================================\n`);
 
-          // Create minimal docx with 'docx' library
-          const doc = new Document({
-            sections: [
-              {
-                children: [ new Paragraph(anonymizedDocxText) ],
-              },
-            ],
-          });
-          const buffer = await Packer.toBuffer(doc);
-          fs.writeFileSync(outputPath, buffer);
-          console.log(`DOCX file processed and saved to: ${outputPath}`);
-          resolve(true);
+      return {
+        success: true,
+        outputPath: mdOutputPath,
+        mappingPath
+      };
 
-        } else if (ext === '.pdf') {
-          // PDF: pdf-parse + pdf-lib approach
-          console.log(`Processing PDF file: ${filePath}`);
-          const dataBuffer = fs.readFileSync(filePath);
-          const data = await pdfParse(dataBuffer);
-          const pdfText = data.text;
-          console.log("Extracted PDF text:", pdfText);
-
-          let anonymizedPdfText = pdfText;
-          if (useLLM) {
-            anonymizedPdfText = await anonymizeText(pdfText);
-          }
-
-          // Create a minimal PDF with pdf-lib
-          const doc = await PDFDocument.create();
-          const page = doc.addPage();
-          page.drawText(anonymizedPdfText, { x: 50, y: 700, size: 12 });
-          const pdfBytes = await doc.save();
-          fs.writeFileSync(outputPath, pdfBytes);
-          console.log(`PDF file processed and saved to: ${outputPath}`);
-          resolve(true);
-
-        } else {
-          // For other file types, just copy
-          console.log(`Processing binary file: ${filePath}`);
-          fs.copyFileSync(filePath, outputPath);
-          console.log(`Binary file copied to: ${outputPath}`);
-          resolve(true);
-        }
-      } catch (error) {
-        console.error("Error in processFile:", error);
-        reject(error);
-      }
-    });
+    } catch (error) {
+      console.error(`✗ Error processing ${filePath}:`, error);
+      throw error;
+    }
   }
 
   static generateOutputFileName(originalName) {
-    const ext = path.extname(originalName);
-    const baseName = path.basename(originalName, ext);
-    return `${baseName}-anon${ext}`;
+    const baseName = path.basename(originalName, path.extname(originalName));
+    return `${baseName}-anon.md`;
   }
 
   static validateFileType(filePath) {
@@ -287,5 +346,14 @@ export class FileProcessor {
     ];
     const ext = path.extname(filePath).toLowerCase();
     return supportedTypes.includes(ext);
+  }
+
+  /**
+   * Reset pseudonym mappings (for new batch)
+   */
+  static resetMappings() {
+    Object.keys(pseudonymCounters).forEach(key => delete pseudonymCounters[key]);
+    Object.keys(pseudonymMapping).forEach(key => delete pseudonymMapping[key]);
+    console.log("Pseudonym mappings reset");
   }
 }
