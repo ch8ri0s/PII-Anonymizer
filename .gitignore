@@ -3,6 +3,7 @@
 /dist/
 .pnp/
 .pnp.js
+package-lock.json
 
 # Optional npm cache directory
 .npm
