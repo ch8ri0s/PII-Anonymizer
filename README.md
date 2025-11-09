@@ -212,21 +212,91 @@ Detects standard PII across 7 languages using state-of-the-art transformer model
 
 ## 🔒 Privacy & Security
 
+### 🟢 Security Status: LOW RISK
+
+Softcom PII Anonymiser underwent a comprehensive security audit (2025-11-09) against OWASP Top 10 and Electron security best practices:
+
+- ✅ **8 of 10** vulnerabilities FIXED
+- ✅ All CRITICAL and HIGH severity issues resolved
+- ✅ Sandboxed renderer with context isolation
+- ✅ Path traversal protection
+- ✅ URL injection prevention
+- ✅ Content Security Policy enabled
+
+[View Security Audit Report →](SECURITY_AUDIT.md) | [Security Policy →](SECURITY.md)
+
 ### Data Protection
 
 - **100% Local** - No internet connection required for processing
 - **No Telemetry** - No usage tracking or analytics
 - **No Cloud** - All data stays on your machine
 - **Open Source** - Audit the code yourself
+- **Sandboxed** - Electron renderer runs in secure sandbox
+- **PII Never Logged** - Original PII values never written to logs
+
+### Security Architecture
+
+**Hardened Electron Security:**
+- ✅ `contextIsolation: true` - Isolates renderer from Node.js
+- ✅ `nodeIntegration: false` - Prevents arbitrary code execution
+- ✅ Preload script with `contextBridge` - Secure IPC communication only
+- ✅ Content Security Policy - Blocks XSS attacks
+- ✅ Path validation - Prevents directory traversal
+- ✅ URL sanitization - Blocks javascript:, data:, file:// URIs
+
+**File System Protection:**
+- Path normalization and validation before all file operations
+- Output files restricted to user-specified directories only
+- Temporary files created with safe permissions
+
+**Error Handling:**
+- File paths redacted from user-facing error messages
+- Full errors logged to console for debugging (local only)
+- No sensitive data in exception messages
 
 ### GDPR Compliance
 
-This tool helps you comply with GDPR when working with LLMs:
+This tool helps you comply with GDPR (EU) and nFADP (Swiss) when working with LLMs:
 
-- Anonymise personal data before cloud processing
-- Keep original-to-pseudonym mapping locally
-- De-anonymise results using mapping file
-- Document your privacy-preserving workflow
+- Anonymise personal data before cloud processing (Art. 5, 32 GDPR)
+- Keep original-to-pseudonym mapping locally (Art. 30 GDPR)
+- De-anonymise results using mapping file (Art. 15 GDPR)
+- Document your privacy-preserving workflow (Art. 24 GDPR)
+- Data minimization - only processes files you select (Art. 5 GDPR)
+- Purpose limitation - anonymization only (Art. 5 GDPR)
+
+### Security Best Practices
+
+**For Mapping Files:**
+```bash
+# ⚠️ -mapping.json contains original PII!
+
+# Set restrictive permissions (user-only)
+chmod 600 customer-data-mapping.json
+
+# Store in encrypted directory
+cp *-mapping.json ~/secure-vault/
+
+# Delete when no longer needed
+shred -uvz customer-data-mapping.json
+```
+
+**For Output Files:**
+```bash
+# Review anonymized output before sharing
+cat customer-data-anon.md | less
+
+# Verify critical PII was caught
+grep -E "NAME_|EMAIL_|PHONE_|SSN_" customer-data-anon.md
+```
+
+### Vulnerability Reporting
+
+Found a security issue? Please report responsibly:
+
+📧 **Email:** contact@softcom.pro (Subject: [SECURITY])
+
+See [SECURITY.md](SECURITY.md) for our vulnerability disclosure policy.
 
 ### Limitations
 
@@ -234,6 +304,7 @@ This tool helps you comply with GDPR when working with LLMs:
 ⚠️ **Review Critical Data** - Always manually review highly sensitive documents
 ⚠️ **Defense in Depth** - Use as part of comprehensive privacy strategy
 ⚠️ **Context Matters** - Some PII requires domain knowledge to detect
+⚠️ **Mapping Files** - Contain original PII, store securely and delete when done
 
 ---
 

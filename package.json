@@ -46,6 +46,13 @@
     },
     "files": [
       "**/*",
+      "!**/*.md",
+      "!SECURITY_AUDIT.md",
+      "!PERFORMANCE_ANALYSIS.md",
+      "README.md",
+      "LICENSE",
+      "SECURITY.md",
+      "preload.js",
       {
         "from": "assets",
         "to": "assets",
