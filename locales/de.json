@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "locale": "de",
+    "version": "2.0.0",
+    "lastUpdated": "2025-11-11T00:00:00Z"
+  },
+  "translations": {
+    "app": {
+      "title": "PII-Anonymisierer",
+      "subtitle": "Laden Sie Dokumente hoch, um personenbezogene Daten automatisch zu erkennen und zu anonymisieren"
+    },
+    "upload": {
+      "heading": "Legen Sie Ihre Datei hier ab",
+      "text": "oder klicken Sie, um von Ihrem Computer zu durchsuchen",
+      "browseButton": "Dateien durchsuchen",
+      "supportedFormats": "Unterstützte Formate:"
+    },
+    "fileDetails": {
+      "title": "Dateidetails",
+      "fileName": "Dateiname",
+      "type": "Typ",
+      "size": "Größe",
+      "lastModified": "Zuletzt geändert"
+    },
+    "preview": {
+      "title": "Vorschau",
+      "selectFile": "Wählen Sie eine Datei zur Vorschau aus..."
+    },
+    "processing": {
+      "title": "Anonymisierungsergebnisse",
+      "ready": "Klicken Sie auf \"Datei verarbeiten\", um zu beginnen",
+      "readyToProcess": "Bereit, Ihre Datei zu verarbeiten",
+      "processButton": "Datei verarbeiten",
+      "processing": "Verarbeitung und Anonymisierung von PII...",
+      "success": "Datei erfolgreich verarbeitet und anonymisiert. Bereit zum Herunterladen."
+    },
+    "download": {
+      "markdown": "Markdown",
+      "mapping": "Zuordnung"
+    },
+    "tabs": {
+      "markdown": "Anonymisiertes Markdown",
+      "mapping": "Änderungszuordnung"
+    },
+    "fileTypes": {
+      "pdf": "PDF",
+      "word": "Word",
+      "excel": "Excel",
+      "csv": "CSV",
+      "pdfDocument": "PDF-Dokument",
+      "wordDocument": "Word-Dokument",
+      "excelSpreadsheet": "Excel-Tabelle",
+      "csvFile": "CSV-Datei",
+      "textFile": "Textdatei"
+    },
+    "footer": {
+      "output": "Ausgabe:",
+      "outputDescription": "Anonymisiertes Markdown (.md) + Entitätszuordnung (.json)",
+      "license": "Lizenz:",
+      "licenseText": "Kostenlos für nichtkommerzielle Nutzung (CC BY-NC-SA 4.0)",
+      "support": "Support:",
+      "supportEmail": "contact@softcom.pro"
+    },
+    "buttons": {
+      "reset": "Zurücksetzen",
+      "download": "Herunterladen",
+      "process": "Verarbeiten"
+    },
+    "entityTypes": {
+      "person": "Person",
+      "organization": "Organisation",
+      "location": "Standort",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "date": "Datum",
+      "ssn": "Sozialversicherungsnummer",
+      "creditCard": "Kreditkarte",
+      "iban": "IBAN",
+      "address": "Adresse"
+    },
+    "messages": {
+      "noFileSelected": "Keine Datei ausgewählt",
+      "fileLoadFailed": "Fehler beim Laden der Datei",
+      "processingFailed": "Verarbeitung fehlgeschlagen",
+      "downloadFailed": "Download fehlgeschlagen"
+    },
+    "piiCount": {
+      "detected": "PII-Entitäten erkannt",
+      "sanitized": "anonymisiert"
+    }
+  }
+}

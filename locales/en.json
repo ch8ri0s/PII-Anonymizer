@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "locale": "en",
+    "version": "2.0.0",
+    "lastUpdated": "2025-11-11T00:00:00Z"
+  },
+  "translations": {
+    "app": {
+      "title": "PII Anonymiser",
+      "subtitle": "Upload documents to automatically detect and sanitize personally identifiable information"
+    },
+    "upload": {
+      "heading": "Drop your file here",
+      "text": "or click to browse from your computer",
+      "browseButton": "Browse Files",
+      "supportedFormats": "Supported formats:"
+    },
+    "fileDetails": {
+      "title": "File Details",
+      "fileName": "File Name",
+      "type": "Type",
+      "size": "Size",
+      "lastModified": "Last Modified"
+    },
+    "preview": {
+      "title": "Preview",
+      "selectFile": "Select a file to preview..."
+    },
+    "processing": {
+      "title": "Sanitization Results",
+      "ready": "Click \"Process File\" to begin",
+      "readyToProcess": "Ready to process your file",
+      "processButton": "Process File",
+      "processing": "Processing and sanitizing PII...",
+      "success": "File successfully processed and sanitized. Ready to download."
+    },
+    "download": {
+      "markdown": "Markdown",
+      "mapping": "Mapping"
+    },
+    "tabs": {
+      "markdown": "Sanitized Markdown",
+      "mapping": "Change Mapping"
+    },
+    "fileTypes": {
+      "pdf": "PDF",
+      "word": "Word",
+      "excel": "Excel",
+      "csv": "CSV",
+      "pdfDocument": "PDF Document",
+      "wordDocument": "Word Document",
+      "excelSpreadsheet": "Excel Spreadsheet",
+      "csvFile": "CSV File",
+      "textFile": "Text File"
+    },
+    "footer": {
+      "output": "Output:",
+      "outputDescription": "Anonymised Markdown (.md) + Entity Mapping (.json)",
+      "license": "License:",
+      "licenseText": "Free for non-commercial use (CC BY-NC-SA 4.0)",
+      "support": "Support:",
+      "supportEmail": "contact@softcom.pro"
+    },
+    "buttons": {
+      "reset": "Reset",
+      "download": "Download",
+      "process": "Process"
+    },
+    "entityTypes": {
+      "person": "Person",
+      "organization": "Organization",
+      "location": "Location",
+      "email": "Email",
+      "phone": "Phone",
+      "date": "Date",
+      "ssn": "SSN",
+      "creditCard": "Credit Card",
+      "iban": "IBAN",
+      "address": "Address"
+    },
+    "messages": {
+      "noFileSelected": "No file selected",
+      "fileLoadFailed": "Failed to load file",
+      "processingFailed": "Processing failed",
+      "downloadFailed": "Download failed"
+    },
+    "piiCount": {
+      "detected": "PII entities detected",
+      "sanitized": "sanitized"
+    }
+  }
+}

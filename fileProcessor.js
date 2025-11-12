@@ -19,11 +19,12 @@ const __dirname = path.dirname(__filename);
 
 // Transformers.js environment
 env.localModelPath = path.join(__dirname, 'models');
-env.allowRemoteModels = false;
+env.allowRemoteModels = false;  // Model is cached locally, no remote downloads needed
 env.quantized = false;
 
 // Model configuration
-const MODEL_NAME = 'betterdataai/PII_DETECTION_MODEL';
+// Using Xenova's pre-converted NER model (compatible with transformers.js)
+const MODEL_NAME = 'Xenova/bert-base-NER';
 
 // Pipeline reference
 let nerPipeline = null;

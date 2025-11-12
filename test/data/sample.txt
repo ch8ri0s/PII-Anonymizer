@@ -1,0 +1,12 @@
+Sample Text Document
+
+This is a simple text file for testing the text converter.
+
+Contact Information:
+John Doe
+Email: john.doe@example.com
+Phone: +41 79 123 45 67
+
+Additional Information:
+This document contains PII that should be detected and anonymized.
+The user's SSN is 756.1234.5678.90 (Swiss format).
