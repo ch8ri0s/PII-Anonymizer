@@ -1,9 +1,9 @@
 {
   "type": "module",
-  "name": "a5-pii-anonymizer",
-  "version": "0.0.1",
+  "name": "softcom-pii-anonymiser",
+  "version": "2.0.0",
   "main": "main.js",
-  "description": "A short description of your app",
+  "description": "Open source, non-commercial desktop app for anonymising documents to LLM-ready Markdown with EU/Swiss PII detection",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "electron .",
@@ -12,24 +12,28 @@
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["pii", "anonymisation", "anonymization", "llm", "markdown", "privacy", "gdpr", "switzerland", "europe", "open-source"],
+  "author": "Softcom <contact@softcom.pro>",
+  "license": "CC-BY-NC-SA-4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ch8ri0s/A5-PII-Anonymizer"
+  },
   "dependencies": {
-    "exceljs": "^4.3.0",
+    "exceljs": "^4.4.0",
     "@xenova/transformers": "2.17.2",
-    "mammoth": "^1.5.2",
-    "docx": "^8.4.0",
+    "mammoth": "^1.11.0",
     "pdf-parse": "^1.1.1",
-    "pdf-lib": "^1.17.1"
+    "turndown": "^7.2.2",
+    "marked": "^12.0.0"
   },
   "devDependencies": {
     "electron": "^34.2.0",
     "electron-builder": "^23.6.0"
   },
   "build": {
-    "productName": "A5 PII Anonymizer",
-    "appId": "com.a5.piiAnonymizer",
+    "productName": "Softcom PII Anonymiser",
+    "appId": "com.softcom.piiAnonymiser",
     "mac": {
       "icon": "assets/icon",
       "category": "public.app-category.utilities"
@@ -42,6 +46,13 @@
     },
     "files": [
       "**/*",
+      "!**/*.md",
+      "!SECURITY_AUDIT.md",
+      "!PERFORMANCE_ANALYSIS.md",
+      "README.md",
+      "LICENSE",
+      "SECURITY.md",
+      "preload.js",
       {
         "from": "assets",
         "to": "assets",

@@ -1,21 +1,66 @@
-MIT License
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
 
-Copyright (c) 2025 A5
+Copyright (c) 2025 Softcom
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+International License. To view a copy of this license, visit:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+You are free to:
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution — You must give appropriate credit, provide a link to the license, and
+  indicate if changes were made.
+- NonCommercial — You may not use the material for commercial purposes.
+- ShareAlike — If you remix, transform, or build upon the material, you must distribute
+  your contributions under the same license as the original.
+
+No additional restrictions — You may not apply legal terms or technological measures that
+legally restrict others from doing anything the license permits.
+
+================================================================================
+
+COMMERCIAL LICENSING
+
+Commercial use of this software requires a separate commercial license.
+For commercial licensing inquiries, please contact: contact@softcom.pro
+
+================================================================================
+
+THIRD-PARTY COMPONENTS
+
+This software includes the following open source components:
+
+- betterdataai/PII_DETECTION_MODEL - Apache License 2.0
+  https://huggingface.co/betterdataai/PII_DETECTION_MODEL
+
+- @xenova/transformers - Apache License 2.0
+  https://github.com/xenova/transformers.js
+
+- Electron - MIT License
+  https://www.electronjs.org/
+
+- ExcelJS - MIT License
+  https://github.com/exceljs/exceljs
+
+- Mammoth - BSD-2-Clause License
+  https://github.com/mwilliamson/mammoth.js
+
+- pdf-parse - MIT License
+  https://www.npmjs.com/package/pdf-parse
+
+- Turndown - MIT License
+  https://github.com/mixmark-io/turndown
+
+- Marked - MIT License
+  https://github.com/markedjs/marked
+
+See the respective project licenses for full terms and conditions.
+
+================================================================================
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
