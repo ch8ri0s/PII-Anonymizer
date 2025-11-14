@@ -1,0 +1,38 @@
+
+> softcom-pii-anonymiser@2.0.0 test
+> mocha test/**/*.test.js --timeout 10000
+
+
+
+  File Format Converters
+    PDF Converter
+      ✔ should convert PDF to markdown
+      ✔ should validate generated markdown
+      ✔ should correctly extract text content from PDF
+    Text Converter
+      ✔ should convert TXT to markdown
+      ✔ should preserve line breaks and structure
+    CSV Converter
+      ✔ should convert CSV to markdown table
+      ✔ should include all rows from CSV
+    Excel Converter
+      ✔ should convert Excel to markdown
+      ✔ should handle multiple sheets
+      ✔ should correctly extract data from Excel
+    DOCX Converter
+      ✔ should convert DOCX to markdown
+      ✔ should correctly extract content from DOCX
+    Markdown Validation
+      ✔ should validate well-formed markdown
+      ✔ should handle frontmatter in validation
+    Common Converter Features
+      ✔ should include metadata in frontmatter
+      ✔ should sanitize filenames in frontmatter
+      ✔ should create proper markdown tables
+      ✔ should escape special characters in table cells
+      ✔ should create proper headings
+      ✔ should handle various markdown elements
+
+
+  20 passing (114ms)
+

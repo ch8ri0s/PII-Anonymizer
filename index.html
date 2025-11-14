@@ -1,92 +1,260 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Softcom PII Anonymiser</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="output.css" />
+  <link rel="stylesheet" href="ui-components.css" />
   <link rel="stylesheet" href="all.min.css" />
 </head>
 <body>
-
-  <div class="container">
-    <h1>
-      <img src="logo.png" alt="Softcom" class="company-logo" />
-      PII Anonymiser
-    </h1>
-    <p class="subtitle">Convert documents to LLM-ready Markdown with EU/Swiss PII detection</p>
-
-    <!-- Drop Zone -->
-    <div id="drop-zone" class="drop-zone">
-      <i class="fas fa-file-upload"></i>
-      <p>Drag & Drop files here or click to select</p>
-      <input
-        type="file"
-        id="file-input"
-        accept=".doc,.docx,.xls,.xlsx,.csv,.pdf,.txt"
-        multiple
-        style="display: none;"
-      />
-    </div>
-
-    <!-- Folder selection -->
-    <div class="folder-select">
-      <button id="select-folder" class="button secondary">
-        <i class="fas fa-folder"></i> Select Folder
-      </button>
-    </div>
-
-    <!-- File list preview -->
-    <div id="file-list" class="file-list hidden">
-      <ul id="files-ul"></ul>
-      <button id="clear-files" class="button secondary">
-        <i class="fas fa-times"></i> Clear Selection
-      </button>
-    </div>
-
-    <!-- Output Directory -->
-    <div class="settings-section">
-      <div class="input-group">
-        <label for="output-dir">Output Directory (Optional):</label>
-        <div class="output-dir-group">
-          <input type="text" id="output-dir" readonly />
-          <button id="select-output" class="button secondary">
-            <i class="fas fa-folder-open"></i> Select
-          </button>
+  <div class="app-container">
+    <div class="max-w-7xl">
+      <!-- Header (always visible) -->
+      <div class="app-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="flex: 1;">
+            <h1 class="app-title">
+              <img src="logo.png" alt="Softcom" class="company-logo" />
+              PII Anonymiser
+            </h1>
+            <p class="app-subtitle">
+              Upload documents to automatically detect and sanitize personally identifiable information
+            </p>
+          </div>
+          <!-- Language Selector Dropdown -->
+          <div id="language-selector" class="dropdown" style="position: relative; margin-top: 0.5rem;">
+            <button id="language-dropdown-trigger" class="dropdown-trigger" type="button">
+              <span id="current-language-flag" style="font-size: 1.25rem;">🇬🇧</span>
+              <span id="current-language-name" style="margin-left: 0.5rem;">English</span>
+              <svg style="margin-left: 0.5rem; width: 1rem; height: 1rem; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="language-dropdown-content" class="dropdown-content" style="display: none;">
+              <button class="dropdown-item" data-lang="en" data-flag="🇬🇧" data-name="English">
+                <span style="font-size: 1.25rem;">🇬🇧</span>
+                <span style="margin-left: 0.75rem;">English</span>
+              </button>
+              <button class="dropdown-item" data-lang="fr" data-flag="🇫🇷" data-name="Français">
+                <span style="font-size: 1.25rem;">🇫🇷</span>
+                <span style="margin-left: 0.75rem;">Français</span>
+              </button>
+              <button class="dropdown-item" data-lang="de" data-flag="🇩🇪" data-name="Deutsch">
+                <span style="font-size: 1.25rem;">🇩🇪</span>
+                <span style="margin-left: 0.75rem;">Deutsch</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Process Button -->
-    <button id="process-button" class="button primary" disabled>
-      <i class="fas fa-file-markdown"></i> Convert to Markdown
-    </button>
+      <!-- Upload Zone (shown before file selection) -->
+      <div id="upload-zone" class="upload-card">
+        <div class="upload-icon-wrapper">
+          <div class="upload-icon-bg">
+            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+        </div>
 
-    <!-- Info Box -->
-    <div class="info-box">
-      <p><strong>Output:</strong> Anonymised Markdown (.md) + Entity Mapping (.json)</p>
-      <p><strong>License:</strong> Free for non-commercial use (CC BY-NC-SA 4.0)</p>
-      <p><strong>Support:</strong> <a href="mailto:contact@softcom.pro">contact@softcom.pro</a></p>
-    </div>
+        <h2 class="upload-heading">Drop your file here</h2>
+        <p class="upload-text">or click to browse from your computer</p>
 
-    <!-- Progress Bar -->
-    <div id="progress" class="progress hidden">
-      <div class="progress-bar"></div>
-    </div>
+        <label class="browse-button">
+          <input
+            type="file"
+            id="file-input"
+            accept=".doc,.docx,.xls,.xlsx,.csv,.pdf,.txt"
+            multiple
+          />
+          <span>Browse Files</span>
+        </label>
 
-    <!-- Status -->
-    <div id="status" class="status hidden"></div>
+        <div class="supported-formats">
+          <p>Supported formats:</p>
+          <div class="format-badges">
+            <div class="format-badge">
+              <i class="fas fa-file-pdf" style="color: var(--red-500);"></i>
+              <span class="format-badge-text">PDF</span>
+            </div>
+            <div class="format-badge">
+              <i class="fas fa-file-word" style="color: var(--blue-500);"></i>
+              <span class="format-badge-text">Word</span>
+            </div>
+            <div class="format-badge">
+              <i class="fas fa-file-excel" style="color: var(--green-600);"></i>
+              <span class="format-badge-text">Excel</span>
+            </div>
+            <div class="format-badge">
+              <i class="fas fa-file-csv" style="color: var(--purple-700);"></i>
+              <span class="format-badge-text">CSV</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <!-- Logs -->
-    <div id="log-area" class="log-area hidden">
-      <h3>Logs:</h3>
-      <div id="log-messages"></div>
-    </div>
+      <!-- Processing View (shown after file selection) -->
+      <div id="processing-view" class="hidden">
+        <div class="grid grid-cols-3 gap-6">
+          <!-- Left Column: Metadata + Preview -->
+          <div class="col-span-1 space-y-6">
+            <!-- File Metadata Panel -->
+            <div class="card">
+              <div class="card-header">
+                <div class="flex items-center justify-between">
+                  <h3 class="card-title">File Details</h3>
+                  <button class="btn btn-ghost btn-sm reset-btn" id="reset-btn" title="Reset">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            <div class="card-content">
+              <div>
+                <div class="metadata-row">
+                  <i class="fas fa-file-alt metadata-icon"></i>
+                  <div class="metadata-content">
+                    <p class="metadata-label">File Name</p>
+                    <p class="metadata-value" id="meta-filename">-</p>
+                  </div>
+                </div>
 
-    <!-- Output Folder Link -->
-    <div id="output-link" class="output-link hidden">
-      <a id="open-output-folder" href="#">Open Output Folder</a>
+                <hr class="separator" />
+
+                <div class="metadata-row">
+                  <i class="fas fa-file metadata-icon"></i>
+                  <div class="metadata-content">
+                    <p class="metadata-label">Type</p>
+                    <span class="badge badge-slate" id="meta-type-badge">-</span>
+                  </div>
+                </div>
+
+                <hr class="separator" />
+
+                <div class="metadata-row">
+                  <i class="fas fa-hdd metadata-icon"></i>
+                  <div class="metadata-content">
+                    <p class="metadata-label">Size</p>
+                    <p class="metadata-value" id="meta-size">-</p>
+                  </div>
+                </div>
+
+                <hr class="separator" />
+
+                <div class="metadata-row">
+                  <i class="fas fa-calendar metadata-icon"></i>
+                  <div class="metadata-content">
+                    <p class="metadata-label">Last Modified</p>
+                    <p class="metadata-value" id="meta-modified">-</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <!-- File Preview Panel -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Preview</h3>
+              </div>
+              <div class="card-content">
+                <div class="scroll-area h-64">
+                  <pre id="preview-content">Select a file to preview...</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Processing Output -->
+          <div class="col-span-2">
+          <div class="card h-full">
+            <div class="card-header">
+              <div class="card-header-split">
+                <div>
+                  <h3 class="card-title">Sanitization Results</h3>
+                  <p class="card-subtitle" id="pii-count-text">Click "Process File" to begin</p>
+                </div>
+                <div class="button-group" id="download-buttons" style="display: none;">
+                  <button class="btn btn-primary btn-sm" id="download-markdown">
+                    <i class="fas fa-download"></i>
+                    Markdown
+                  </button>
+                  <button class="btn btn-outline btn-sm" id="download-mapping">
+                    <i class="fas fa-download"></i>
+                    Mapping
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card-content">
+              <!-- Initial State -->
+              <div id="initial-state" class="text-center" style="padding: 3rem 0;">
+                <svg style="width: 4rem; height: 4rem; color: var(--slate-300); margin: 0 auto var(--spacing-4);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p style="color: var(--slate-600); margin-bottom: var(--spacing-4);">Ready to process your file</p>
+                <button class="btn btn-primary" id="process-button" disabled>
+                  <i class="fas fa-file-export"></i>
+                  Process File
+                </button>
+              </div>
+
+              <!-- Loading State -->
+              <div id="processing-spinner" class="loader-container hidden">
+                <i class="fas fa-spinner fa-spin spinner"></i>
+                <p class="loader-text">Processing and sanitizing PII...</p>
+              </div>
+
+              <!-- Success State -->
+              <div id="processing-result" class="hidden">
+                <div class="alert alert-success">
+                  <i class="fas fa-check-circle"></i>
+                  <p>File successfully processed and sanitized. Ready to download.</p>
+                </div>
+
+                <div class="tabs">
+                  <div class="tab-list">
+                    <button class="tab active" data-tab="markdown">Sanitized Markdown</button>
+                    <button class="tab" data-tab="mapping">Change Mapping</button>
+                  </div>
+
+                  <div class="tab-content active" id="tab-markdown">
+                    <div class="scroll-area h-96">
+                      <pre id="sanitized-markdown"></pre>
+                    </div>
+                  </div>
+
+                  <div class="tab-content" id="tab-mapping">
+                    <div class="scroll-area h-96">
+                      <div id="change-list" class="change-list"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Footer (always visible) -->
+      <div id="app-footer" style="margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--slate-200); text-align: center; color: var(--slate-600); font-size: 0.875rem;">
+        <p style="margin: 0 0 var(--spacing-2) 0;">
+          <strong id="footer-output-label">Output:</strong> <span id="footer-output-text">Anonymised Markdown (.md) + Entity Mapping (.json)</span>
+        </p>
+        <p style="margin: 0;">
+          <strong id="footer-license-label">License:</strong> <span id="footer-license-text">Free for non-commercial use (CC BY-NC-SA 4.0)</span> |
+          <strong id="footer-support-label">Support:</strong> <a href="mailto:contact@softcom.pro" style="color: var(--blue-600);">contact@softcom.pro</a>
+        </p>
+      </div>
     </div>
   </div>
 
+  <script src="i18n-init.js"></script>
   <script src="renderer.js"></script>
+  <!-- filePreviewIntegration.js disabled - functionality integrated into renderer.js -->
+  <!-- <script type="module" src="filePreviewIntegration.js"></script> -->
 </body>
 </html>

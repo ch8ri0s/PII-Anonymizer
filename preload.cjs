@@ -78,6 +78,81 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => {
       ipcRenderer.removeListener('log-message', wrappedCallback);
     };
+  },
+
+  /**
+   * Get file metadata (stats + text analysis)
+   * @param {string} filePath - Absolute path to the file
+   * @returns {Promise<Object>} - FileMetadata | FileMetadataError
+   */
+  getFileMetadata: (filePath) => {
+    if (typeof filePath !== 'string' || filePath.length === 0) {
+      return Promise.reject(new Error('Invalid file path'));
+    }
+    return ipcRenderer.invoke('file:getMetadata', filePath);
+  },
+
+  /**
+   * Get content preview (first N lines or M characters)
+   * @param {string} filePath - Absolute path to the file
+   * @param {Object} limit - { lines: number, chars: number }
+   * @returns {Promise<Object>} - FilePreview | FilePreviewError
+   */
+  getFilePreview: (filePath, limit) => {
+    if (typeof filePath !== 'string' || filePath.length === 0) {
+      return Promise.reject(new Error('Invalid file path'));
+    }
+    if (!limit || typeof limit.lines !== 'number' || typeof limit.chars !== 'number') {
+      return Promise.reject(new Error('Invalid limit parameters'));
+    }
+    return ipcRenderer.invoke('file:getPreview', filePath, limit);
+  },
+
+  /**
+   * Open file selection dialog
+   * @param {Object} options - { allowMultiple: boolean, filters: Array }
+   * @returns {Promise<string[]|null>} - Selected file paths or null if cancelled
+   */
+  selectFiles: (options) => {
+    if (!options || typeof options.allowMultiple !== 'boolean') {
+      return Promise.reject(new Error('Invalid options'));
+    }
+    return ipcRenderer.invoke('dialog:selectFiles', options);
+  },
+
+  /**
+   * Read a JSON file
+   * @param {string} filePath - Absolute path to the JSON file
+   * @returns {Promise<Object>} - Parsed JSON object
+   */
+  readJsonFile: (filePath) => {
+    if (typeof filePath !== 'string' || filePath.length === 0) {
+      return Promise.reject(new Error('Invalid file path'));
+    }
+    return ipcRenderer.invoke('file:readJson', filePath);
+  }
+});
+
+// Expose i18n API for internationalization
+contextBridge.exposeInMainWorld('i18nAPI', {
+  /**
+   * Get translations for a specific locale
+   * @param {string} locale - Two-letter language code ('en', 'fr', 'de')
+   * @returns {Promise<Object>} - { success: boolean, locale: string, translations: Object, metadata?: Object, error?: string }
+   */
+  getTranslations: (locale) => {
+    if (typeof locale !== 'string' || !['en', 'fr', 'de'].includes(locale)) {
+      return Promise.reject(new Error('Invalid locale. Must be en, fr, or de'));
+    }
+    return ipcRenderer.invoke('i18n:getTranslations', locale);
+  },
+
+  /**
+   * Get detected system locale
+   * @returns {Promise<Object>} - { success: boolean, language: string, systemLocale: string, supported: boolean, fallback?: string }
+   */
+  getDetectedLocale: () => {
+    return ipcRenderer.invoke('i18n:getDetectedLocale');
   }
 });
 
@@ -99,14 +174,34 @@ const os = require('os');
 
 contextBridge.exposeInMainWorld('fsAPI', {
   // File system operations (limited and validated)
-  lstat: (filePath) => {
+  lstat: async (filePath) => {
     if (typeof filePath !== 'string') throw new Error('Invalid path');
-    return fs.promises.lstat(filePath);
+    const stats = await fs.promises.lstat(filePath);
+    // Return a serializable object with methods converted to properties
+    return {
+      isDirectory: () => stats.isDirectory(),
+      isFile: () => stats.isFile(),
+      isSymbolicLink: () => stats.isSymbolicLink(),
+      size: stats.size,
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      atime: stats.atime
+    };
   },
 
-  stat: (filePath) => {
+  stat: async (filePath) => {
     if (typeof filePath !== 'string') throw new Error('Invalid path');
-    return fs.promises.stat(filePath);
+    const stats = await fs.promises.stat(filePath);
+    // Return a serializable object with methods converted to properties
+    return {
+      isDirectory: () => stats.isDirectory(),
+      isFile: () => stats.isFile(),
+      isSymbolicLink: () => stats.isSymbolicLink(),
+      size: stats.size,
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      atime: stats.atime
+    };
   },
 
   readdir: (dirPath) => {
@@ -139,7 +234,7 @@ contextBridge.exposeInMainWorld('osAPI', {
   tmpdir: () => os.tmpdir()
 });
 
-// Log successful preload (only in development)
-if (process.env.NODE_ENV === 'development') {
-  console.log('✓ Preload script initialized securely');
-}
+// Log successful preload
+console.log('✓ Preload script initialized securely');
+console.log('✓ electronAPI methods:', Object.keys(contextBridge.exposeInMainWorld.name || {}));
+console.log('✓ window.electronAPI should be available');
