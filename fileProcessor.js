@@ -26,17 +26,13 @@ env.quantized = false;
 // Using Xenova's pre-converted NER model (compatible with transformers.js)
 const MODEL_NAME = 'Xenova/bert-base-NER';
 
-// Pipeline reference
+// Pipeline reference (shared across sessions for performance)
 let nerPipeline = null;
 
-// Swiss/EU detector instance
+// Swiss/EU detector instance (shared, stateless)
 const swissEuDetector = new SwissEuDetector();
 
-// Pseudonym counters/mappings
-const pseudonymCounters = {};
-const pseudonymMapping = {};
-
-// Initialize converters with model name
+// Initialize converters with model name (shared, stateless)
 const converters = {
   '.txt': new TextToMarkdown({ modelName: MODEL_NAME }),
   '.csv': new CsvToMarkdown({ modelName: MODEL_NAME }),
@@ -47,24 +43,61 @@ const converters = {
 };
 
 /**
- * Returns a consistent pseudonym for a given entity text + type.
+ * FileProcessingSession - Encapsulates state for a single file processing operation
+ *
+ * This class provides isolation between different file processing operations,
+ * ensuring that pseudonym mappings don't leak between files.
+ *
+ * Each session has its own:
+ * - Pseudonym counters (PER_1, PER_2, etc.)
+ * - Pseudonym mappings (entity text -> pseudonym)
  */
-function getPseudonym(entityText, entityType) {
-  // Check if we already have a mapping
-  if (pseudonymMapping[entityText]) {
-    return pseudonymMapping[entityText];
+class FileProcessingSession {
+  constructor() {
+    // Per-session pseudonym state (isolated)
+    this.pseudonymCounters = {};
+    this.pseudonymMapping = {};
   }
 
-  // Initialize counter for this type if needed
-  if (!pseudonymCounters[entityType]) {
-    pseudonymCounters[entityType] = 1;
+  /**
+   * Get or create a consistent pseudonym for an entity
+   * @param {string} entityText - The original entity text
+   * @param {string} entityType - The entity type (PER, ORG, LOC, etc.)
+   * @returns {string} The pseudonym
+   */
+  getOrCreatePseudonym(entityText, entityType) {
+    // Check if we already have a mapping in THIS session
+    if (this.pseudonymMapping[entityText]) {
+      return this.pseudonymMapping[entityText];
+    }
+
+    // Initialize counter for this type if needed
+    if (!this.pseudonymCounters[entityType]) {
+      this.pseudonymCounters[entityType] = 1;
+    }
+
+    // Generate pseudonym
+    const pseudonym = `${entityType}_${this.pseudonymCounters[entityType]++}`;
+    this.pseudonymMapping[entityText] = pseudonym;
+
+    return pseudonym;
   }
 
-  // Generate pseudonym
-  const pseudonym = `${entityType}_${pseudonymCounters[entityType]++}`;
-  pseudonymMapping[entityText] = pseudonym;
+  /**
+   * Get the current mapping state
+   * @returns {Object} The pseudonym mapping
+   */
+  getMapping() {
+    return { ...this.pseudonymMapping };
+  }
 
-  return pseudonym;
+  /**
+   * Get entity count
+   * @returns {number} Number of entities anonymized in this session
+   */
+  getEntityCount() {
+    return Object.keys(this.pseudonymMapping).length;
+  }
 }
 
 /**
@@ -211,8 +244,10 @@ function restoreInlineCode(text, inlineCode) {
 
 /**
  * Main anonymization function using both ML model and Swiss/EU rules.
+ * @param {string} text - Text to anonymize
+ * @param {FileProcessingSession} session - Session for isolated state
  */
-async function anonymizeText(text) {
+async function anonymizeText(text, session) {
   let processedText = String(text);
 
   // Step 1: ML-based detection
@@ -241,7 +276,7 @@ async function anonymizeText(text) {
 
     if (!entityText) continue;
 
-    const pseudonym = getPseudonym(entityText, entityType);
+    const pseudonym = session.getOrCreatePseudonym(entityText, entityType);
     const fuzzyRegex = buildFuzzyRegex(entityText);
 
     if (!fuzzyRegex) {
@@ -276,8 +311,10 @@ async function anonymizeText(text) {
 
 /**
  * Anonymize Markdown while preserving syntax (code blocks, inline code)
+ * @param {string} markdown - Markdown text to anonymize
+ * @param {FileProcessingSession} session - Session for isolated state
  */
-async function anonymizeMarkdown(markdown) {
+async function anonymizeMarkdown(markdown, session) {
   console.log("Anonymizing Markdown (preserving code blocks)...");
 
   // Step 1: Extract and protect code blocks
@@ -286,8 +323,8 @@ async function anonymizeMarkdown(markdown) {
   // Step 2: Extract and protect inline code
   const { textWithoutInline, inlineCode } = extractInlineCode(textWithoutCode);
 
-  // Step 3: Anonymize the remaining text
-  const anonymizedText = await anonymizeText(textWithoutInline);
+  // Step 3: Anonymize the remaining text with session
+  const anonymizedText = await anonymizeText(textWithoutInline, session);
 
   // Step 4: Restore inline code
   let result = restoreInlineCode(anonymizedText, inlineCode);
@@ -295,16 +332,16 @@ async function anonymizeMarkdown(markdown) {
   // Step 5: Restore code blocks
   result = restoreCodeBlocks(result, codeBlocks);
 
-  // Step 6: Create mapping export
+  // Step 6: Create mapping export from session
   const mapping = {
     version: '2.0',
     timestamp: new Date().toISOString(),
     model: MODEL_NAME,
     detectionMethods: ['ML (transformers)', 'Rule-based (Swiss/EU)'],
-    entities: { ...pseudonymMapping }
+    entities: session.getMapping()
   };
 
-  console.log(`Total entities anonymised: ${Object.keys(pseudonymMapping).length}`);
+  console.log(`Total entities anonymised: ${session.getEntityCount()}`);
 
   return { anonymised: result, mapping };
 }
@@ -352,6 +389,9 @@ export class FileProcessor {
       throw new Error(`Unsupported file type: ${ext}`);
     }
 
+    // Create a new session for this file (isolated state)
+    const session = new FileProcessingSession();
+
     try {
       console.log(`\n========================================`);
       console.log(`Processing: ${path.basename(filePath)}`);
@@ -362,9 +402,9 @@ export class FileProcessor {
       const markdown = await converter.convert(filePath);
       console.log(`✓ Converted to Markdown (${markdown.length} characters)`);
 
-      // Step 2: Anonymise Markdown
+      // Step 2: Anonymise Markdown with session
       console.log("Step 2: Anonymising content...");
-      const { anonymised, mapping } = await anonymizeMarkdown(markdown);
+      const { anonymised, mapping } = await anonymizeMarkdown(markdown, session);
       console.log(`✓ Anonymisation complete`);
 
       // ✅ SECURITY: Validate output paths before writing
@@ -412,11 +452,15 @@ export class FileProcessor {
   }
 
   /**
-   * Reset pseudonym mappings (for new batch)
+   * Reset pseudonym mappings (DEPRECATED - no longer needed)
+   *
+   * This method is kept for backward compatibility but does nothing,
+   * as each processFile() call now creates its own isolated session.
+   *
+   * @deprecated Each file processing operation is now automatically isolated
    */
   static resetMappings() {
-    Object.keys(pseudonymCounters).forEach(key => delete pseudonymCounters[key]);
-    Object.keys(pseudonymMapping).forEach(key => delete pseudonymMapping[key]);
     console.log("Pseudonym mappings reset");
+    // No-op: Each processFile() creates a new session automatically
   }
 }
