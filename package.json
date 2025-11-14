@@ -1,35 +1,71 @@
 {
   "type": "module",
-  "name": "a5-pii-anonymizer",
-  "version": "0.0.1",
+  "name": "softcom-pii-anonymiser",
+  "version": "2.0.0",
   "main": "main.js",
-  "description": "A short description of your app",
+  "description": "Open source, non-commercial desktop app for anonymising documents to LLM-ready Markdown with EU/Swiss PII detection",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test/**/*.test.js --timeout 10000",
+    "test:watch": "mocha test/**/*.test.js --watch",
+    "test:ts": "mocha --require ts-node/register test/**/*.test.ts --timeout 10000",
+    "test:i18n": "mocha test/unit/i18n/**/*.test.js test/integration/i18n/**/*.test.js --timeout 10000",
+    "test:i18n:coverage": "mocha test/unit/i18n/translationCoverage.test.js --timeout 10000",
+    "compile": "tsc",
+    "compile:watch": "tsc --watch",
+    "css:build": "npx tailwindcss -i ./src/input.css -o ./output.css",
+    "css:watch": "npx tailwindcss -i ./src/input.css -o ./output.css --watch",
+    "prebuild": "npm run compile && npm run css:build",
     "dev": "electron .",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "pii",
+    "anonymisation",
+    "anonymization",
+    "llm",
+    "markdown",
+    "privacy",
+    "gdpr",
+    "switzerland",
+    "europe",
+    "open-source"
+  ],
+  "author": "Softcom <contact@softcom.pro>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ch8ri0s/A5-PII-Anonymizer"
+  },
   "dependencies": {
-    "exceljs": "^4.3.0",
     "@xenova/transformers": "2.17.2",
-    "mammoth": "^1.5.2",
-    "docx": "^8.4.0",
+    "exceljs": "^4.4.0",
+    "mammoth": "^1.11.0",
+    "marked": "^17.0.0",
     "pdf-parse": "^1.1.1",
-    "pdf-lib": "^1.17.1"
+    "turndown": "^7.2.2"
   },
   "devDependencies": {
-    "electron": "^34.2.0",
-    "electron-builder": "^23.6.0"
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.10.0",
+    "autoprefixer": "^10.4.21",
+    "chai": "^6.2.0",
+    "docx": "^9.5.1",
+    "electron": "^39.1.1",
+    "electron-builder": "^26.0.12",
+    "mocha": "^11.7.5",
+    "pdfkit": "^0.17.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "build": {
-    "productName": "A5 PII Anonymizer",
-    "appId": "com.a5.piiAnonymizer",
+    "productName": "Softcom PII Anonymiser",
+    "appId": "com.softcom.piiAnonymiser",
     "mac": {
       "icon": "assets/icon",
       "category": "public.app-category.utilities"
@@ -42,6 +78,13 @@
     },
     "files": [
       "**/*",
+      "!**/*.md",
+      "!SECURITY_AUDIT.md",
+      "!PERFORMANCE_ANALYSIS.md",
+      "README.md",
+      "LICENSE",
+      "SECURITY.md",
+      "preload.js",
       {
         "from": "assets",
         "to": "assets",

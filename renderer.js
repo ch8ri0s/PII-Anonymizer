@@ -1,483 +1,642 @@
-/***** renderer.js *****/
-const { ipcRenderer } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+/**
+ * Renderer Process - New UI
+ * Integrates with beautiful card-based design
+ */
 
-// Global userState
-let userState = {
-  deviceID: null,
-  isPro: false,
-  dailyCount: 0,
-  dailyDate: null
-};
-let autoUpdate= false;
+// ✅ SECURITY: Use contextBridge APIs
+const ipcRenderer = window.electronAPI;
+const fs = window.fsAPI;
+const path = window.pathAPI;
 
-// Simple hash for your local testing
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return hash.toString(16);
-}
+// State
+let currentFile = null;
+let currentFilePath = null;
+let processingResult = null;
 
-// DOM elements
-let selectedFiles = [];
-let outputDirectory = null;
-let lastDialogTime = 0;
-
+// DOM Elements
+const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('file-input');
-const dropZone = document.getElementById('drop-zone');
-const selectFolderBtn = document.getElementById('select-folder');
-const fileListDiv = document.getElementById('file-list');
-const filesUl = document.getElementById('files-ul');
-const clearFilesBtn = document.getElementById('clear-files');
-const outputDirInput = document.getElementById('output-dir');
-const selectOutputBtn = document.getElementById('select-output');
+const processingView = document.getElementById('processing-view');
+const resetBtn = document.getElementById('reset-btn');
 const processButton = document.getElementById('process-button');
-const progress = document.getElementById('progress');
-const progressBar = document.querySelector('.progress-bar');
-const statusDiv = document.getElementById('status');
-const outputLinkDiv = document.getElementById('output-link');
-const openOutputFolderLink = document.getElementById('open-output-folder');
 
-// Logs area
-const logArea = document.getElementById('log-area');
-const logMessages = document.getElementById('log-messages');
+// Metadata elements
+const metaFilename = document.getElementById('meta-filename');
+const metaTypeBadge = document.getElementById('meta-type-badge');
+const metaSize = document.getElementById('meta-size');
+const metaModified = document.getElementById('meta-modified');
+const metaLines = document.getElementById('meta-lines');
+const metaWords = document.getElementById('meta-words');
+const previewContent = document.getElementById('preview-content');
 
-// Pro container
-const proContainer = document.getElementById('pro-container');
-const proButton = document.getElementById('pro-button');
-const proInfoLink = document.getElementById('pro-info-link');
+// Processing elements
+const initialState = document.getElementById('initial-state');
+const processingSpinner = document.getElementById('processing-spinner');
+const processingResultDiv = document.getElementById('processing-result');
+const piiCountText = document.getElementById('pii-count-text');
+const downloadButtons = document.getElementById('download-buttons');
+const sanitizedMarkdown = document.getElementById('sanitized-markdown');
+const changeList = document.getElementById('change-list');
 
-// Upgrade modal
-const upgradeModal = document.getElementById('upgrade-modal');
-const upgradeClose = document.getElementById('upgrade-close');
-const deviceIdField = document.getElementById('device-id-field');
-const copyDeviceIdBtn = document.getElementById('copy-device-id');
-const proKeyInput = document.getElementById('pro-key-input');
-const validateKeyBtn = document.getElementById('validate-key-button');
-const upgradeStoreBtn = document.getElementById('upgrade-store-btn');
-const keyMessageDiv = document.getElementById('key-message'); // for invalid/success messages
+// Download buttons
+const downloadMarkdownBtn = document.getElementById('download-markdown');
+const downloadMappingBtn = document.getElementById('download-mapping');
 
-// Info modal
-const infoModal = document.getElementById('info-modal');
-const infoClose = document.getElementById('info-close');
+// Tabs
+const tabs = document.querySelectorAll('.tab');
+const tabContents = document.querySelectorAll('.tab-content');
 
-// Manage Plan modal
-const manageModal = document.getElementById('manage-modal');
-const manageClose = document.getElementById('manage-close');
-const downgradeBtn = document.getElementById('downgrade-btn');
+// ====================
+// Event Listeners
+// ====================
 
-// On load: restore output dir
-const storedOutput = localStorage.getItem('outputDirectory');
-if (storedOutput) {
-  outputDirectory = storedOutput;
-  outputDirInput.value = storedOutput;
-  outputLinkDiv.classList.remove('hidden');
-  openOutputFolderLink.onclick = async () => {
-    await ipcRenderer.invoke('open-folder', outputDirectory);
-  };
-}
-
-// Load userState
-function loadUserState() {
-  const saved = localStorage.getItem('userState');
-  if (saved) {
-    userState = JSON.parse(saved);
-  } else {
-    userState = {
-      deviceID: null,
-      isPro: false,
-      dailyCount: 0,
-      dailyDate: null
-    };
+// Upload zone drag & drop
+uploadZone.addEventListener('click', (e) => {
+  // Don't trigger if clicking on the input itself or the browse button
+  if (e.target === fileInput || e.target.closest('.browse-button')) {
+    return;
   }
-  if (!userState.deviceID) {
-    userState.deviceID = generateDeviceID(10);
-    saveUserState();
-  }
-  checkDailyReset();
-}
-
-function saveUserState() {
-  localStorage.setItem('userState', JSON.stringify(userState));
-}
-
-function generateDeviceID(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-function checkDailyReset() {
-  const today = getLocalDateString();
-  if (userState.dailyDate !== today) {
-    userState.dailyDate = today;
-    userState.dailyCount = 0;
-    saveUserState();
-  }
-}
-
-function getLocalDateString() {
-  const now = new Date();
-  return now.toLocaleDateString('en-CA'); 
-}
-
-loadUserState();
-updateProUI();
-
-dropZone.addEventListener('click', () => {
-  const now = Date.now();
-  if (now - lastDialogTime < 1000) return;
-  lastDialogTime = now;
-  fileInput.value = "";
   fileInput.click();
 });
 
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.classList.add('dragging');
+});
+
+uploadZone.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragging');
+});
+
+uploadZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragging');
+
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    await handleFileSelection(files[0]);
+  }
+});
+
+// File input change
 fileInput.addEventListener('change', async (e) => {
-  await handleInputItems(e.target.files);
-});
-
-dropZone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropZone.style.borderColor = 'var(--accent)';
-});
-dropZone.addEventListener('dragleave', () => {
-  dropZone.style.borderColor = 'var(--text-secondary)';
-});
-dropZone.addEventListener('drop', async (e) => {
-  e.preventDefault();
-  dropZone.style.borderColor = 'var(--text-secondary)';
-  await handleInputItems(e.dataTransfer.files);
-});
-
-selectFolderBtn.addEventListener('click', async () => {
-  const folderPath = await ipcRenderer.invoke('select-input-directory');
-  if (folderPath) {
-    const filesFromFolder = getFilesFromDirectory(folderPath);
-    if (filesFromFolder.length === 0) {
-      showStatus('No supported files found in the selected folder.', 'error');
-    } else {
-      filesFromFolder.forEach((f) => addFile(f));
-      updateFileListUI();
-      updateProcessButton();
-    }
+  if (e.target.files.length > 0) {
+    const file = e.target.files[0];
+    // Clear the input so the same file can be selected again
+    e.target.value = '';
+    await handleFileSelection(file);
   }
 });
 
-clearFilesBtn.addEventListener('click', clearState);
-selectOutputBtn.addEventListener('click', async () => {
-  outputDirectory = await ipcRenderer.invoke('select-output-directory');
-  if (outputDirectory) {
-    outputDirInput.value = outputDirectory;
-    localStorage.setItem('outputDirectory', outputDirectory);
-    outputLinkDiv.classList.remove('hidden');
-    openOutputFolderLink.onclick = async () => {
-      await ipcRenderer.invoke('open-folder', outputDirectory);
-    };
-  }
-  updateProcessButton();
+// Reset button
+resetBtn.addEventListener('click', reset);
+
+// Process button
+processButton.addEventListener('click', processFile);
+
+// Tab switching
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    // Remove active from all
+    tabs.forEach(t => t.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
+
+    // Add active to clicked
+    tab.classList.add('active');
+    const targetId = 'tab-' + tab.dataset.tab;
+    document.getElementById(targetId).classList.add('active');
+  });
 });
 
-processButton.addEventListener('click', processFiles);
+// Download handlers
+downloadMarkdownBtn.addEventListener('click', downloadMarkdown);
+downloadMappingBtn.addEventListener('click', downloadMapping);
 
-async function processFiles() {
-  if (selectedFiles.length === 0) return;
+// ====================
+// File Handling
+// ====================
 
-  if (!userState.isPro) {
-    checkDailyReset();
-    if (userState.dailyCount >= 100) {
-      showStatus(`You've reached your 100-file daily limit. Upgrade to Pro or wait until midnight for a limit reset.`, 'error');
+async function handleFileSelection(file) {
+  console.log('📁 File selected:', file.name);
+
+  // Check if file has path property (Electron)
+  let filePath = file.path;
+
+  if (!filePath) {
+    console.warn('File has no path property, creating temp file...');
+    filePath = await createTempFile(file);
+    if (!filePath) {
+      alert('Failed to process file');
       return;
     }
   }
 
-  processButton.disabled = true;
-  const oldButtonText = processButton.innerHTML;
-  processButton.innerHTML = `<i class="fas fa-cog"></i> Anonymizing...`;
+  currentFile = file;
+  currentFilePath = filePath;
 
-  progress.classList.remove('hidden');
-  let total = selectedFiles.length;
-  let processedCount = 0;
+  // Show processing view FIRST so DOM elements exist
+  showProcessingView();
 
-  for (let i = 0; i < total; i++) {
-    if (!userState.isPro) {
-      userState.dailyCount++;
-      saveUserState();
-      if (userState.dailyCount > 100) {
-        showStatus(`You've reached your 100-file daily limit mid-batch.`, 'error');
-        break;
-      }
-    }
-    const file = selectedFiles[i];
-    const result = await ipcRenderer.invoke('process-file', {
-      filePath: file.path,
-      outputDir: outputDirectory
-    });
-    if (!result.success) {
-      showStatus(`Error processing ${file.name}: ${result.error}`, 'error');
-    }
-    processedCount++;
-    let percentage = Math.floor((processedCount / total) * 100);
-    progressBar.style.width = `${percentage}%`;
-  }
+  // Small delay to ensure DOM is rendered
+  await new Promise(resolve => setTimeout(resolve, 50));
 
-  progressBar.style.width = '100%';
-  showStatus(`Files processed successfully!`, 'success');
+  // Load metadata and preview
+  await loadFileData(filePath);
 
+  // Enable process button
   processButton.disabled = false;
-  processButton.innerHTML = oldButtonText;
-
-  if (outputDirectory) {
-    outputLinkDiv.classList.remove('hidden');
-    openOutputFolderLink.onclick = async () => {
-      await ipcRenderer.invoke('open-folder', outputDirectory);
-    };
-  }
-
-  window.scrollTo(0, document.body.scrollHeight);
-  clearState();
-
-  setTimeout(() => {
-    progress.classList.add('hidden');
-    progressBar.style.width = '0%';
-  }, 1500);
 }
 
-// Basic file logic
-async function handleInputItems(fileList) {
-  for (let i = 0; i < fileList.length; i++) {
-    let fileItem = fileList[i];
-    if (!fileItem.path) {
-      fileItem = await createTempFile(fileItem);
-      if (!fileItem) continue;
-    }
-    try {
-      const stats = fs.lstatSync(fileItem.path);
-      if (stats.isDirectory()) {
-        const filesFromFolder = getFilesFromDirectory(fileItem.path);
-        filesFromFolder.forEach((f) => addFile(f));
-      } else {
-        addFile({ path: fileItem.path, name: fileItem.name });
-      }
-    } catch (error) {
-      console.error(error);
-      showStatus(`Error processing ${fileItem.name}: ${error.message}`, 'error');
-    }
-  }
-  updateFileListUI();
-  updateProcessButton();
-}
-
-function createTempFile(fileItem) {
+async function createTempFile(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const buffer = Buffer.from(reader.result);
-      const tempDir = os.tmpdir();
-      const tempPath = path.join(tempDir, fileItem.name);
-      fs.writeFile(tempPath, buffer, (err) => {
+      const arrayBuffer = reader.result;
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const tempDir = window.osAPI.tmpdir();
+      const tempPath = path.join(tempDir, file.name);
+
+      fs.writeFile(tempPath, uint8Array, (err) => {
         if (err) {
-          showStatus(`Error writing temporary file: ${err.message}`, 'error');
+          console.error('Error writing temp file:', err);
           resolve(null);
         } else {
-          resolve({ path: tempPath, name: fileItem.name });
+          resolve(tempPath);
         }
       });
     };
     reader.onerror = () => {
-      showStatus(`Error reading file ${fileItem.name}`, 'error');
+      console.error('Error reading file');
       resolve(null);
     };
-    reader.readAsArrayBuffer(fileItem);
+    reader.readAsArrayBuffer(file);
   });
 }
 
-function getFilesFromDirectory(dirPath) {
-  let results = [];
+async function loadFileData(filePath) {
+  console.log('📊 Loading file metadata...');
+
   try {
-    const list = fs.readdirSync(dirPath);
-    list.forEach((file) => {
-      const filePath = path.join(dirPath, file);
-      const stat = fs.statSync(filePath);
-      if (stat && stat.isDirectory()) {
-        results = results.concat(getFilesFromDirectory(filePath));
-      } else {
-        const ext = path.extname(file).toLowerCase();
-        if (['.doc','.docx','.xls','.xlsx','.csv','.pdf','.txt'].includes(ext)) {
-          results.push({ path: filePath, name: file });
+    // Re-query DOM elements to ensure they exist
+    const metaFilename = document.getElementById('meta-filename');
+    const metaTypeBadge = document.getElementById('meta-type-badge');
+    const metaSize = document.getElementById('meta-size');
+    const metaModified = document.getElementById('meta-modified');
+    const previewContent = document.getElementById('preview-content');
+
+    if (!metaFilename || !metaTypeBadge || !metaSize || !metaModified || !previewContent) {
+      console.error('Required DOM elements not found');
+      return;
+    }
+
+    // Load metadata
+    const metadata = await ipcRenderer.getFileMetadata(filePath);
+
+    if ('error' in metadata) {
+      console.error('Metadata error:', metadata.error);
+      showError(`Failed to load metadata: ${metadata.error}`);
+      return;
+    }
+
+    console.log('✓ Metadata loaded:', metadata);
+
+    // Populate metadata panel directly
+    metaFilename.textContent = metadata.filename;
+
+    const typeInfo = getFileTypeInfo(metadata.extension);
+    metaTypeBadge.textContent = typeInfo.label;
+    metaTypeBadge.className = `badge ${typeInfo.badgeClass}`;
+
+    // Use i18n formatting if available, otherwise fallback to metadata
+    if (window.i18n && metadata.fileSize) {
+      metaSize.textContent = window.i18n.formatFileSize(metadata.fileSize);
+    } else {
+      metaSize.textContent = metadata.fileSizeFormatted;
+    }
+
+    const date = new Date(metadata.lastModified);
+    if (window.i18n) {
+      metaModified.textContent = `${window.i18n.formatDate(date)} ${window.i18n.formatTime(date)}`;
+    } else {
+      metaModified.textContent = `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+    }
+
+    // Load preview
+    console.log('📄 Loading file preview...');
+    const preview = await ipcRenderer.getFilePreview(filePath, {
+      lines: 20,
+      chars: 1000
+    });
+
+    if ('error' in preview) {
+      console.error('Preview error:', preview.error);
+      previewContent.textContent = 'Preview not available';
+    } else {
+      console.log('✓ Preview loaded');
+      previewContent.textContent = preview.content;
+
+      if (preview.isTruncated) {
+        const truncatedMsg = document.createElement('div');
+        truncatedMsg.style.cssText = 'margin-top: 1rem; padding: 0.5rem; background: var(--slate-100); border-radius: var(--radius-sm); color: var(--slate-600); font-style: italic;';
+        truncatedMsg.textContent = `Preview truncated (showing first ${preview.previewLineCount} lines)`;
+        previewContent.parentElement.appendChild(truncatedMsg);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading file data:', error);
+    showError('Failed to load file data');
+  }
+}
+
+function populateMetadata(metadata) {
+  // Check if elements exist
+  if (!metaFilename || !metaTypeBadge || !metaSize || !metaModified) {
+    console.error('Metadata elements not found in DOM');
+    return;
+  }
+
+  // Filename
+  metaFilename.textContent = metadata.filename;
+
+  // Type badge
+  const typeInfo = getFileTypeInfo(metadata.extension);
+  metaTypeBadge.textContent = typeInfo.label;
+  metaTypeBadge.className = `badge ${typeInfo.badgeClass}`;
+
+  // Size
+  if (window.i18n && metadata.fileSize) {
+    metaSize.textContent = window.i18n.formatFileSize(metadata.fileSize);
+  } else {
+    metaSize.textContent = metadata.fileSizeFormatted;
+  }
+
+  // Modified
+  const date = new Date(metadata.lastModified);
+  if (window.i18n) {
+    metaModified.textContent = `${window.i18n.formatDate(date)} ${window.i18n.formatTime(date)}`;
+  } else {
+    metaModified.textContent = `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+  }
+}
+
+function populatePreview(preview) {
+  previewContent.textContent = preview.content;
+
+  if (preview.isTruncated) {
+    const truncatedMsg = document.createElement('div');
+    truncatedMsg.style.cssText = 'margin-top: 1rem; padding: 0.5rem; background: var(--slate-100); border-radius: var(--radius-sm); color: var(--slate-600); font-style: italic;';
+    truncatedMsg.textContent = `Preview truncated (showing first ${preview.previewLineCount} lines)`;
+    previewContent.parentElement.appendChild(truncatedMsg);
+  }
+}
+
+function getFileTypeInfo(extension) {
+  const ext = extension.toLowerCase();
+
+  // Use i18n if available for labels
+  const getLabel = (key, fallback) => {
+    return window.i18n ? window.i18n.t(key) : fallback;
+  };
+
+  const types = {
+    '.pdf': { label: getLabel('fileTypes.pdfDocument', 'PDF Document'), badgeClass: 'badge-red' },
+    '.doc': { label: getLabel('fileTypes.wordDocument', 'Word Document'), badgeClass: 'badge-blue' },
+    '.docx': { label: getLabel('fileTypes.wordDocument', 'Word Document'), badgeClass: 'badge-blue' },
+    '.xls': { label: getLabel('fileTypes.excelSpreadsheet', 'Excel Spreadsheet'), badgeClass: 'badge-green' },
+    '.xlsx': { label: getLabel('fileTypes.excelSpreadsheet', 'Excel Spreadsheet'), badgeClass: 'badge-green' },
+    '.csv': { label: getLabel('fileTypes.csvFile', 'CSV File'), badgeClass: 'badge-purple' },
+    '.txt': { label: getLabel('fileTypes.textFile', 'Text File'), badgeClass: 'badge-slate' },
+  };
+
+  return types[ext] || { label: 'Document', badgeClass: 'badge-slate' };
+}
+
+// ====================
+// Processing
+// ====================
+
+async function processFile() {
+  if (!currentFilePath) return;
+
+  console.log('🔄 Processing file...');
+
+  // Show spinner
+  showProcessingState('loading');
+
+  try {
+    const result = await ipcRenderer.processFile({
+      filePath: currentFilePath,
+      outputDir: null // Will use same directory as input
+    });
+
+    if (!result.success) {
+      console.error('Processing error:', result.error);
+      showError(`Processing failed: ${result.error}`);
+      showProcessingState('initial');
+      return;
+    }
+
+    console.log('✓ Processing complete:', result.outputPath);
+
+    // Store result
+    processingResult = result;
+
+    // The result already contains markdownContent from main process
+    const markdownContent = result.markdownContent || '';
+
+    // Read mapping file if available
+    let mapping = { entities: {} };
+    if (result.mappingPath) {
+      try {
+        console.log('📖 Reading mapping file:', result.mappingPath);
+        mapping = await ipcRenderer.readJsonFile(result.mappingPath);
+
+        if (mapping.error) {
+          console.warn('Mapping file error:', mapping.error);
+          mapping = { entities: {} };
+        } else {
+          const entityCount = mapping.entities ? Object.keys(mapping.entities).length : 0;
+          console.log('✓ Mapping loaded:', entityCount, 'entities');
         }
+      } catch (error) {
+        console.error('Error reading mapping:', error);
+        mapping = { entities: {} };
+      }
+    }
+
+    // Show results
+    showResults(markdownContent, mapping);
+  } catch (error) {
+    console.error('Processing error:', error);
+    showError('Processing failed: ' + error.message);
+    showProcessingState('initial');
+  }
+}
+
+function showResults(markdown, mapping) {
+  // Update PII count
+  const piiCount = mapping.entities ? Object.keys(mapping.entities).length : 0;
+  piiCountText.textContent = `${piiCount} PII instances detected and sanitized`;
+
+  // Show markdown
+  sanitizedMarkdown.textContent = markdown;
+
+  // Show mapping
+  populateMappingList(mapping.entities || {});
+
+  // Show download buttons
+  downloadButtons.style.display = 'flex';
+
+  // Show success state
+  showProcessingState('success');
+}
+
+function populateMappingList(entities) {
+  changeList.innerHTML = '';
+
+  // entities is an object like { "John Doe": "PER_1", "jane@example.com": "PER_2" }
+  const entityEntries = Object.entries(entities);
+
+  if (entityEntries.length === 0) {
+    changeList.innerHTML = '<p style="color: var(--slate-500); text-align: center; padding: 2rem;">No PII changes detected</p>';
+    return;
+  }
+
+  entityEntries.forEach(([original, replacement], index) => {
+    const changeItem = document.createElement('div');
+    changeItem.className = 'change-item';
+
+    // Determine entity type from replacement (e.g., "PER_1" -> "PER")
+    const entityType = replacement.split('_')[0] || 'PII';
+    const typeLabels = {
+      'PER': 'Person',
+      'LOC': 'Location',
+      'ORG': 'Organization',
+      'MISC': 'Miscellaneous',
+      'PHONE': 'Phone',
+      'EMAIL': 'Email',
+      'IBAN': 'IBAN',
+      'AHV': 'AHV Number',
+      'PASSPORT': 'Passport',
+      'UIDNUMBER': 'UID Number'
+    };
+    const typeLabel = typeLabels[entityType] || entityType;
+
+    changeItem.innerHTML = `
+      <div class="change-header">
+        <span class="badge badge-outline">${typeLabel}</span>
+        <span class="change-location">Entity ${index + 1}</span>
+      </div>
+      <div class="change-details">
+        <div class="change-row">
+          <span class="change-row-label">Original:</span>
+          <span class="change-original">${escapeHtml(original)}</span>
+        </div>
+        <div class="change-row">
+          <span class="change-row-label">Replaced:</span>
+          <span class="change-replacement">${escapeHtml(replacement)}</span>
+        </div>
+      </div>
+    `;
+
+    changeList.appendChild(changeItem);
+  });
+}
+
+function showProcessingState(state) {
+  // Hide all states
+  initialState.classList.add('hidden');
+  processingSpinner.classList.add('hidden');
+  processingResultDiv.classList.add('hidden');
+
+  // Show requested state
+  if (state === 'initial') {
+    initialState.classList.remove('hidden');
+  } else if (state === 'loading') {
+    processingSpinner.classList.remove('hidden');
+  } else if (state === 'success') {
+    processingResultDiv.classList.remove('hidden');
+  }
+}
+
+// ====================
+// Download Functions
+// ====================
+
+function downloadMarkdown() {
+  if (!processingResult) return;
+
+  const markdown = sanitizedMarkdown.textContent;
+  const filename = currentFile.name.replace(/\.[^/.]+$/, '') + '_sanitized.md';
+
+  downloadFile(markdown, filename, 'text/markdown');
+}
+
+function downloadMapping() {
+  if (!processingResult) return;
+
+  // Reconstruct mapping from UI
+  const entities = {};
+  Array.from(changeList.children).forEach(item => {
+    const original = item.querySelector('.change-original')?.textContent || '';
+    const replacement = item.querySelector('.change-replacement')?.textContent || '';
+    if (original && replacement) {
+      entities[original] = replacement;
+    }
+  });
+
+  const mapping = {
+    version: '2.0',
+    originalFile: currentFile.name,
+    timestamp: new Date().toISOString(),
+    model: 'Xenova/bert-base-NER',
+    detectionMethods: ['ML (transformers)', 'Rule-based (Swiss/EU)'],
+    entities
+  };
+
+  const filename = currentFile.name.replace(/\.[^/.]+$/, '') + '_mapping.json';
+  downloadFile(JSON.stringify(mapping, null, 2), filename, 'application/json');
+}
+
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  console.log('✓ Downloaded:', filename);
+}
+
+// ====================
+// UI State Management
+// ====================
+
+function showProcessingView() {
+  uploadZone.classList.add('hidden');
+  processingView.classList.remove('hidden');
+}
+
+function showUploadZone() {
+  processingView.classList.add('hidden');
+  uploadZone.classList.remove('hidden');
+}
+
+function reset() {
+  currentFile = null;
+  currentFilePath = null;
+  processingResult = null;
+
+  // Reset UI
+  showUploadZone();
+  showProcessingState('initial');
+  if (downloadButtons) downloadButtons.style.display = 'none';
+  if (processButton) processButton.disabled = true;
+
+  // Clear file input
+  if (fileInput) fileInput.value = '';
+
+  // Clear metadata - re-query to ensure they exist
+  const metaFilename = document.getElementById('meta-filename');
+  const metaTypeBadge = document.getElementById('meta-type-badge');
+  const metaSize = document.getElementById('meta-size');
+  const metaModified = document.getElementById('meta-modified');
+  const previewContent = document.getElementById('preview-content');
+
+  if (metaFilename) metaFilename.textContent = '-';
+  if (metaTypeBadge) {
+    metaTypeBadge.textContent = '-';
+    metaTypeBadge.className = 'badge badge-slate';
+  }
+  if (metaSize) metaSize.textContent = '-';
+  if (metaModified) metaModified.textContent = '-';
+  if (previewContent) previewContent.textContent = 'Select a file to preview...';
+
+  // Clear processing results
+  if (sanitizedMarkdown) sanitizedMarkdown.textContent = '';
+  if (changeList) changeList.innerHTML = '';
+  if (piiCountText) piiCountText.textContent = 'Click "Process File" to begin';
+
+  // Reset tabs
+  if (tabs) {
+    tabs.forEach((tab, i) => {
+      if (i === 0) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
       }
     });
-  } catch (err) {
-    console.error(`Error reading directory ${dirPath}: ${err.message}`);
   }
-  return results;
+
+  if (tabContents) {
+    tabContents.forEach((content, i) => {
+      if (i === 0) {
+        content.classList.add('active');
+      } else {
+        content.classList.remove('active');
+      }
+    });
+  }
+
+  console.log('↺ Reset complete');
 }
 
-function addFile(fileObj) {
-  const ext = path.extname(fileObj.path).toLowerCase();
-  if (['.doc','.docx','.xls','.xlsx','.csv','.pdf','.txt'].includes(ext)) {
-    if (!selectedFiles.find((f) => f.path === fileObj.path)) {
-      selectedFiles.push(fileObj);
+function showError(message) {
+  console.error('❌ Error:', message);
+
+  // Create error alert
+  const alert = document.createElement('div');
+  alert.className = 'alert alert-error';
+  alert.innerHTML = `
+    <i class="fas fa-exclamation-circle"></i>
+    <p>${escapeHtml(message)}</p>
+  `;
+
+  // Insert at top of processing view or show as browser alert
+  if (processingView && !processingView.classList.contains('hidden')) {
+    const gridContainer = processingView.querySelector('.grid');
+    if (gridContainer && gridContainer.parentElement === processingView) {
+      processingView.insertBefore(alert, gridContainer);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        alert.remove();
+      }, 5000);
+    } else {
+      // Fallback to browser alert
+      console.warn('Grid container not found or not a child of processing view');
+      window.alert(message);
     }
   } else {
-    showStatus(`Unsupported file type: ${fileObj.name}`, 'error');
+    // If processing view isn't visible, use browser alert
+    window.alert(message);
   }
 }
 
-function updateFileListUI() {
-  filesUl.innerHTML = '';
-  if (selectedFiles.length === 0) {
-    fileListDiv.classList.add('hidden');
-    return;
-  }
-  fileListDiv.classList.remove('hidden');
-  selectedFiles.forEach(file => {
-    const li = document.createElement('li');
-    li.textContent = file.name;
-    filesUl.appendChild(li);
-  });
+// ====================
+// Utilities
+// ====================
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-function updateProcessButton() {
-  processButton.disabled = (selectedFiles.length === 0);
-}
+// ====================
+// Logs from main process
+// ====================
 
-function clearState() {
-  selectedFiles = [];
-  fileInput.value = '';
-  updateFileListUI();
-  updateProcessButton();
-}
-
-// Show status in main area
-function showStatus(message, type) {
-  statusDiv.textContent = message;
-  statusDiv.className = `status ${type}`;
-  statusDiv.classList.remove('hidden');
-}
-
-// Logs from main -> renderer
-ipcRenderer.on('log-message', (event, msg) => {
-  logArea.classList.remove('hidden');
-  logMessages.textContent = `Status: ${msg}`;
+ipcRenderer.onLogMessage((msg) => {
+  console.log('[Main]', msg);
 });
 
+// ====================
+// Initialization
+// ====================
 
-
-// PRO Upgrade UI & Logic
-proButton.addEventListener('click', () => {
-  if (userState.isPro) {
-    showManageModal();
-  } else {
-    showUpgradeModal();
-  }
-});
-
-proInfoLink.addEventListener('click', () => {
-  if (userState.isPro) {
-    showManageModal();
-  } else {
-    showInfoModal();
-  }
-});
-
-// Upgrade modal
-upgradeClose.addEventListener('click', hideUpgradeModal);
-copyDeviceIdBtn.addEventListener('click', () => {
-  deviceIdField.select();
-  document.execCommand('copy');
-  showStatus('Device ID copied to clipboard!', 'success');
-});
-
-// White wide button => open external store
-upgradeStoreBtn.addEventListener('click', () => {
-  require('electron').shell.openExternal('https://amicus5.com/store/PA');
-});
-
-// Validate key => show message in #key-message
-validateKeyBtn.addEventListener('click', () => {
-  const key = proKeyInput.value.trim();
-  if (!key) {
-    showKeyMessage('Please enter a key.', 'error');
-    return;
-  }
-  if (validateProKey(key)) {
-    userState.isPro = true;
-    saveUserState();
-    hideUpgradeModal();
-    showStatus('Pro activated! Enjoy unlimited usage.', 'success');
-    updateProUI();
-  } else {
-    showKeyMessage('Invalid key.', 'error');
-  }
-});
-
-// Manage Plan modal
-manageClose.addEventListener('click', hideManageModal);
-downgradeBtn.addEventListener('click', () => {
-  userState.isPro = false;
-  saveUserState();
-  hideManageModal();
-  showStatus('You have been downgraded to free plan.', 'success');
-  updateProUI();
-});
-
-// Info modal
-infoClose.addEventListener('click', hideInfoModal);
-
-// Simple validation
-function validateProKey(key) {
-  // e.g. "MASTERTESTKEY" or check simpleHash(userState.deviceID)
-  // Return true if matches
-  return (key === 'MASTERTESTKEY');
-}
-
-function showUpgradeModal() {
-  deviceIdField.value = userState.deviceID;
-  keyMessageDiv.classList.add('hidden'); // hide old messages
-  upgradeModal.classList.add('show');
-}
-function hideUpgradeModal() {
-  upgradeModal.classList.remove('show');
-}
-function showInfoModal() {
-  infoModal.classList.add('show');
-}
-function hideInfoModal() {
-  infoModal.classList.remove('show');
-}
-function showManageModal() {
-  manageModal.classList.add('show');
-}
-function hideManageModal() {
-  manageModal.classList.remove('show');
-}
-
-function showKeyMessage(msg, type) {
-  keyMessageDiv.textContent = msg;
-  keyMessageDiv.className = 'key-message'; // reset
-  keyMessageDiv.classList.add(type === 'error' ? 'error' : 'success');
-  keyMessageDiv.classList.remove('hidden');
-}
-
-function updateProUI() {
-  if (userState.isPro) {
-    proButton.textContent = 'Pro Version';
-    proButton.classList.remove('pro-upgrade');
-    proButton.classList.add('pro-active');
-    proInfoLink.textContent = 'Manage Plan';
-  } else {
-    proButton.innerHTML = `<i class="fas fa-gem"></i> Upgrade to Pro`;
-    proButton.classList.remove('pro-active');
-    proButton.classList.add('pro-upgrade');
-    proInfoLink.textContent = "What's Included in Pro?";
-  }
-}
+console.log('✓ Renderer initialized with new UI');
+console.log('✓ electronAPI available:', !!window.electronAPI);

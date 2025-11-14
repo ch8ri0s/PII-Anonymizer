@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "locale": "fr",
+    "version": "2.0.0",
+    "lastUpdated": "2025-11-11T00:00:00Z"
+  },
+  "translations": {
+    "app": {
+      "title": "Anonymiseur PII",
+      "subtitle": "Téléchargez des documents pour détecter et anonymiser automatiquement les informations personnelles identifiables"
+    },
+    "upload": {
+      "heading": "Déposez votre fichier ici",
+      "text": "ou cliquez pour parcourir depuis votre ordinateur",
+      "browseButton": "Parcourir les fichiers",
+      "supportedFormats": "Formats pris en charge :"
+    },
+    "fileDetails": {
+      "title": "Détails du fichier",
+      "fileName": "Nom du fichier",
+      "type": "Type",
+      "size": "Taille",
+      "lastModified": "Dernière modification"
+    },
+    "preview": {
+      "title": "Aperçu",
+      "selectFile": "Sélectionnez un fichier pour l'aperçu..."
+    },
+    "processing": {
+      "title": "Résultats de l'anonymisation",
+      "ready": "Cliquez sur \"Traiter le fichier\" pour commencer",
+      "readyToProcess": "Prêt à traiter votre fichier",
+      "processButton": "Traiter le fichier",
+      "processing": "Traitement et anonymisation des PII...",
+      "success": "Fichier traité et anonymisé avec succès. Prêt à télécharger."
+    },
+    "download": {
+      "markdown": "Markdown",
+      "mapping": "Correspondances"
+    },
+    "tabs": {
+      "markdown": "Markdown anonymisé",
+      "mapping": "Tableau de correspondance"
+    },
+    "fileTypes": {
+      "pdf": "PDF",
+      "word": "Word",
+      "excel": "Excel",
+      "csv": "CSV",
+      "pdfDocument": "Document PDF",
+      "wordDocument": "Document Word",
+      "excelSpreadsheet": "Feuille de calcul Excel",
+      "csvFile": "Fichier CSV",
+      "textFile": "Fichier texte"
+    },
+    "footer": {
+      "output": "Sortie :",
+      "outputDescription": "Markdown anonymisé (.md) + Correspondance des entités (.json)",
+      "license": "Licence :",
+      "licenseText": "Gratuit pour usage non commercial (CC BY-NC-SA 4.0)",
+      "support": "Support :",
+      "supportEmail": "contact@softcom.pro"
+    },
+    "buttons": {
+      "reset": "Réinitialiser",
+      "download": "Télécharger",
+      "process": "Traiter"
+    },
+    "entityTypes": {
+      "person": "Personne",
+      "organization": "Organisation",
+      "location": "Localisation",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "date": "Date",
+      "ssn": "Numéro de sécurité sociale",
+      "creditCard": "Carte de crédit",
+      "iban": "IBAN",
+      "address": "Adresse"
+    },
+    "messages": {
+      "noFileSelected": "Aucun fichier sélectionné",
+      "fileLoadFailed": "Échec du chargement du fichier",
+      "processingFailed": "Échec du traitement",
+      "downloadFailed": "Échec du téléchargement"
+    },
+    "piiCount": {
+      "detected": "entités PII détectées",
+      "sanitized": "anonymisées"
+    }
+  }
+}

@@ -29,7 +29,10 @@ coverage/
 
 # Production build output
 build/
-# Note: dist/ is intentionally kept
+
+# TypeScript build artifacts
+*.tsbuildinfo
+.tscache/
 
 # Dependency directories
 jspm_packages/
@@ -67,3 +70,6 @@ oldExampleStyles.css
 *.bak
 *.tmp
 
+# Tailwind CSS compiled output
+output.css
+output.css.map

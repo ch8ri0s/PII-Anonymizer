@@ -1,8 +1,10 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, session } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { FileProcessor } from './fileProcessor.js';
 import { fileURLToPath } from 'url';
+import { registerFilePreviewHandlers } from './dist/services/filePreviewHandlers.js';
+import { registerI18nHandlers } from './src/services/i18nHandlers.js';
 
 let isLLMInitialized = false; // track if LLM is loaded once
 
@@ -16,18 +18,45 @@ function createWindow() {
     width: 900,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,       // ✅ SECURITY: Disable Node.js in renderer
+      contextIsolation: true,        // ✅ SECURITY: Enable context isolation
+      sandbox: false,                // Note: Disabled for fs access - consider moving fs ops to main process
+      preload: path.join(__dirname, 'preload.cjs')  // ✅ SECURITY: Use preload for IPC
     },
     backgroundColor: '#1a1a1a',
   });
   // mainWindow.webContents.openDevTools(); // uncomment if you want the console
 
   mainWindow.loadFile('index.html');
+
+  // Uncomment to debug preload issues:
+  // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
+  // ✅ SECURITY: Set Content Security Policy
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; " +
+          "script-src 'self'; " +
+          "style-src 'self' 'unsafe-inline'; " +
+          "img-src 'self' data:; " +
+          "font-src 'self'; " +
+          "connect-src 'none'; " +
+          "frame-src 'none';"
+        ]
+      }
+    });
+  });
+
   createWindow();
+
+  // Register IPC handlers
+  registerFilePreviewHandlers();
+  registerI18nHandlers();
 
   // macOS Dock icon
   if (process.platform === 'darwin') {
@@ -91,24 +120,122 @@ ipcMain.handle('process-file', async (event, { filePath, outputDir }) => {
     // Mark LLM as initialized after first file
     isLLMInitialized = true;
 
+    // Read the generated markdown file to return its content
+    let markdownContent = '';
+    try {
+      markdownContent = fs.readFileSync(outputPath, 'utf-8');
+    } catch (readError) {
+      console.error('Could not read output file:', readError);
+    }
+
+    // Construct mapping file path (matches fileProcessor.js naming)
+    const mappingPath = outputPath.replace('.md', '-mapping.json');
+
     mainWindow.webContents.send('log-message', `Finished: ${fileName}`);
-    return { success: true, outputPath };
+    return { success: true, outputPath, markdownContent, mappingPath };
   } catch (error) {
+    // ✅ SECURITY: Log full error to console (for debugging)
     console.error("Error in process-file IPC:", error);
-    mainWindow.webContents.send('log-message', `Error: ${error.message}`);
-    return { success: false, error: error.message };
+
+    // ✅ SECURITY: Sanitize error message for UI (remove file paths)
+    const sanitizedError = error.message.replace(/\/[\w\/.-]+/g, '[REDACTED_PATH]');
+    mainWindow.webContents.send('log-message', `Error: ${sanitizedError}`);
+
+    return { success: false, error: sanitizedError };
   }
 });
 
-// Open a folder or URL
+// Read JSON file handler
+ipcMain.handle('file:readJson', async (event, filePath) => {
+  try {
+    // Validate file path
+    if (!filePath || typeof filePath !== 'string') {
+      return { error: 'Invalid file path', changes: [] };
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.warn('Mapping file not found:', filePath);
+      return { error: 'Mapping file not found', changes: [] };
+    }
+
+    // Read and parse JSON
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const data = JSON.parse(content);
+    return data;
+  } catch (error) {
+    console.error('Error reading JSON file:', error);
+    return { error: error.message, changes: [] };
+  }
+});
+
+// ✅ SECURITY: Open a folder or URL with validation
 ipcMain.handle('open-folder', async (event, folderPath) => {
-  if (folderPath) {
-    // If it looks like a URL (starts with http or https), open in external browser
-    if (folderPath.startsWith('http')) {
-      shell.openExternal(folderPath);
-    } else {
-      // Otherwise, treat as a local file path
-      shell.openPath(folderPath);
+  if (!folderPath || typeof folderPath !== 'string') {
+    console.warn('Invalid folder path provided');
+    return;
+  }
+
+  // Handle URLs
+  if (folderPath.startsWith('http://') || folderPath.startsWith('https://')) {
+    try {
+      const url = new URL(folderPath);
+
+      // Only allow http and https protocols (block javascript:, data:, file:, etc.)
+      if (url.protocol === 'https:' || url.protocol === 'http:') {
+        await shell.openExternal(folderPath);
+      } else {
+        console.warn(`Blocked unsafe URL protocol: ${url.protocol}`);
+      }
+    } catch (error) {
+      console.error('Invalid URL:', error.message);
+    }
+  } else {
+    // Handle local paths with validation
+    try {
+      // Normalize and resolve path to prevent traversal
+      const normalizedPath = path.normalize(folderPath);
+      const resolvedPath = path.resolve(normalizedPath);
+
+      // Prevent path traversal
+      if (resolvedPath.includes('..')) {
+        console.warn('Blocked path traversal attempt:', folderPath);
+        return;
+      }
+
+      // Ensure path is absolute
+      if (!path.isAbsolute(resolvedPath)) {
+        console.warn('Blocked relative path:', folderPath);
+        return;
+      }
+
+      // Define allowed base directories (user directories only)
+      const allowedBaseDirs = [
+        app.getPath('home'),
+        app.getPath('documents'),
+        app.getPath('downloads'),
+        app.getPath('desktop'),
+        app.getPath('temp')
+      ];
+
+      // Check if path is within allowed directories
+      const isAllowed = allowedBaseDirs.some(baseDir => {
+        const resolvedBase = path.resolve(baseDir);
+        return resolvedPath.startsWith(resolvedBase);
+      });
+
+      if (isAllowed) {
+        // Verify path exists before opening
+        if (fs.existsSync(resolvedPath)) {
+          await shell.openPath(resolvedPath);
+        } else {
+          console.warn('Path does not exist:', resolvedPath);
+        }
+      } else {
+        console.warn('Blocked access to path outside allowed directories:', resolvedPath);
+      }
+    } catch (error) {
+      console.error('Error opening path:', error.message);
     }
   }
 });
