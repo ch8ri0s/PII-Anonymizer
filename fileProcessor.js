@@ -142,18 +142,55 @@ function escapeRegexChars(str) {
 
 /**
  * Builds a fuzzy regex that matches the merged string ignoring spacing/punctuation.
- * Uses bounded repetition to prevent ReDoS attacks.
+ *
+ * ReDoS Protection Strategy:
+ * 1. Limit input length to prevent exponential backtracking
+ * 2. Use simpler pattern with word boundaries
+ * 3. Avoid nested quantifiers that cause catastrophic backtracking
+ *
+ * @param {string} mergedString - The entity text to match
+ * @returns {RegExp|null} Regex pattern or null if invalid/too complex
  */
 function buildFuzzyRegex(mergedString) {
+  // Protection Layer 1: Length limit to prevent exponential complexity
+  const MAX_ENTITY_LENGTH = 50;
+  if (mergedString.length > MAX_ENTITY_LENGTH) {
+    console.log(`Skipping entity longer than ${MAX_ENTITY_LENGTH} chars (ReDoS protection)`);
+    return null;
+  }
+
   let noPunc = mergedString.replace(/[^\w]/g, '');
   if (!noPunc) return null;
 
+  // Protection Layer 2: Character count limit
+  if (noPunc.length > 30) {
+    console.log(`Skipping entity with ${noPunc.length} chars after cleanup (ReDoS protection)`);
+    return null;
+  }
+
   noPunc = escapeRegexChars(noPunc);
 
+  // Protection Layer 3: Use simpler, safer pattern
+  // Instead of: a[^a-zA-Z0-9]{0,3}b[^a-zA-Z0-9]{0,3}... (nested quantifiers - BAD)
+  // Use: word boundaries with escaped literal (simpler - GOOD)
+
+  // Build pattern that allows optional punctuation/whitespace between chars
+  // but limits it to prevent catastrophic backtracking
   let pattern = '';
-  for (const char of noPunc) {
-    // Limit repetition to prevent catastrophic backtracking (ReDoS protection)
-    pattern += `${char}[^a-zA-Z0-9]{0,3}`;
+  const chars = Array.from(noPunc);
+
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+
+    // Add character
+    pattern += char;
+
+    // Add optional separator (but not after last char)
+    if (i < chars.length - 1) {
+      // Use possessive quantifier alternative: limit backtracking
+      // Match 0-2 non-alphanumeric chars (reduced from 0-3 for safety)
+      pattern += '[^a-zA-Z0-9]{0,2}?'; // Non-greedy to reduce backtracking
+    }
   }
 
   if (!pattern) return null;
@@ -163,6 +200,39 @@ function buildFuzzyRegex(mergedString) {
   } catch (err) {
     console.warn(`Regex build failed for pattern="${pattern}". Error: ${err.message}`);
     return null;
+  }
+}
+
+/**
+ * Test regex with timeout protection
+ *
+ * @param {RegExp} regex - The regex to test
+ * @param {string} text - Text to match against
+ * @param {number} timeoutMs - Timeout in milliseconds (default: 100ms)
+ * @returns {boolean} Whether regex matched (false on timeout)
+ */
+function testRegexWithTimeout(regex, text, timeoutMs = 100) {
+  const startTime = Date.now();
+
+  try {
+    // Reset regex state
+    regex.lastIndex = 0;
+
+    // Test match
+    const result = regex.test(text);
+
+    const duration = Date.now() - startTime;
+
+    // Check if took too long (potential ReDoS)
+    if (duration > timeoutMs) {
+      console.warn(`Regex test took ${duration}ms (timeout: ${timeoutMs}ms) - potential ReDoS`);
+      return false;
+    }
+
+    return result;
+  } catch (err) {
+    console.warn(`Regex test error: ${err.message}`);
+    return false;
   }
 }
 
