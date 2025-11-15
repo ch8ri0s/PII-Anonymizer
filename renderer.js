@@ -13,6 +13,60 @@ let currentFile = null;
 let currentFilePath = null;
 let processingResult = null;
 
+// ✅ SECURITY: Timeout configuration for async operations
+const TIMEOUT_CONFIG = {
+  fileProcessing: 5 * 60 * 1000,  // 5 minutes default
+  filePreview: 30 * 1000,          // 30 seconds
+  metadata: 10 * 1000,             // 10 seconds
+  jsonRead: 5 * 1000               // 5 seconds
+};
+
+/**
+ * ✅ SECURITY: Wraps a promise with timeout protection
+ * Prevents indefinite hangs from async operations
+ *
+ * @param {Promise} promise - The promise to wrap
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @param {string} operation - Human-readable operation name for error messages
+ * @returns {Promise} - Resolves/rejects with the original promise or timeout error
+ */
+async function withTimeout(promise, timeoutMs, operation = 'Operation') {
+  let timeoutHandle;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(`${operation} timed out after ${timeoutMs}ms. The file may be too large or corrupted.`));
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutHandle); // ✅ CRITICAL: Prevent memory leak
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutHandle); // ✅ CRITICAL: Prevent memory leak even on error
+    throw error;
+  }
+}
+
+/**
+ * Calculate timeout based on file size
+ * Larger files get proportionally longer timeouts, up to a maximum
+ *
+ * @param {number} fileSizeBytes - File size in bytes
+ * @returns {number} - Timeout in milliseconds
+ */
+function calculateFileTimeout(fileSizeBytes) {
+  const BASE_TIMEOUT = 30000; // 30 seconds
+  const PER_MB_TIMEOUT = 10000; // 10 seconds per MB
+  const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes max
+
+  const fileSizeMB = fileSizeBytes / (1024 * 1024);
+  const calculatedTimeout = BASE_TIMEOUT + (fileSizeMB * PER_MB_TIMEOUT);
+
+  return Math.min(calculatedTimeout, MAX_TIMEOUT);
+}
+
 // DOM Elements
 const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('file-input');
@@ -190,8 +244,12 @@ async function loadFileData(filePath) {
       return;
     }
 
-    // Load metadata
-    const metadata = await ipcRenderer.getFileMetadata(filePath);
+    // ✅ SECURITY: Load metadata with timeout protection
+    const metadata = await withTimeout(
+      ipcRenderer.getFileMetadata(filePath),
+      TIMEOUT_CONFIG.metadata,
+      'Loading metadata'
+    );
 
     if ('error' in metadata) {
       console.error('Metadata error:', metadata.error);
@@ -222,12 +280,16 @@ async function loadFileData(filePath) {
       metaModified.textContent = `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
     }
 
-    // Load preview
+    // ✅ SECURITY: Load preview with timeout protection
     console.log('📄 Loading file preview...');
-    const preview = await ipcRenderer.getFilePreview(filePath, {
-      lines: 20,
-      chars: 1000
-    });
+    const preview = await withTimeout(
+      ipcRenderer.getFilePreview(filePath, {
+        lines: 20,
+        chars: 1000
+      }),
+      TIMEOUT_CONFIG.filePreview,
+      'Loading file preview'
+    );
 
     if ('error' in preview) {
       console.error('Preview error:', preview.error);
@@ -325,10 +387,20 @@ async function processFile() {
   showProcessingState('loading');
 
   try {
-    const result = await ipcRenderer.processFile({
-      filePath: currentFilePath,
-      outputDir: null // Will use same directory as input
-    });
+    // ✅ SECURITY: Calculate timeout based on file size
+    const fileSize = currentFile?.size || 0;
+    const timeout = calculateFileTimeout(fileSize);
+    console.log(`⏱️ File processing timeout: ${timeout}ms (${(timeout / 1000).toFixed(1)}s)`);
+
+    // ✅ SECURITY: Wrap processFile with timeout protection
+    const result = await withTimeout(
+      ipcRenderer.processFile({
+        filePath: currentFilePath,
+        outputDir: null // Will use same directory as input
+      }),
+      timeout,
+      'File processing'
+    );
 
     if (!result.success) {
       console.error('Processing error:', result.error);
@@ -350,7 +422,13 @@ async function processFile() {
     if (result.mappingPath) {
       try {
         console.log('📖 Reading mapping file:', result.mappingPath);
-        mapping = await ipcRenderer.readJsonFile(result.mappingPath);
+
+        // ✅ SECURITY: Wrap readJsonFile with timeout protection
+        mapping = await withTimeout(
+          ipcRenderer.readJsonFile(result.mappingPath),
+          TIMEOUT_CONFIG.jsonRead,
+          'Reading mapping file'
+        );
 
         if (mapping.error) {
           console.warn('Mapping file error:', mapping.error);
@@ -369,7 +447,14 @@ async function processFile() {
     showResults(markdownContent, mapping);
   } catch (error) {
     console.error('Processing error:', error);
-    showError('Processing failed: ' + error.message);
+
+    // ✅ SECURITY: Show user-friendly timeout message
+    if (error.message.includes('timed out')) {
+      showError('File processing is taking longer than expected. The file may be too large or corrupted. Please try a smaller file or contact support.');
+    } else {
+      showError('Processing failed: ' + error.message);
+    }
+
     showProcessingState('initial');
   }
 }
