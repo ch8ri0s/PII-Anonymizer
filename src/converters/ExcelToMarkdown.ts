@@ -5,15 +5,21 @@
 
 import ExcelJS from 'exceljs';
 import path from 'path';
-import { MarkdownConverter } from './MarkdownConverter.js';
+import { MarkdownConverter, MarkdownConverterOptions } from './MarkdownConverter.js';
+
+export interface ExcelConverterOptions extends MarkdownConverterOptions {
+  maxRowsPerSheet?: number;
+}
 
 export class ExcelToMarkdown extends MarkdownConverter {
-  constructor(options = {}) {
+  private maxRowsPerSheet: number;
+
+  constructor(options: ExcelConverterOptions = {}) {
     super(options);
     this.maxRowsPerSheet = options.maxRowsPerSheet || 1000;
   }
 
-  async convert(filePath) {
+  async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
     const workbook = new ExcelJS.Workbook();
 
@@ -40,11 +46,11 @@ export class ExcelToMarkdown extends MarkdownConverter {
 
     } catch (error) {
       console.error(`Error converting Excel ${filename}:`, error);
-      throw new Error(`Failed to convert Excel: ${error.message}`);
+      throw new Error(`Failed to convert Excel: ${(error as Error).message}`);
     }
   }
 
-  convertWorksheet(worksheet) {
+  private convertWorksheet(worksheet: ExcelJS.Worksheet): string {
     const sheetName = worksheet.name;
     let markdown = this.normalizeHeading(sheetName, 2);
 
@@ -67,8 +73,8 @@ export class ExcelToMarkdown extends MarkdownConverter {
     }
 
     // Extract data
-    const headers = [];
-    const rows = [];
+    const headers: string[] = [];
+    const rows: string[][] = [];
 
     // Get headers (first row)
     const headerRow = worksheet.getRow(1);
@@ -79,7 +85,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
 
     // Get data rows
     for (let row = 2; row <= Math.min(displayRows + 1, rowCount); row++) {
-      const rowData = [];
+      const rowData: string[] = [];
       const excelRow = worksheet.getRow(row);
 
       for (let col = 1; col <= colCount; col++) {
@@ -97,7 +103,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
     return markdown;
   }
 
-  getCellValue(cell) {
+  private getCellValue(cell: ExcelJS.Cell): string {
     // Handle different cell types
     if (!cell || cell.value === null || cell.value === undefined) {
       return '';
@@ -105,29 +111,30 @@ export class ExcelToMarkdown extends MarkdownConverter {
 
     // Handle formulas - show result
     if (cell.type === ExcelJS.ValueType.Formula) {
-      return String(cell.result || cell.value.result || '');
+      return String((cell.value as any).result || '');
     }
 
     // Handle rich text
     if (cell.type === ExcelJS.ValueType.RichText) {
-      return cell.value.richText.map(t => t.text).join('');
+      return (cell.value as ExcelJS.CellRichTextValue).richText.map(t => t.text).join('');
     }
 
     // Handle dates
     if (cell.type === ExcelJS.ValueType.Date) {
-      return cell.value.toISOString().split('T')[0];
+      return (cell.value as Date).toISOString().split('T')[0];
     }
 
     // Handle hyperlinks
     if (cell.type === ExcelJS.ValueType.Hyperlink) {
-      const text = cell.value.text || cell.value.hyperlink;
-      const link = cell.value.hyperlink;
+      const hyperlinkValue = cell.value as ExcelJS.CellHyperlinkValue;
+      const text = hyperlinkValue.text || hyperlinkValue.hyperlink || '';
+      const link = hyperlinkValue.hyperlink || '';
       return this.createLink(text, link);
     }
 
     // Handle booleans
     if (cell.type === ExcelJS.ValueType.Boolean) {
-      return cell.value ? 'TRUE' : 'FALSE';
+      return (cell.value as boolean) ? 'TRUE' : 'FALSE';
     }
 
     // Default: convert to string

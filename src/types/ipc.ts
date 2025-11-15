@@ -5,8 +5,8 @@
  * between renderer and main processes.
  */
 
-import type { FileMetadata, FileMetadataError } from './fileMetadata';
-import type { FilePreview, FilePreviewError, PreviewOptions } from './filePreview';
+import type { FileMetadata, FileMetadataError } from './fileMetadata.js';
+import type { FilePreview, FilePreviewError, PreviewOptions } from './filePreview.js';
 
 /**
  * Electron API exposed to renderer via contextBridge

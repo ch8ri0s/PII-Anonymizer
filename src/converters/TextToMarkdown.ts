@@ -8,7 +8,7 @@ import path from 'path';
 import { MarkdownConverter } from './MarkdownConverter.js';
 
 export class TextToMarkdown extends MarkdownConverter {
-  async convert(filePath) {
+  async convert(filePath: string): Promise<string> {
     const content = await fs.readFile(filePath, 'utf8');
     const filename = path.basename(filePath);
 

@@ -14,6 +14,7 @@
     "compile:watch": "tsc --watch",
     "css:build": "npx tailwindcss -i ./src/input.css -o ./output.css",
     "css:watch": "npx tailwindcss -i ./src/input.css -o ./output.css --watch",
+    "postinstall": "node scripts/patch-pdf-parse.js",
     "prebuild": "npm run compile && npm run css:build",
     "dev": "electron .",
     "build": "electron-builder",
@@ -71,20 +72,46 @@
       "category": "public.app-category.utilities"
     },
     "win": {
-      "icon": "assets/icon"
+      "icon": "assets/icon",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "directories": {
       "buildResources": "assets"
     },
     "files": [
-      "**/*",
+      "main.js",
+      "fileProcessor.js",
+      "preload.cjs",
+      "index.html",
+      "renderer.js",
+      "styles.css",
+      "output.css",
+      "logo.png",
+      "dist/**/*",
+      "src/**/*.css",
+      "locales/**/*",
+      "scripts/patch-pdf-parse.js",
+      "!src/**/*.ts",
+      "!test/**/*",
+      "!specs/**/*",
       "!**/*.md",
-      "!SECURITY_AUDIT.md",
-      "!PERFORMANCE_ANALYSIS.md",
       "README.md",
       "LICENSE",
       "SECURITY.md",
-      "preload.js",
       {
         "from": "assets",
         "to": "assets",

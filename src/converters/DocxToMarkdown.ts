@@ -4,11 +4,14 @@
  */
 
 import mammoth from 'mammoth';
+// @ts-ignore - No type definitions available for turndown
 import TurndownService from 'turndown';
 import path from 'path';
 import { MarkdownConverter } from './MarkdownConverter.js';
 
 export class DocxToMarkdown extends MarkdownConverter {
+  private turndown: TurndownService;
+
   constructor(options = {}) {
     super(options);
 
@@ -25,13 +28,14 @@ export class DocxToMarkdown extends MarkdownConverter {
     this.configureTurndown();
   }
 
-  configureTurndown() {
+  private configureTurndown(): void {
     // Handle images
     this.turndown.addRule('images', {
       filter: 'img',
-      replacement: (content, node) => {
-        const alt = node.getAttribute('alt') || 'Image';
-        const src = node.getAttribute('src') || '';
+      replacement: (content: string, node: any) => {
+        const imgNode = node as HTMLImageElement;
+        const alt = imgNode.getAttribute('alt') || 'Image';
+        const src = imgNode.getAttribute('src') || '';
 
         // For embedded images, just describe them
         if (src.startsWith('data:')) {
@@ -49,15 +53,16 @@ export class DocxToMarkdown extends MarkdownConverter {
     });
   }
 
-  async convert(filePath) {
+  async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
 
     try {
       // Extract DOCX as HTML
       const result = await mammoth.convertToHtml({
         path: filePath,
-        convertImage: mammoth.images.imgElement((image) => {
-          return image.read('base64').then((imageBuffer) => {
+        // @ts-expect-error - convertImage is valid but not in mammoth type definitions
+        convertImage: mammoth.images.imgElement((image: any) => {
+          return image.read('base64').then((imageBuffer: string) => {
             // Describe image instead of embedding
             return {
               src: `data:image/png;base64,${imageBuffer.substring(0, 100)}...`,
@@ -96,7 +101,7 @@ export class DocxToMarkdown extends MarkdownConverter {
 
     } catch (error) {
       console.error(`Error converting DOCX ${filename}:`, error);
-      throw new Error(`Failed to convert DOCX: ${error.message}`);
+      throw new Error(`Failed to convert DOCX: ${(error as Error).message}`);
     }
   }
 }

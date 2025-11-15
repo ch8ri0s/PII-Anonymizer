@@ -10,12 +10,12 @@ import { dirname, join } from 'path';
 import { readFile, access } from 'fs/promises';
 import { constants } from 'fs';
 
-// Import converters
-import { PdfToMarkdown } from '../src/converters/PdfToMarkdown.js';
-import { DocxToMarkdown } from '../src/converters/DocxToMarkdown.js';
-import { ExcelToMarkdown } from '../src/converters/ExcelToMarkdown.js';
-import { CsvToMarkdown } from '../src/converters/CsvToMarkdown.js';
-import { TextToMarkdown } from '../src/converters/TextToMarkdown.js';
+// Import converters (from dist/ - TypeScript compiled output)
+import { PdfToMarkdown } from '../dist/converters/PdfToMarkdown.js';
+import { DocxToMarkdown } from '../dist/converters/DocxToMarkdown.js';
+import { ExcelToMarkdown } from '../dist/converters/ExcelToMarkdown.js';
+import { CsvToMarkdown } from '../dist/converters/CsvToMarkdown.js';
+import { TextToMarkdown } from '../dist/converters/TextToMarkdown.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

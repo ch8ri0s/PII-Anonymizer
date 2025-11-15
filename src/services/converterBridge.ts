@@ -11,9 +11,16 @@ import { PdfToMarkdown } from '../converters/PdfToMarkdown.js';
 import { ExcelToMarkdown } from '../converters/ExcelToMarkdown.js';
 import { CsvToMarkdown } from '../converters/CsvToMarkdown.js';
 import { TextToMarkdown } from '../converters/TextToMarkdown.js';
+import { MarkdownConverter } from '../converters/MarkdownConverter.js';
 
 // Initialize converter instances
-const converters = {
+const converters: {
+  docx: DocxToMarkdown;
+  pdf: PdfToMarkdown;
+  excel: ExcelToMarkdown;
+  csv: CsvToMarkdown;
+  txt: TextToMarkdown;
+} = {
   docx: new DocxToMarkdown(),
   pdf: new PdfToMarkdown(),
   excel: new ExcelToMarkdown(),
@@ -23,50 +30,50 @@ const converters = {
 
 /**
  * Extract text content from a DOCX file
- * @param {string} filePath - Absolute path to the file
- * @returns {Promise<string>} - Extracted text content
+ * @param filePath - Absolute path to the file
+ * @returns Extracted text content
  */
-export async function convertDocxToText(filePath) {
+export async function convertDocxToText(filePath: string): Promise<string> {
   const markdown = await converters.docx.convert(filePath);
   return stripMarkdownFormatting(markdown);
 }
 
 /**
  * Extract text content from a PDF file
- * @param {string} filePath - Absolute path to the file
- * @returns {Promise<string>} - Extracted text content
+ * @param filePath - Absolute path to the file
+ * @returns Extracted text content
  */
-export async function convertPdfToText(filePath) {
+export async function convertPdfToText(filePath: string): Promise<string> {
   const markdown = await converters.pdf.convert(filePath);
   return stripMarkdownFormatting(markdown);
 }
 
 /**
  * Extract text content from an Excel file
- * @param {string} filePath - Absolute path to the file
- * @returns {Promise<string>} - Extracted text content
+ * @param filePath - Absolute path to the file
+ * @returns Extracted text content
  */
-export async function convertExcelToText(filePath) {
+export async function convertExcelToText(filePath: string): Promise<string> {
   const markdown = await converters.excel.convert(filePath);
   return stripMarkdownFormatting(markdown);
 }
 
 /**
  * Extract text content from a CSV file
- * @param {string} filePath - Absolute path to the file
- * @returns {Promise<string>} - Extracted text content
+ * @param filePath - Absolute path to the file
+ * @returns Extracted text content
  */
-export async function convertCsvToText(filePath) {
+export async function convertCsvToText(filePath: string): Promise<string> {
   const markdown = await converters.csv.convert(filePath);
   return stripMarkdownFormatting(markdown);
 }
 
 /**
  * Extract text content from a plain text file
- * @param {string} filePath - Absolute path to the file
- * @returns {Promise<string>} - Extracted text content
+ * @param filePath - Absolute path to the file
+ * @returns Extracted text content
  */
-export async function convertTxtToText(filePath) {
+export async function convertTxtToText(filePath: string): Promise<string> {
   const markdown = await converters.txt.convert(filePath);
   return stripMarkdownFormatting(markdown);
 }
@@ -74,10 +81,10 @@ export async function convertTxtToText(filePath) {
 /**
  * Strip markdown formatting to get plain text
  * Removes frontmatter, headers, tables, and formatting
- * @param {string} markdown - Markdown content
- * @returns {string} - Plain text
+ * @param markdown - Markdown content
+ * @returns Plain text
  */
-function stripMarkdownFormatting(markdown) {
+function stripMarkdownFormatting(markdown: string): string {
   let text = markdown;
 
   // Remove frontmatter (--- ... ---)
@@ -125,11 +132,11 @@ function stripMarkdownFormatting(markdown) {
 
 /**
  * Convert file to text based on extension
- * @param {string} filePath - Absolute path to the file
- * @param {string} extension - File extension (e.g., '.docx', '.pdf')
- * @returns {Promise<string>} - Extracted text content
+ * @param filePath - Absolute path to the file
+ * @param extension - File extension (e.g., '.docx', '.pdf')
+ * @returns Extracted text content
  */
-export async function convertToText(filePath, extension) {
+export async function convertToText(filePath: string, extension: string): Promise<string> {
   const ext = extension.toLowerCase();
 
   switch (ext) {

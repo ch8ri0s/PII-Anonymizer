@@ -3,15 +3,15 @@ import path from 'path';
 import { pipeline, env } from '@xenova/transformers';
 import { fileURLToPath } from 'url';
 
-// Import converters
-import { TextToMarkdown } from './src/converters/TextToMarkdown.js';
-import { CsvToMarkdown } from './src/converters/CsvToMarkdown.js';
-import { DocxToMarkdown } from './src/converters/DocxToMarkdown.js';
-import { ExcelToMarkdown } from './src/converters/ExcelToMarkdown.js';
-import { PdfToMarkdown } from './src/converters/PdfToMarkdown.js';
+// Import converters (from dist/ - TypeScript compiled output)
+import { TextToMarkdown } from './dist/converters/TextToMarkdown.js';
+import { CsvToMarkdown } from './dist/converters/CsvToMarkdown.js';
+import { DocxToMarkdown } from './dist/converters/DocxToMarkdown.js';
+import { ExcelToMarkdown } from './dist/converters/ExcelToMarkdown.js';
+import { PdfToMarkdown } from './dist/converters/PdfToMarkdown.js';
 
-// Import Swiss/EU PII detector
-import { SwissEuDetector } from './src/pii/SwissEuDetector.js';
+// Import Swiss/EU PII detector (from dist/ - TypeScript compiled output)
+import { SwissEuDetector } from './dist/pii/SwissEuDetector.js';
 
 // ES module paths
 const __filename = fileURLToPath(import.meta.url);

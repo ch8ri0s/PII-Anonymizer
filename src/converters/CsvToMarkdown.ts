@@ -5,15 +5,21 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { MarkdownConverter } from './MarkdownConverter.js';
+import { MarkdownConverter, MarkdownConverterOptions } from './MarkdownConverter.js';
+
+export interface CsvConverterOptions extends MarkdownConverterOptions {
+  maxRows?: number;
+}
 
 export class CsvToMarkdown extends MarkdownConverter {
-  constructor(options = {}) {
+  private maxRows: number;
+
+  constructor(options: CsvConverterOptions = {}) {
     super(options);
     this.maxRows = options.maxRows || 1000;
   }
 
-  async convert(filePath) {
+  async convert(filePath: string): Promise<string> {
     const content = await fs.readFile(filePath, 'utf8');
     const filename = path.basename(filePath);
 
@@ -63,8 +69,8 @@ export class CsvToMarkdown extends MarkdownConverter {
    * Simple CSV parser - handles quoted fields
    * For production, consider using a library like papaparse
    */
-  parseCsvLine(line) {
-    const result = [];
+  private parseCsvLine(line: string): string[] {
+    const result: string[] = [];
     let current = '';
     let inQuotes = false;
 

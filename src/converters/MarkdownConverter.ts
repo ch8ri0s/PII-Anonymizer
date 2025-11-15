@@ -7,8 +7,32 @@
 
 import { marked } from 'marked';
 
+export interface MarkdownConverterOptions {
+  includeFrontmatter?: boolean;
+  includeMetadata?: boolean;
+  modelName?: string;
+  [key: string]: any;
+}
+
+export interface DocumentMetadata {
+  filename: string;
+  format: string;
+  timestamp: string;
+  pageCount?: number;
+  sheetCount?: number;
+  rowCount?: number;
+  conversionWarnings?: number;
+  [key: string]: any;
+}
+
+export interface TableAlignment {
+  alignment?: ('left' | 'center' | 'right')[];
+}
+
 export class MarkdownConverter {
-  constructor(options = {}) {
+  protected options: MarkdownConverterOptions;
+
+  constructor(options: MarkdownConverterOptions = {}) {
     this.options = {
       includeFrontmatter: options.includeFrontmatter !== false,
       includeMetadata: options.includeMetadata !== false,
@@ -20,10 +44,10 @@ export class MarkdownConverter {
   /**
    * Generate YAML frontmatter with metadata
    */
-  generateFrontmatter(metadata) {
+  generateFrontmatter(metadata: DocumentMetadata): string {
     if (!this.options.includeFrontmatter) return '';
 
-    const yaml = [
+    const yaml: string[] = [
       '---',
       `source: ${metadata.filename}`,
       `sourceFormat: ${metadata.format}`,
@@ -54,12 +78,12 @@ export class MarkdownConverter {
   /**
    * Validate generated Markdown syntax
    */
-  async validateMarkdown(markdown) {
+  async validateMarkdown(markdown: string): Promise<{ valid: boolean; error?: string }> {
     try {
       marked.parse(markdown);
       return { valid: true };
     } catch (error) {
-      return { valid: false, error: error.message };
+      return { valid: false, error: (error as Error).message };
     }
   }
 
@@ -67,12 +91,12 @@ export class MarkdownConverter {
    * Create Markdown table from 2D array
    * Supports alignment options
    */
-  createTable(headers, rows, options = {}) {
+  createTable(headers: string[], rows: string[][], options: TableAlignment = {}): string {
     if (!headers || headers.length === 0) {
       return '';
     }
 
-    const alignment = options.alignment || headers.map(() => 'left');
+    const alignment = options.alignment || headers.map(() => 'left' as const);
 
     // Escape headers
     const escapedHeaders = headers.map(h => this.escapeTableCell(h));
@@ -100,7 +124,7 @@ export class MarkdownConverter {
   /**
    * Escape pipe characters and newlines in table cells
    */
-  escapeTableCell(text) {
+  escapeTableCell(text: any): string {
     if (text === null || text === undefined) {
       return '';
     }
@@ -114,7 +138,7 @@ export class MarkdownConverter {
   /**
    * Normalize heading levels (h1-h6)
    */
-  normalizeHeading(text, level) {
+  normalizeHeading(text: string, level: number): string {
     const normalizedLevel = Math.max(1, Math.min(6, level));
     const prefix = '#'.repeat(normalizedLevel);
     return `${prefix} ${text}\n\n`;
@@ -123,7 +147,7 @@ export class MarkdownConverter {
   /**
    * Convert text to title case for headings
    */
-  toTitleCase(text) {
+  toTitleCase(text: string): string {
     return text.replace(/\w\S*/g, (txt) => {
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     });
@@ -132,7 +156,7 @@ export class MarkdownConverter {
   /**
    * Sanitize filename for use in frontmatter
    */
-  sanitizeFilename(filename) {
+  sanitizeFilename(filename: string): string {
     // Remove or escape characters that could break YAML
     return filename.replace(/[:"]/g, '');
   }
@@ -140,70 +164,70 @@ export class MarkdownConverter {
   /**
    * Create a horizontal rule
    */
-  createHorizontalRule() {
+  createHorizontalRule(): string {
     return '\n---\n\n';
   }
 
   /**
    * Create a blockquote
    */
-  createBlockquote(text) {
+  createBlockquote(text: string): string {
     return text.split('\n').map(line => `> ${line}`).join('\n') + '\n\n';
   }
 
   /**
    * Create a code block
    */
-  createCodeBlock(code, language = '') {
+  createCodeBlock(code: string, language: string = ''): string {
     return `\`\`\`${language}\n${code}\n\`\`\`\n\n`;
   }
 
   /**
    * Create inline code
    */
-  createInlineCode(text) {
+  createInlineCode(text: string): string {
     return `\`${text}\``;
   }
 
   /**
    * Create a link
    */
-  createLink(text, url) {
+  createLink(text: string, url: string): string {
     return `[${text}](${url})`;
   }
 
   /**
    * Create emphasis (italic)
    */
-  createEmphasis(text) {
+  createEmphasis(text: string): string {
     return `_${text}_`;
   }
 
   /**
    * Create strong (bold)
    */
-  createStrong(text) {
+  createStrong(text: string): string {
     return `**${text}**`;
   }
 
   /**
    * Create an unordered list
    */
-  createUnorderedList(items) {
+  createUnorderedList(items: string[]): string {
     return items.map(item => `- ${item}`).join('\n') + '\n\n';
   }
 
   /**
    * Create an ordered list
    */
-  createOrderedList(items) {
+  createOrderedList(items: string[]): string {
     return items.map((item, index) => `${index + 1}. ${item}`).join('\n') + '\n\n';
   }
 
   /**
    * Detect if text looks like a code block
    */
-  looksLikeCode(text) {
+  looksLikeCode(text: string): boolean {
     const codeIndicators = [
       /function\s+\w+\s*\(/,
       /class\s+\w+/,
@@ -221,7 +245,7 @@ export class MarkdownConverter {
   /**
    * Must be implemented by subclasses
    */
-  async convert(filePath) {
+  async convert(filePath: string): Promise<string> {
     throw new Error('convert() must be implemented by subclass');
   }
 }

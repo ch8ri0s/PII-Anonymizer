@@ -3,13 +3,14 @@
  * Converts PDF files to Markdown using structure detection heuristics
  */
 
+// @ts-ignore - No type definitions available for pdf-parse
 import pdfParse from 'pdf-parse';
 import fs from 'fs/promises';
 import path from 'path';
 import { MarkdownConverter } from './MarkdownConverter.js';
 
 export class PdfToMarkdown extends MarkdownConverter {
-  async convert(filePath) {
+  async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
     const dataBuffer = await fs.readFile(filePath);
 
@@ -40,11 +41,11 @@ export class PdfToMarkdown extends MarkdownConverter {
 
     } catch (error) {
       console.error(`Error converting PDF ${filename}:`, error);
-      throw new Error(`Failed to convert PDF: ${error.message}`);
+      throw new Error(`Failed to convert PDF: ${(error as Error).message}`);
     }
   }
 
-  detectStructure(text, pageCount) {
+  private detectStructure(text: string, pageCount: number): string {
     // Split into lines
     const lines = text.split('\n');
     let markdown = '';
@@ -98,7 +99,7 @@ export class PdfToMarkdown extends MarkdownConverter {
     return markdown;
   }
 
-  looksLikeHeading(line, nextLine) {
+  private looksLikeHeading(line: string, nextLine: string): boolean {
     // Too long to be a heading
     if (line.length > 100) return false;
 
@@ -121,7 +122,7 @@ export class PdfToMarkdown extends MarkdownConverter {
     return (isAllCaps || isTitleCase || isNumberedHeading) && followedByBlank;
   }
 
-  addPageMarkers(markdown, pageCount) {
+  private addPageMarkers(markdown: string, pageCount: number): string {
     // Simple heuristic: divide text evenly by pages
     // Note: This is approximate - perfect page detection requires PDF parsing
     const lines = markdown.split('\n');

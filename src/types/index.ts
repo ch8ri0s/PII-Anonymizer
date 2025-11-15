@@ -7,8 +7,8 @@ export type {
   FileMetadata,
   FileMetadataError,
   FileErrorCode,
-} from './fileMetadata';
-export { isFileMetadataError } from './fileMetadata';
+} from './fileMetadata.js';
+export { isFileMetadataError } from './fileMetadata.js';
 
 // File Preview types
 export type {
@@ -16,8 +16,8 @@ export type {
   FilePreviewError,
   PreviewOptions,
   PreviewFormatType,
-} from './filePreview';
-export { isFilePreviewError } from './filePreview';
+} from './filePreview.js';
+export { isFilePreviewError } from './filePreview.js';
 
 // Batch Queue types
 export type {
@@ -25,7 +25,7 @@ export type {
   BatchFileStatus,
   BatchQueueState,
   BatchProgress,
-} from './batchQueue';
+} from './batchQueue.js';
 
 // IPC types
-export type { ElectronAPI, FileDialogOptions } from './ipc';
+export type { ElectronAPI, FileDialogOptions } from './ipc.js';
