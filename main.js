@@ -4,7 +4,7 @@ import fs from 'fs';
 import { FileProcessor } from './fileProcessor.js';
 import { fileURLToPath } from 'url';
 import { registerFilePreviewHandlers } from './dist/services/filePreviewHandlers.js';
-import { registerI18nHandlers } from './src/services/i18nHandlers.js';
+import { registerI18nHandlers } from './dist/services/i18nHandlers.js';
 
 let isLLMInitialized = false; // track if LLM is loaded once
 
@@ -12,6 +12,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
+
+// ✅ SECURITY: Input validation helper for IPC handlers
+function validateIpcInput(data, schema) {
+  if (!data || typeof data !== 'object') {
+    return { valid: false, error: 'Invalid input: must be an object' };
+  }
+
+  for (const [key, type] of Object.entries(schema)) {
+    if (typeof data[key] !== type) {
+      return { valid: false, error: `Invalid ${key}: must be ${type}` };
+    }
+    if (type === 'string' && data[key].trim() === '') {
+      return { valid: false, error: `Invalid ${key}: cannot be empty` };
+    }
+  }
+
+  return { valid: true };
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -100,8 +118,48 @@ ipcMain.handle('select-input-directory', async () => {
   return null;
 });
 
-ipcMain.handle('process-file', async (event, { filePath, outputDir }) => {
+ipcMain.handle('process-file', async (event, data) => {
   try {
+    // ✅ SECURITY: Validate input structure and types
+    const validation = validateIpcInput(data, { filePath: 'string' });
+    if (!validation.valid) {
+      console.warn('process-file validation failed:', validation.error);
+      return { success: false, error: validation.error };
+    }
+
+    const { filePath, outputDir } = data;
+
+    // ✅ SECURITY: Validate filePath is not empty after trimming
+    if (filePath.trim() === '') {
+      return { success: false, error: 'Invalid file path: cannot be empty' };
+    }
+
+    // ✅ SECURITY: Validate file exists
+    if (!fs.existsSync(filePath)) {
+      return { success: false, error: 'File does not exist' };
+    }
+
+    // ✅ SECURITY: Validate file size (max 100MB to prevent OOM attacks)
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    const stats = fs.statSync(filePath);
+    if (stats.size > MAX_FILE_SIZE) {
+      return { success: false, error: 'File too large (max 100MB)' };
+    }
+
+    // ✅ SECURITY: Validate file extension (only supported types)
+    const supportedExtensions = ['.txt', '.csv', '.docx', '.xlsx', '.xls', '.pdf'];
+    const fileExtension = path.extname(filePath).toLowerCase();
+    if (!supportedExtensions.includes(fileExtension)) {
+      return { success: false, error: `Unsupported file type: ${fileExtension}` };
+    }
+
+    // ✅ SECURITY: Validate outputDir if provided
+    if (outputDir !== undefined && outputDir !== null) {
+      if (typeof outputDir !== 'string' || outputDir.trim() === '') {
+        return { success: false, error: 'Invalid output directory' };
+      }
+    }
+
     const fileName = path.basename(filePath);
 
     // If LLM not yet loaded, notify the renderer
@@ -148,24 +206,51 @@ ipcMain.handle('process-file', async (event, { filePath, outputDir }) => {
 // Read JSON file handler
 ipcMain.handle('file:readJson', async (event, filePath) => {
   try {
-    // Validate file path
+    // ✅ SECURITY: Validate file path type and presence
     if (!filePath || typeof filePath !== 'string') {
       return { error: 'Invalid file path', changes: [] };
     }
 
+    // ✅ SECURITY: Validate not empty after trimming
+    if (filePath.trim() === '') {
+      return { error: 'Invalid file path: cannot be empty', changes: [] };
+    }
+
+    // ✅ SECURITY: Enforce .json extension
+    const fileExtension = path.extname(filePath).toLowerCase();
+    if (fileExtension !== '.json') {
+      console.warn('Blocked non-JSON file read attempt:', filePath);
+      return { error: 'Only .json files are allowed', changes: [] };
+    }
+
+    // ✅ SECURITY: Prevent path traversal
+    const normalizedPath = path.normalize(filePath);
+    if (normalizedPath.includes('..')) {
+      console.warn('Blocked path traversal attempt:', filePath);
+      return { error: 'Invalid file path', changes: [] };
+    }
+
+    // ✅ SECURITY: Ensure path is absolute
+    if (!path.isAbsolute(normalizedPath)) {
+      console.warn('Blocked relative path:', filePath);
+      return { error: 'Invalid file path', changes: [] };
+    }
+
     // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      console.warn('Mapping file not found:', filePath);
+    if (!fs.existsSync(normalizedPath)) {
+      console.warn('Mapping file not found:', normalizedPath);
       return { error: 'Mapping file not found', changes: [] };
     }
 
     // Read and parse JSON
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const content = fs.readFileSync(normalizedPath, 'utf-8');
     const data = JSON.parse(content);
     return data;
   } catch (error) {
     console.error('Error reading JSON file:', error);
-    return { error: error.message, changes: [] };
+    // ✅ SECURITY: Sanitize error message (remove paths)
+    const sanitizedError = error.message.replace(/\/[\w\/.-]+/g, '[REDACTED_PATH]');
+    return { error: sanitizedError, changes: [] };
   }
 });
 
