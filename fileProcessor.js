@@ -2,6 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline, env } from '@xenova/transformers';
 import { fileURLToPath } from 'url';
+import { createLogger } from './src/config/logging.js';
+
+// Initialize loggers
+const log = createLogger('fileProcessor');
+const mlLog = createLogger('ml');
+const securityLog = createLogger('security');
 
 // Import converters (from dist/ - TypeScript compiled output)
 import { TextToMarkdown } from './dist/converters/TextToMarkdown.js';
@@ -23,8 +29,10 @@ env.allowRemoteModels = false;  // Model is cached locally, no remote downloads 
 env.quantized = false;
 
 // Model configuration
-// Using Xenova's pre-converted NER model (compatible with transformers.js)
-const MODEL_NAME = 'Xenova/bert-base-NER';
+// Using Xenova's multilingual NER model (supports 10 languages including French, German, English)
+// Supports: Arabic, German, English, Spanish, French, Italian, Latvian, Dutch, Portuguese, Chinese
+// Entity types: PER (person), ORG (organization), LOC (location)
+const MODEL_NAME = 'Xenova/distilbert-base-multilingual-cased-ner-hrl';
 
 // Pipeline reference (shared across sessions for performance)
 let nerPipeline = null;
@@ -39,7 +47,7 @@ const converters = {
   '.docx': new DocxToMarkdown({ modelName: MODEL_NAME }),
   '.xlsx': new ExcelToMarkdown({ modelName: MODEL_NAME }),
   '.xls': new ExcelToMarkdown({ modelName: MODEL_NAME }),
-  '.pdf': new PdfToMarkdown({ modelName: MODEL_NAME })
+  '.pdf': new PdfToMarkdown({ modelName: MODEL_NAME }),
 };
 
 /**
@@ -155,22 +163,30 @@ function buildFuzzyRegex(mergedString) {
   // Protection Layer 1: Length limit to prevent exponential complexity
   const MAX_ENTITY_LENGTH = 50;
   if (mergedString.length > MAX_ENTITY_LENGTH) {
-    console.log(`Skipping entity longer than ${MAX_ENTITY_LENGTH} chars (ReDoS protection)`);
+    securityLog.debug('Skipping long entity (ReDoS protection)', { maxLength: MAX_ENTITY_LENGTH });
     return null;
   }
 
   let noPunc = mergedString.replace(/[^\w]/g, '');
   if (!noPunc) return null;
 
-  // Protection Layer 2: Character count limit
+  // Protection Layer 2: Minimum length to prevent single-character false positives
+  // This prevents cases like "C" being detected as PII and replacing all "c" letters
+  const MIN_ENTITY_LENGTH = 3;
+  if (noPunc.length < MIN_ENTITY_LENGTH) {
+    securityLog.debug('Skipping short entity (false positive protection)', { minLength: MIN_ENTITY_LENGTH });
+    return null;
+  }
+
+  // Protection Layer 3: Character count limit
   if (noPunc.length > 30) {
-    console.log(`Skipping entity with ${noPunc.length} chars after cleanup (ReDoS protection)`);
+    securityLog.debug('Skipping entity after cleanup (ReDoS protection)', { charCount: noPunc.length });
     return null;
   }
 
   noPunc = escapeRegexChars(noPunc);
 
-  // Protection Layer 3: Use simpler, safer pattern
+  // Protection Layer 4: Use simpler, safer pattern
   // Instead of: a[^a-zA-Z0-9]{0,3}b[^a-zA-Z0-9]{0,3}... (nested quantifiers - BAD)
   // Use: word boundaries with escaped literal (simpler - GOOD)
 
@@ -198,7 +214,7 @@ function buildFuzzyRegex(mergedString) {
   try {
     return new RegExp(pattern, 'ig');
   } catch (err) {
-    console.warn(`Regex build failed for pattern="${pattern}". Error: ${err.message}`);
+    securityLog.warn('Regex build failed', { error: err.message });
     return null;
   }
 }
@@ -225,13 +241,13 @@ function testRegexWithTimeout(regex, text, timeoutMs = 100) {
 
     // Check if took too long (potential ReDoS)
     if (duration > timeoutMs) {
-      console.warn(`Regex test took ${duration}ms (timeout: ${timeoutMs}ms) - potential ReDoS`);
+      securityLog.warn('Regex test timeout (potential ReDoS)', { duration, timeout: timeoutMs });
       return false;
     }
 
     return result;
   } catch (err) {
-    console.warn(`Regex test error: ${err.message}`);
+    securityLog.warn('Regex test error', { error: err.message });
     return false;
   }
 }
@@ -241,9 +257,9 @@ function testRegexWithTimeout(regex, text, timeoutMs = 100) {
  */
 async function loadNERModel() {
   if (!nerPipeline) {
-    console.log(`Loading PII detection model: ${MODEL_NAME}...`);
+    mlLog.info('Loading PII detection model', { model: MODEL_NAME });
     nerPipeline = await pipeline('token-classification', MODEL_NAME);
-    console.log("Model loaded successfully.");
+    mlLog.info('Model loaded successfully');
   }
   return nerPipeline;
 }
@@ -322,16 +338,16 @@ async function anonymizeText(text, session) {
 
   // Step 1: ML-based detection
   const ner = await loadNERModel();
-  console.log("Running ML-based PII detection...");
+  mlLog.debug('Running ML-based PII detection');
   const predictions = await ner(processedText);
 
   const mlEntities = aggressiveMergeTokens(predictions);
-  console.log(`ML detected ${mlEntities.length} entities`);
+  mlLog.info('ML detection completed', { entityCount: mlEntities.length });
 
   // Step 2: Rule-based Swiss/EU detection
-  console.log("Running Swiss/EU rule-based PII detection...");
+  mlLog.debug('Running Swiss/EU rule-based PII detection');
   const swissEuEntities = swissEuDetector.detect(processedText);
-  console.log(`Swiss/EU detected ${swissEuEntities.length} entities`);
+  mlLog.info('Swiss/EU detection completed', { entityCount: swissEuEntities.length });
 
   // Step 3: Merge all entities
   const allEntities = [...mlEntities, ...swissEuEntities];
@@ -346,17 +362,21 @@ async function anonymizeText(text, session) {
 
     if (!entityText) continue;
 
-    const pseudonym = session.getOrCreatePseudonym(entityText, entityType);
+    // ✅ CRITICAL FIX: Filter entity BEFORE adding to session mapping
+    // This prevents short entities (like "C") from appearing in mapping file
     const fuzzyRegex = buildFuzzyRegex(entityText);
 
     if (!fuzzyRegex) {
       // ✅ SECURITY: Don't log PII - only log entity type
-      console.log(`Skipping invalid pattern for ${entityType} entity`);
+      securityLog.debug('Skipping invalid pattern', { entityType });
       continue;
     }
 
+    // Only create pseudonym AFTER validation passes
+    const pseudonym = session.getOrCreatePseudonym(entityText, entityType);
+
     // ✅ SECURITY: Don't log actual PII values - only log entity types and pseudonyms
-    console.log(`Mapped ${entityType} → ${pseudonym}`);
+    mlLog.debug('Entity mapped', { entityType, pseudonym });
     patterns.push(fuzzyRegex.source);
     replacements.set(fuzzyRegex.source, pseudonym);
   }
@@ -385,7 +405,7 @@ async function anonymizeText(text, session) {
  * @param {FileProcessingSession} session - Session for isolated state
  */
 async function anonymizeMarkdown(markdown, session) {
-  console.log("Anonymizing Markdown (preserving code blocks)...");
+  log.debug('Anonymizing Markdown (preserving code blocks)');
 
   // Step 1: Extract and protect code blocks
   const { textWithoutCode, codeBlocks } = extractCodeBlocks(markdown);
@@ -408,10 +428,10 @@ async function anonymizeMarkdown(markdown, session) {
     timestamp: new Date().toISOString(),
     model: MODEL_NAME,
     detectionMethods: ['ML (transformers)', 'Rule-based (Swiss/EU)'],
-    entities: session.getMapping()
+    entities: session.getMapping(),
   };
 
-  console.log(`Total entities anonymised: ${session.getEntityCount()}`);
+  log.info('Anonymization complete', { entityCount: session.getEntityCount() });
 
   return { anonymised: result, mapping };
 }
@@ -463,19 +483,18 @@ export class FileProcessor {
     const session = new FileProcessingSession();
 
     try {
-      console.log(`\n========================================`);
-      console.log(`Processing: ${path.basename(filePath)}`);
-      console.log(`========================================`);
+      const fileName = path.basename(filePath);
+      log.info('Processing file', { fileName, extension: ext });
 
       // Step 1: Convert to Markdown
-      console.log("Step 1: Converting to Markdown...");
+      log.debug('Converting to Markdown');
       const markdown = await converter.convert(filePath);
-      console.log(`✓ Converted to Markdown (${markdown.length} characters)`);
+      log.info('Converted to Markdown', { charCount: markdown.length });
 
       // Step 2: Anonymise Markdown with session
-      console.log("Step 2: Anonymising content...");
+      log.debug('Anonymising content');
       const { anonymised, mapping } = await anonymizeMarkdown(markdown, session);
-      console.log(`✓ Anonymisation complete`);
+      log.info('Anonymisation complete');
 
       // ✅ SECURITY: Validate output paths before writing
       const validatedOutputPath = this.validateOutputPath(outputPath);
@@ -483,27 +502,26 @@ export class FileProcessor {
       // Step 3: Write Markdown output
       const mdOutputPath = validatedOutputPath.replace(/\.[^.]+$/, '.md');
       fs.writeFileSync(mdOutputPath, anonymised, 'utf8');
-      console.log(`✓ Saved: ${path.basename(mdOutputPath)}`);
+      log.info('Saved Markdown output', { fileName: path.basename(mdOutputPath) });
 
       // Step 4: Write mapping JSON (ALWAYS)
       const mappingPath = validatedOutputPath.replace(/\.[^.]+$/, '-mapping.json');
       fs.writeFileSync(
         mappingPath,
         JSON.stringify(mapping, null, 2),
-        'utf8'
+        'utf8',
       );
-      console.log(`✓ Saved: ${path.basename(mappingPath)}`);
-      console.log(`========================================\n`);
+      log.info('Saved mapping file', { fileName: path.basename(mappingPath) });
 
       return {
         success: true,
         outputPath: mdOutputPath,
-        mappingPath
+        mappingPath,
       };
 
     } catch (error) {
-      // ✅ SECURITY: Log full error to console, but sanitize for throwing
-      console.error(`✗ Error processing file:`, error);
+      // ✅ SECURITY: Log full error details for debugging
+      log.error('Error processing file', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -515,7 +533,7 @@ export class FileProcessor {
 
   static validateFileType(filePath) {
     const supportedTypes = [
-      '.doc', '.docx', '.xls', '.xlsx', '.csv', '.pdf', '.txt'
+      '.doc', '.docx', '.xls', '.xlsx', '.csv', '.pdf', '.txt',
     ];
     const ext = path.extname(filePath).toLowerCase();
     return supportedTypes.includes(ext);
@@ -530,7 +548,7 @@ export class FileProcessor {
    * @deprecated Each file processing operation is now automatically isolated
    */
   static resetMappings() {
-    console.log("Pseudonym mappings reset");
+    log.debug('resetMappings called (deprecated, no-op)');
     // No-op: Each processFile() creates a new session automatically
   }
 }
