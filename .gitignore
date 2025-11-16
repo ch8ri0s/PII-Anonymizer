@@ -1,9 +1,7 @@
 # Node modules and package manager artifacts
 /node_modules/
-/dist/
 .pnp/
 .pnp.js
-package-lock.json
 
 # Optional npm cache directory
 .npm
@@ -33,6 +31,10 @@ build/
 # TypeScript build artifacts
 *.tsbuildinfo
 .tscache/
+tsconfig.tsbuildinfo
+
+# ESLint cache
+.eslintcache
 
 # Dependency directories
 jspm_packages/
