@@ -1,0 +1,27 @@
+CONFIDENTIAL EMPLOYEE RECORD
+
+Employee Information:
+Name: Dr. Sarah Chen
+Email: sarah.chen@example.com
+Phone: (555) 123-4567
+Address: 123 Main Street, Apt 4B
+         San Francisco, CA 94102
+
+Emergency Contact:
+Name: Michael Chen
+Phone: (555) 987-6543
+
+Employment Details:
+Employee ID: EMP-2024-001
+Department: Engineering
+Manager: Jennifer Martinez
+Manager Email: j.martinez@example.com
+
+Notes:
+Sarah has been with the company since January 2020. She lives at the address above with her family.
+For urgent matters, contact her mobile: 555-123-4567 or email sarah.chen@example.com
+
+Salary Information:
+Annual Salary: $125,000
+Bank Account: Chase Bank, Account #1234567890
+SSN: 123-45-6789

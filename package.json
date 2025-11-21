@@ -5,7 +5,8 @@
   "main": "main.js",
   "description": "A short description of your app",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/textExtractor.test.js",
+    "test:extractor": "node test/textExtractor.test.js",
     "dev": "electron .",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac",
