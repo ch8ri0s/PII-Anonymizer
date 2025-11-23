@@ -1,0 +1,97 @@
+PATIENT MEDICAL RECORD
+======================
+
+PATIENT INFORMATION
+-------------------
+Name: Elizabeth Anne Thompson
+Date of Birth: April 15, 1978
+Patient ID: PT-2024-78451
+Social Security: 456-78-9123
+Medical Record #: MRN-00012345
+
+Contact Information:
+  Address: 2847 Riverside Drive, Apartment 12C
+           San Francisco, CA 94107
+  Home Phone: (415) 555-7890
+  Mobile: (415) 555-7891
+  Email: e.thompson@email.com
+
+Emergency Contact:
+  Name: Robert Thompson (Husband)
+  Phone: (415) 555-7892
+  Relationship: Spouse
+
+Insurance Information:
+  Provider: BlueCross BlueShield
+  Policy #: BCB-789456123
+  Group #: GRP-456789
+  Subscriber ID: SUB-EAT-78451
+
+PRIMARY CARE PHYSICIAN
+----------------------
+Dr. Patricia Williams, MD
+Internal Medicine
+Valley Medical Center
+1200 Health Plaza, Suite 300
+San Francisco, CA 94108
+Phone: (415) 555-3000
+Fax: (415) 555-3001
+NPI: 1234567890
+DEA: AW1234567
+
+VISIT SUMMARY - November 20, 2024
+---------------------------------
+Chief Complaint: Annual wellness examination
+
+Vital Signs:
+  Blood Pressure: 118/76 mmHg
+  Heart Rate: 72 bpm
+  Temperature: 98.6°F
+  Weight: 145 lbs
+  Height: 5'6"
+  BMI: 23.4
+
+Medical History:
+  - Hypertension (controlled with medication)
+  - Type 2 Diabetes (diagnosed 2019)
+  - Seasonal allergies
+
+Current Medications:
+  1. Lisinopril 10mg - once daily
+  2. Metformin 500mg - twice daily
+  3. Cetirizine 10mg - as needed
+
+Allergies:
+  - Penicillin (rash)
+  - Shellfish (anaphylaxis)
+
+Family History:
+  Father: Heart disease (deceased age 68)
+  Mother: Type 2 Diabetes, alive age 75
+  Sister: Breast cancer survivor, age 52
+
+Assessment & Plan:
+  1. Continue current medications
+  2. Schedule mammogram (routine screening)
+  3. Lab work ordered: CBC, CMP, HbA1c, Lipid Panel
+  4. Follow up in 6 months
+
+Referrals:
+  - Cardiology: Dr. James Chen, (415) 555-4000
+  - Ophthalmology: Dr. Susan Park, (415) 555-5000
+
+Laboratory Orders sent to:
+  Quest Diagnostics
+  Account #: QD-78945612
+  Requisition #: REQ-20241120-001
+
+PHYSICIAN SIGNATURE
+-------------------
+Electronically signed by:
+Dr. Patricia Williams, MD
+Date: November 20, 2024 at 2:45 PM PST
+License #: CA-MD-123456
+
+CONFIDENTIALITY NOTICE:
+This medical record contains protected health information (PHI)
+as defined by HIPAA. Unauthorized disclosure is prohibited.

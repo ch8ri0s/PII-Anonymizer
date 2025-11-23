@@ -1,0 +1,117 @@
+EMPLOYMENT APPLICATION FORM
+===========================
+
+PERSONAL INFORMATION
+--------------------
+
+Full Legal Name: Christopher Michael Davis
+Preferred Name: Chris
+Date of Birth: September 3, 1992
+Place of Birth: Los Angeles, California
+
+Current Address:
+  Street: 1847 Sunset Boulevard, Unit 5A
+  City: Los Angeles
+  State: CA
+  ZIP: 90028
+
+  How long at this address? 3 years 2 months
+
+Previous Address (if less than 3 years):
+  Street: 456 Hollywood Way, Apt 12
+  City: Burbank
+  State: CA
+  ZIP: 91505
+
+Contact Information:
+  Primary Phone: (323) 555-1234
+  Secondary Phone: (818) 555-5678
+  Email: chris.davis.jobs@gmail.com
+  LinkedIn: linkedin.com/in/chrisdavis92
+
+IDENTIFICATION
+--------------
+Social Security Number: 543-21-0987
+Driver's License: CA D1234567
+  State: California
+  Expiration: 09/03/2028
+
+Work Authorization:
+  [X] US Citizen
+  [ ] Permanent Resident
+  [ ] Work Visa (Type: _____)
+
+EDUCATION
+---------
+
+Highest Degree: Bachelor of Science in Computer Science
+
+Institution: University of California, Los Angeles (UCLA)
+Address: 405 Hilgard Avenue, Los Angeles, CA 90095
+Dates Attended: September 2010 - June 2014
+GPA: 3.7/4.0
+Degree Received: Yes
+
+EMPLOYMENT HISTORY
+------------------
+
+Current/Most Recent Employer:
+  Company: TechCorp Solutions Inc.
+  Address: 2000 Avenue of the Stars, Suite 1500, Century City, CA 90067
+  Phone: (310) 555-9000
+
+  Supervisor: Amanda Richardson
+  Supervisor Email: a.richardson@techcorp.com
+  Supervisor Phone: (310) 555-9001
+
+  Position: Senior Software Engineer
+  Dates: March 2018 - Present
+  Salary: $125,000/year
+  Reason for leaving: Career growth opportunity
+
+Previous Employer:
+  Company: StartupXYZ
+  Address: 800 Wilshire Blvd, Los Angeles, CA 90017
+  Phone: (213) 555-7000
+
+  Supervisor: Mark Johnson
+  Supervisor Email: mark.j@startupxyz.com (Note: company closed in 2020)
+
+  Position: Software Developer
+  Dates: July 2014 - February 2018
+  Starting Salary: $72,000
+  Ending Salary: $95,000
+  Reason for leaving: Company acquisition
+
+REFERENCES
+----------
+
+Professional Reference 1:
+  Name: Dr. Sarah Miller
+  Title: CTO, TechCorp Solutions
+  Relationship: Direct Manager
+  Phone: (310) 555-9100
+  Email: s.miller@techcorp.com
+
+Professional Reference 2:
+  Name: Kevin Zhang
+  Title: Tech Lead, StartupXYZ (now at Google)
+  Relationship: Former Colleague
+  Phone: (650) 555-4000
+  Email: kevin.zhang.personal@gmail.com
+
+Personal Reference:
+  Name: Jennifer Davis
+  Relationship: Sister
+  Phone: (323) 555-8888
+  Email: jen.davis@email.com
+
+BACKGROUND CHECK AUTHORIZATION
+------------------------------
+I authorize investigation of all statements in this application.
+
+Signature: Christopher M. Davis
+Date: November 21, 2024
+
+SSN for background check: 543-21-0987
+Date of Birth: 09/03/1992

@@ -1,0 +1,55 @@
+INVOICE #INV-2024-0892
+
+                         ACME CORPORATION
+                    123 Business Park Drive
+                    Suite 400, Floor 12
+                    New York, NY 10001
+                    Phone: (212) 555-0100
+                    Email: billing@acmecorp.com
+
+BILL TO:                                    SHIP TO:
+--------                                    --------
+Dr. James Wilson                            Same as billing
+Wilson Medical Associates
+456 Healthcare Avenue
+Boston, MA 02108
+Phone: (617) 555-2345
+Email: jwilson@wilsonmedical.com
+Tax ID: 12-3456789
+
+DATE: November 15, 2024
+DUE DATE: December 15, 2024
+PO NUMBER: PO-2024-7891
+
+================================================================================
+ITEM                          QTY    UNIT PRICE    DISCOUNT    TOTAL
+================================================================================
+Medical Equipment Model X     2      $5,000.00     10%         $9,000.00
+Installation Service          1      $1,500.00     0%          $1,500.00
+Annual Maintenance Plan       1      $2,400.00     15%         $2,040.00
+Training Session (8 hrs)      1        $800.00     0%            $800.00
+================================================================================
+                                              SUBTOTAL:       $13,340.00
+                                              TAX (8.5%):      $1,133.90
+                                              SHIPPING:          $250.00
+                                              --------------------------------
+                                              TOTAL DUE:      $14,723.90
+================================================================================
+
+PAYMENT INFORMATION:
+Bank: First National Bank
+Account Name: ACME Corporation
+Account Number: 1234567890
+Routing Number: 021000021
+SWIFT: FNBAUS33
+
+NOTES:
+- Payment is due within 30 days
+- For questions, contact Sarah Chen at sarah.chen@acmecorp.com or (212) 555-0101
+- Please reference invoice number INV-2024-0892 in all correspondence
+
+Thank you for your business!
+
+Authorized by: Michael Rodriguez, Sales Director
+               michael.rodriguez@acmecorp.com
+               Mobile: (917) 555-3456

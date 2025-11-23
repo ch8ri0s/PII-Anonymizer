@@ -1,0 +1,11 @@
+ID,FirstName,LastName,Email,Phone,SSN,Address,City,State,ZIP,DOB,CreditCard,Salary
+1001,John,Smith,john.smith@email.com,(555) 111-2222,123-45-6789,456 Oak Avenue,Boston,MA,02101,1985-03-15,4532-1234-5678-9012,75000
+1002,Maria,Garcia,m.garcia@company.net,555-333-4444,234-56-7890,789 Pine Street Apt 4B,Austin,TX,78701,1990-07-22,5425-9876-5432-1098,82000
+1003,David,Lee,david.lee@personal.org,(555) 444-5555,345-67-8901,321 Elm Road Suite 100,Seattle,WA,98101,1978-11-08,3712-5555-4444-3333,95000
+1004,Sarah,Johnson,s.johnson@work.io,555.666.7777,456-78-9012,654 Maple Drive,Denver,CO,80201,1992-01-30,6011-2222-3333-4444,68000
+1005,Michael,Brown,mike.brown@domain.com,1-555-777-8888,567-89-0123,987 Cedar Lane,Portland,OR,97201,1988-05-17,4916-8888-7777-6666,71000
+1006,Emily,Davis,emily.d@email.net,(555) 888-9999,678-90-1234,147 Birch Boulevard,Miami,FL,33101,1995-09-03,5500-1111-2222-3333,59000
+1007,Robert,Wilson,rwilson@corporate.com,555-999-0000,789-01-2345,258 Spruce Way,Chicago,IL,60601,1982-12-25,4024-4444-5555-6666,105000
+1008,Lisa,Martinez,lisa.m@startup.io,(555) 000-1111,890-12-3456,369 Willow Court,Phoenix,AZ,85001,1991-04-11,3782-7777-8888-9999,77000
+1009,James,Anderson,j.anderson@tech.org,555-111-2222,901-23-4567,741 Ash Street Unit 5,Atlanta,GA,30301,1986-08-29,4147-0000-1111-2222,88000
+1010,Jennifer,Taylor,jen.taylor@mail.com,(555) 222-3333,012-34-5678,852 Redwood Path,San Diego,CA,92101,1993-06-14,5019-3333-4444-5555,64000
