@@ -7,6 +7,16 @@
 </head>
 <body>
 
+  <!-- MODEL LOADING OVERLAY -->
+  <div id="model-loading-overlay" class="model-loading-overlay hidden">
+    <div class="model-loading-content">
+      <div class="loading-spinner"></div>
+      <h2>Initializing AI Model</h2>
+      <p id="model-loading-message">Loading PII detection model...</p>
+      <p class="loading-note">This may take a moment on first run</p>
+    </div>
+  </div>
+
   <!-- PRO UPGRADE CONTAINER (top-right) -->
   <div id="pro-container" class="pro-container">
     <button id="pro-button" class="button pro-upgrade">

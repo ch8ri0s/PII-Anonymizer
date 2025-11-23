@@ -1,8 +1,44 @@
 /***** renderer.js *****/
+// Use electronAPI from preload script for IPC, Node modules for file ops
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+
+// Model loading overlay
+const modelLoadingOverlay = document.getElementById('model-loading-overlay');
+const modelLoadingMessage = document.getElementById('model-loading-message');
+
+// Listen for model status updates from main process
+if (window.electronAPI) {
+  window.electronAPI.onModelStatus((status) => {
+    if (status.status === 'loading') {
+      showModelLoading(status.message);
+    } else if (status.status === 'ready') {
+      hideModelLoading();
+    }
+  });
+
+  window.electronAPI.onProgress((data) => {
+    console.log('Progress:', data);
+    // Could add more detailed progress UI here
+  });
+}
+
+function showModelLoading(message) {
+  if (modelLoadingOverlay) {
+    modelLoadingOverlay.classList.remove('hidden');
+    if (modelLoadingMessage && message) {
+      modelLoadingMessage.textContent = message;
+    }
+  }
+}
+
+function hideModelLoading() {
+  if (modelLoadingOverlay) {
+    modelLoadingOverlay.classList.add('hidden');
+  }
+}
 
 // Global userState
 let userState = {
@@ -399,7 +435,12 @@ copyDeviceIdBtn.addEventListener('click', () => {
 
 // White wide button => open external store
 upgradeStoreBtn.addEventListener('click', () => {
-  require('electron').shell.openExternal('https://amicus5.com/store/PA');
+  // Use electronAPI if available, fallback to require
+  if (window.electronAPI) {
+    window.electronAPI.openFolder('https://amicus5.com/store/PA');
+  } else {
+    require('electron').shell.openExternal('https://amicus5.com/store/PA');
+  }
 });
 
 // Validate key => show message in #key-message
