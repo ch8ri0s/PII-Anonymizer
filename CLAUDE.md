@@ -13,10 +13,11 @@
 
 - **Core Processing:** fileProcessor.js, main.js
 - **Converters:** src/converters/ (DOCX, PDF, Excel, CSV, Text → Markdown)
+- **PDF Table Detection:** src/utils/pdfTableDetector.ts (auto-detects tables in PDFs)
 - **PII Detection:** src/pii/SwissEuDetector.js
 - **i18n:** src/i18n/ (EN/FR/DE support)
 - **UI:** renderer.js, index.html, src/ui/
-- **Tests:** test/ (139 tests)
+- **Tests:** test/ (101+ tests)
 
 ## Tech Stack
 
@@ -83,14 +84,16 @@
 │   ├── utils/                # Utilities
 │   │   ├── metadataExtractor.ts
 │   │   ├── pathValidator.ts
-│   │   └── previewGenerator.ts
+│   │   ├── previewGenerator.ts
+│   │   └── pdfTableDetector.ts  # PDF table detection & Markdown conversion
 │   │
 │   └── types/                # TypeScript definitions
 │       ├── index.ts
 │       ├── ipc.ts
 │       ├── filePreview.ts
 │       ├── fileMetadata.ts
-│       └── batchQueue.ts
+│       ├── batchQueue.ts
+│       └── pdfTable.ts       # Table detection type definitions
 │
 ├── locales/                  # Translation files
 │   ├── en.json
@@ -281,6 +284,33 @@ Mapping File → Download
 4. Create test cases with real-world examples
 5. Verify accuracy with `test-pii-accuracy.js`
 
+### PDF Table Detection
+
+The PDF converter automatically detects and converts tables to GitHub Flavored Markdown.
+
+**Key Components:**
+- `src/utils/pdfTableDetector.ts` - TableDetector and TableToMarkdownConverter classes
+- `src/types/pdfTable.ts` - Type definitions for table structures
+
+**Detection Methods:**
+- **Lattice detection** - Bordered tables with clear gridlines (95%+ confidence)
+- **Stream detection** - Borderless/whitespace-separated tables (80%+ confidence)
+- **Letter layout detection** - Detects formal letters with sidebars (skips false table detection)
+
+**Features:**
+- Automatic column alignment (left for text, right for numeric)
+- Multi-page table merging
+- Special character escaping (pipes, backslashes)
+- Graceful fallback to text extraction when detection fails
+- Position-based text reconstruction for proper word spacing in PDFs
+- Metadata in YAML frontmatter (tableCount, detectionMethod, confidence)
+
+**Adding New Detection Heuristics:**
+1. Update detection methods in `TableDetector` class
+2. Adjust confidence scoring in `calculateLatticeConfidence()` or `calculateStreamConfidence()`
+3. Add test fixtures in `test/fixtures/pdfTables.js`
+4. Write tests in `test/unit/pdfTableDetector.test.js`
+
 ## Debugging Tips
 
 ### Electron DevTools
@@ -343,3 +373,10 @@ npm run test:watch  # Watch mode for debugging
 **Electron:** 39.1.1
 **TypeScript:** 5.x
 **Last Updated:** 2025-11-16
+
+## Active Technologies
+- TypeScript 5.x (converters), JavaScript ES2022 (main process) (019-pdf-table-detection)
+- File system only (input PDFs, output Markdown, no database) (019-pdf-table-detection)
+
+## Recent Changes
+- 019-pdf-table-detection: Added TypeScript 5.x (converters), JavaScript ES2022 (main process)
