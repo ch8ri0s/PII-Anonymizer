@@ -1,26 +1,168 @@
 /**
  * PDF to Markdown Converter
  * Converts PDF files to Markdown using structure detection heuristics
+ * Enhanced with table detection and conversion (FR-001)
  */
 
 // @ts-ignore - No type definitions available for pdf-parse
 import pdfParse from 'pdf-parse';
 import fs from 'fs/promises';
 import path from 'path';
-import { MarkdownConverter } from './MarkdownConverter.js';
+import { MarkdownConverter, type DocumentMetadata } from './MarkdownConverter.js';
 import { createLogger } from '../utils/logger.js';
+import { TableDetector, TableToMarkdownConverter } from '../utils/pdfTableDetector.js';
+import type { TableStructure, PdfTextItem } from '../types/index.js';
 
 const log = createLogger('converter:pdf');
 
+/**
+ * Interface for pdf.js text content item
+ * @see https://mozilla.github.io/pdf.js/api/draft/module-pdfjsLib.html
+ */
+interface PdfJsTextItem {
+  str: string;
+  transform: number[]; // [scaleX, skewX, skewY, scaleY, x, y]
+  width: number;
+  height: number;
+  fontName?: string;
+}
+
 export class PdfToMarkdown extends MarkdownConverter {
+  // Table detection infrastructure (T040)
+  private tableDetector: TableDetector;
+  private tableConverter: TableToMarkdownConverter;
+
+  // Collected text items across all pages for table detection
+  private collectedTextItems: PdfTextItem[] = [];
+  private currentPageNumber = 0;
+
+  constructor() {
+    super();
+    this.tableDetector = new TableDetector();
+    this.tableConverter = new TableToMarkdownConverter();
+  }
+
+  /**
+   * Custom page render function to extract positioned text items (T041)
+   * This replaces the default pdf-parse render to capture text positions
+   * for table detection while still returning text for fallback.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private createPageRenderer(): (pageData: any) => Promise<string> {
+     
+    const self = this;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return async function(pageData: any): Promise<string> {
+      self.currentPageNumber++;
+
+      const renderOptions = {
+        normalizeWhitespace: false,
+        disableCombineTextItems: false,
+      };
+
+      try {
+        const textContent = await pageData.getTextContent(renderOptions);
+        let lastY: number | undefined;
+        let text = '';
+
+        // Process each text item - extract positions for table detection
+        for (const item of textContent.items as PdfJsTextItem[]) {
+          // Extract position from transform matrix: [scaleX, skewX, skewY, scaleY, x, y]
+          const x = item.transform[4] ?? 0;
+          const y = item.transform[5] ?? 0;
+
+          // Collect positioned text item for table detection
+          const textItem: PdfTextItem = {
+            str: item.str,
+            x: x,
+            y: y,
+            width: item.width || 0,
+            height: item.height || (item.transform[3] ?? 12), // Use scaleY as fallback height
+            fontName: item.fontName,
+          };
+          self.collectedTextItems.push(textItem);
+
+          // Build text output (same logic as default pdf-parse)
+          if (lastY === y || lastY === undefined) {
+            text += item.str;
+          } else {
+            text += '\n' + item.str;
+          }
+          lastY = y;
+        }
+
+        return text;
+      } catch (error) {
+        log.warn('Error extracting text from page', {
+          page: self.currentPageNumber,
+          error: (error as Error).message,
+        });
+        return '';
+      }
+    };
+  }
+
   override async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
     const dataBuffer = await fs.readFile(filePath);
 
-    try {
-      const data = await pdfParse(dataBuffer);
+    // Reset state for new conversion
+    this.collectedTextItems = [];
+    this.currentPageNumber = 0;
 
-      const metadata = {
+    try {
+      // Use custom page renderer to extract positioned text items (T041)
+      const data = await pdfParse(dataBuffer, {
+        pagerender: this.createPageRenderer(),
+      });
+
+      // Table detection using collected positioned text items (T041, T042)
+      let detectedTables: TableStructure[] = [];
+      let tableMarkdown = '';
+      let tableDetectionUsed = false;
+
+      // Check if this is a letter layout (sidebar + main content) - skip table detection
+      const isLetter = this.collectedTextItems.length > 0 && this.isLetterLayout(this.collectedTextItems);
+
+      if (this.collectedTextItems.length > 0 && !isLetter) {
+        log.debug('Attempting table detection', {
+          filename,
+          textItemCount: this.collectedTextItems.length,
+        });
+
+        const detectionResult = this.tableDetector.detectTables(this.collectedTextItems);
+
+        if (!detectionResult.fallbackUsed && detectionResult.tables.length > 0) {
+          tableDetectionUsed = true;
+          detectedTables = this.tableDetector.mergeTables(detectionResult.tables);
+
+          // Convert detected tables to Markdown
+          tableMarkdown = detectedTables
+            .map(table => this.tableConverter.convertTable(table))
+            .join('\n\n');
+
+          log.info('Tables detected and converted', {
+            filename,
+            tableCount: detectedTables.length,
+            method: detectionResult.method,
+            confidence: detectionResult.confidence,
+          });
+        } else {
+          log.debug('No tables detected, using text fallback', {
+            filename,
+            warnings: detectionResult.warnings,
+          });
+        }
+      } else if (isLetter) {
+        log.debug('Letter layout detected, skipping table detection', { filename });
+      } else {
+        log.debug('No positioned text items collected, using text fallback', {
+          filename,
+        });
+      }
+
+      const baseMetadata: DocumentMetadata = {
         filename: this.sanitizeFilename(filename),
         format: 'pdf',
         timestamp: new Date().toISOString(),
@@ -28,16 +170,24 @@ export class PdfToMarkdown extends MarkdownConverter {
         pdfInfo: data.info,
       };
 
+      // Enhance metadata with table detection info (T043, T044)
+      const metadata = this.addTableMetadata(baseMetadata, detectedTables, tableDetectionUsed);
       const frontmatter = this.generateFrontmatter(metadata);
 
-      // Extract text
-      let text = data.text;
-
-      // Fix broken word spacing (pdf-parse sometimes inserts spaces incorrectly)
-      text = this.fixBrokenSpacing(text);
-
-      // Fix merged words (common PDF encoding issue)
-      text = this.fixMergedWords(text);
+      // Extract text - use position-based reconstruction for letters
+      let text: string;
+      if (isLetter && this.collectedTextItems.length > 0) {
+        // For letters, reconstruct text from positioned items with proper spacing
+        text = this.reconstructTextFromItems();
+        log.debug('Using position-based text reconstruction for letter');
+      } else {
+        // Use default pdf-parse text with fixes
+        text = data.text;
+        // Fix broken word spacing (pdf-parse sometimes inserts spaces incorrectly)
+        text = this.fixBrokenSpacing(text);
+        // Fix merged words (common PDF encoding issue)
+        text = this.fixMergedWords(text);
+      }
 
       // Apply basic structure detection
       let markdown = this.detectStructure(text, data.numpages);
@@ -45,6 +195,11 @@ export class PdfToMarkdown extends MarkdownConverter {
       // Add title
       const title = data.info?.Title || filename.replace(/\.pdf$/i, '');
       markdown = this.normalizeHeading(title, 1) + markdown;
+
+      // Prepend table markdown if tables were detected
+      if (tableMarkdown) {
+        markdown = tableMarkdown + '\n\n' + markdown;
+      }
 
       return frontmatter + markdown;
 
@@ -112,23 +267,35 @@ export class PdfToMarkdown extends MarkdownConverter {
     // Too long to be a heading
     if (line.length > 100) return false;
 
-    // Check if ALL CAPS
-    const isAllCaps = line === line.toUpperCase() && /[A-Z]/.test(line);
+    // Too short to be a heading (likely just a name or label)
+    if (line.length < 10) return false;
 
-    // Check if Title Case
-    const words = line.split(/\s+/);
-    const isTitleCase = words.length > 0 && words.every(word =>
-      word.length === 0 ||
-      (word[0] && word[0] === word[0].toUpperCase()),
-    );
+    // Skip common non-heading patterns
+    // Email addresses
+    if (line.includes('@')) return false;
+    // Phone numbers
+    if (/\+?\d{2,}[\s.-]?\d{2,}/.test(line)) return false;
+    // Dates
+    if (/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/.test(line)) return false;
+    // Horizontal rules
+    if (/^[-=_*]{3,}$/.test(line)) return false;
+    // Postal codes / addresses
+    if (/^\d{4,5}\s+[A-Z]/.test(line)) return false;
+    // Name signatures (First Last pattern with 2-3 words)
+    if (/^[A-Z][a-zà-ÿ]+\s+[A-Z][a-zà-ÿ]+(\s+[A-Z][a-zà-ÿ]+)?$/.test(line)) return false;
+    // Contact labels
+    if (/^(Contact|Visiteurs|Tél|www\.)/.test(line)) return false;
 
-    // Check if followed by blank line
-    const followedByBlank = !nextLine || nextLine === '';
+    // Check if ALL CAPS (and has at least 2 words)
+    const isAllCaps = line === line.toUpperCase() && /[A-Z]/.test(line) && line.split(/\s+/).length >= 2;
 
     // Check if it's a numbered heading (e.g., "1. Introduction")
     const isNumberedHeading = /^\d+\.?\s+[A-Z]/.test(line);
 
-    return (isAllCaps || isTitleCase || isNumberedHeading) && followedByBlank;
+    // Check if followed by blank line
+    const followedByBlank = !nextLine || nextLine === '';
+
+    return (isAllCaps || isNumberedHeading) && followedByBlank;
   }
 
   private addPageMarkers(markdown: string, pageCount: number): string {
@@ -150,6 +317,25 @@ export class PdfToMarkdown extends MarkdownConverter {
     }
 
     return lines.join('\n');
+  }
+
+  /**
+   * Enhance metadata with table detection information (T043)
+   */
+  private addTableMetadata(
+    baseMetadata: DocumentMetadata,
+    detectedTables: TableStructure[],
+    tableDetectionUsed: boolean,
+  ): DocumentMetadata {
+    return {
+      ...baseMetadata,
+      tablesDetected: tableDetectionUsed,
+      tableCount: detectedTables.length,
+      detectionMethod: detectedTables.length > 0 ? detectedTables[0]?.method : 'none',
+      confidence: detectedTables.length > 0
+        ? detectedTables.reduce((sum, t) => sum + t.confidence, 0) / detectedTables.length
+        : 0,
+    };
   }
 
   /**
@@ -234,24 +420,6 @@ export class PdfToMarkdown extends MarkdownConverter {
     const inputSample = text.substring(0, 100);
     log.debug('fixMergedWords input:', { sample: inputSample });
 
-    // DISABLED: These patterns were incorrectly splitting compound words like "Conformément" → "Conform ément"
-    // The word boundary \b isn't sufficient to prevent matching inside compound words
-    // Instead, we'll rely on the lowercase-to-uppercase transition pattern below
-
-    // // Add space after common words (lowercase only - case-sensitive to avoid breaking compound words)
-    // for (const word of allWords) {
-    //   // Match word followed by a letter (not space/punctuation)
-    //   // Must be lowercase to avoid matching inside compound words like "Mesdames"
-    //   const regex = new RegExp(`\\b${word}([A-ZÀ-Ÿa-zà-ÿ])`, 'g');
-    //   text = text.replace(regex, `${word} $1`);
-    // }
-
-    // // Add space before common words when preceded by a letter (lowercase only)
-    // for (const word of allWords) {
-    //   const regex = new RegExp(`([A-ZÀ-Ÿa-zà-ÿ])\\b${word}\\b`, 'g');
-    //   text = text.replace(regex, `$1 ${word}`);
-    // }
-
     // Fix punctuation spacing
     // Add space after commas, periods, colons, semicolons if followed by letter
     text = text.replace(/([,.:;])([A-ZÀ-Ÿa-zà-ÿ])/g, '$1 $2');
@@ -280,6 +448,31 @@ export class PdfToMarkdown extends MarkdownConverter {
     text = text.replace(/\bn'([a-zà-ÿ])/gi, "n'$1"); // n'est → n'est
     text = text.replace(/\bc'([a-zà-ÿ])/gi, "c'$1"); // c'est → c'est
 
+    // Fix common merged compound words in French/German business documents
+    // Postal code + city (e.g., "8085Zurich" → "8085 Zurich")
+    text = text.replace(/(\d{4,5})([A-ZÀ-Ÿ][a-zà-ÿ]+)/g, '$1 $2');
+
+    // Street/place name + number (e.g., "Mongevon25" → "Mongevon 25")
+    text = text.replace(/([A-Za-zà-ÿ])(\d{1,4})(\s|$)/g, '$1 $2$3');
+
+    // Common merged labels (French)
+    text = text.replace(/\bNotreréférence\b/g, 'Notre référence');
+    text = text.replace(/\bCasepostale\b/g, 'Case postale');
+    text = text.replace(/\bAssurancesvie\b/g, 'Assurances vie');
+    text = text.replace(/\bCheminde\b/g, 'Chemin de');
+    text = text.replace(/\bFondationcollective\b/g, 'Fondation collective');
+    text = text.replace(/\bTél\.direct\b/g, 'Tél. direct');
+
+    // Format Swiss phone numbers (e.g., "+41216274137" → "+41 21 627 41 37")
+    text = text.replace(/\+41(\d{2})(\d{3})(\d{2})(\d{2})/g, '+41 $1 $2 $3 $4');
+
+    // Fix spaced punctuation in URLs/emails
+    text = text.replace(/www\.\s+/g, 'www.');
+    text = text.replace(/\.\s+ch\b/g, '.ch');
+    text = text.replace(/\.\s+com\b/g, '.com');
+    text = text.replace(/\s+@/g, '@');
+    text = text.replace(/@\s+/g, '@');
+
     // Remove multiple consecutive spaces
     text = text.replace(/  +/g, ' ');
 
@@ -287,6 +480,174 @@ export class PdfToMarkdown extends MarkdownConverter {
     log.debug('fixMergedWords output:', { sample: outputSample });
 
     return text;
+  }
+
+  /**
+   * Reconstruct text from positioned text items with proper spacing
+   * For letter layouts, separates sidebar from main content
+   * Uses X-coordinate gaps to determine word boundaries
+   */
+  private reconstructTextFromItems(): string {
+    if (this.collectedTextItems.length === 0) return '';
+
+    // Calculate layout boundaries
+    const xPositions = this.collectedTextItems.map(item => item.x);
+    const minX = Math.min(...xPositions);
+    const maxX = Math.max(...xPositions);
+    const pageWidth = maxX - minX;
+
+    // Determine sidebar threshold (items in left 25% are sidebar)
+    const sidebarThreshold = minX + pageWidth * 0.25;
+
+    // Separate sidebar and main content items
+    const sidebarItems = this.collectedTextItems.filter(item => item.x < sidebarThreshold);
+    const mainItems = this.collectedTextItems.filter(item => item.x >= sidebarThreshold);
+
+    log.debug('Letter content separation', {
+      sidebarThreshold,
+      sidebarItemCount: sidebarItems.length,
+      mainItemCount: mainItems.length,
+    });
+
+    // Process main content first (the actual letter body)
+    const mainContent = this.reconstructTextRegion(mainItems);
+
+    // Process sidebar (contact info, etc.) - will be appended at the end
+    let sidebarContent = this.reconstructTextRegion(sidebarItems);
+
+    // Apply merged word fixes to sidebar (which often has tighter kerning)
+    sidebarContent = this.fixMergedWords(sidebarContent);
+
+    // Combine: main content first, then sidebar as a separate section
+    let result = mainContent;
+    if (sidebarContent.trim()) {
+      result += '\n\n---\n\n**Contact:**\n' + sidebarContent;
+    }
+
+    return result;
+  }
+
+  /**
+   * Reconstruct text from a specific region of text items
+   */
+  private reconstructTextRegion(items: PdfTextItem[]): string {
+    if (items.length === 0) return '';
+
+    // Sort items by Y (descending - top to bottom) then X (ascending - left to right)
+    const sortedItems = [...items].sort((a, b) => {
+      const yDiff = b.y - a.y;
+      if (Math.abs(yDiff) > 5) return yDiff;
+      return a.x - b.x;
+    });
+
+    const lines: string[] = [];
+    let currentLine: PdfTextItem[] = [];
+    let currentY: number | null = null;
+
+    for (const item of sortedItems) {
+      if (currentY === null || Math.abs(item.y - currentY) > 5) {
+        // New line - process previous line
+        if (currentLine.length > 0) {
+          lines.push(this.processLineItems(currentLine));
+        }
+        currentLine = [item];
+        currentY = item.y;
+      } else {
+        currentLine.push(item);
+      }
+    }
+
+    // Process last line
+    if (currentLine.length > 0) {
+      lines.push(this.processLineItems(currentLine));
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Process a line of text items into a properly spaced string
+   */
+  private processLineItems(items: PdfTextItem[]): string {
+    if (items.length === 0) return '';
+    if (items.length === 1) return items[0]?.str ?? '';
+
+    // Sort by X position
+    items.sort((a, b) => a.x - b.x);
+
+    let result = '';
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+
+      if (i === 0) {
+        result = item.str;
+      } else {
+        const prevItem = items[i - 1];
+        if (!prevItem) {
+          result += item.str;
+          continue;
+        }
+
+        const gap = item.x - (prevItem.x + prevItem.width);
+
+        // Add space if there's a significant gap (> 3 pixels typically indicates word break)
+        // Smaller threshold for this PDF which has tight kerning
+        if (gap > 2) {
+          result += ' ' + item.str;
+        } else {
+          result += item.str;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Check if the PDF layout suggests a formal letter (sidebar + main content)
+   * Returns true if table detection should be skipped
+   */
+  private isLetterLayout(items: PdfTextItem[]): boolean {
+    if (items.length < 20) return false;
+
+    // Analyze X-position distribution
+    const xPositions = items.map(item => item.x);
+    const minX = Math.min(...xPositions);
+    const maxX = Math.max(...xPositions);
+    const pageWidth = maxX - minX;
+
+    if (pageWidth < 200) return false;
+
+    // Count items in left quarter (sidebar region)
+    const leftThreshold = minX + pageWidth * 0.25;
+    const leftItems = items.filter(item => item.x < leftThreshold).length;
+
+    // Letter layout typically has sidebar (10-30% of items) and main content (70-90%)
+    const leftRatio = leftItems / items.length;
+    const isLetterLikeLayout = leftRatio > 0.1 && leftRatio < 0.35;
+
+    // Check for typical letter structure markers
+    const hasDateMarker = items.some(item =>
+      /\b(Date|Datum|date)\b/i.test(item.str) ||
+      /\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/.test(item.str),
+    );
+    const hasReferenceMarker = items.some(item =>
+      /\b(référence|Referenz|reference|Réf|Ref)\b/i.test(item.str),
+    );
+    const hasSalutation = items.some(item =>
+      /\b(Mesdames|Messieurs|Madame|Monsieur|Sehr geehrte|Dear)\b/i.test(item.str),
+    );
+
+    log.debug('Letter layout detection', {
+      leftRatio: leftRatio.toFixed(2),
+      isLetterLikeLayout,
+      hasDateMarker,
+      hasReferenceMarker,
+      hasSalutation,
+    });
+
+    return isLetterLikeLayout && (hasDateMarker || hasReferenceMarker) && hasSalutation;
   }
 }
 
