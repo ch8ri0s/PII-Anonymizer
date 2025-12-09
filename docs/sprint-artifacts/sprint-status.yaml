@@ -1,0 +1,85 @@
+# generated: 2025-12-05
+# project: A5-PII-Anonymizer
+# project_key: a5-pii
+# tracking_system: file-system
+# story_location: docs/sprint-artifacts/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Next epic tech context created by *epic-tech-context (required)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder by *create-story
+#   - ready-for-dev: Draft approved and story context created by *story-ready
+#   - in-progress: Developer actively working on implementation by *dev-story
+#   - review: Implementation complete, ready for review by *code-review
+#   - done: Story completed by *story-done
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done by *retrospective
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', dev reviews, then Dev moves to 'done'
+#
+# SPRINT 0 PREREQUISITES:
+# =======================
+# Before starting Epic 1, complete these Sprint 0 tasks:
+# - [ ] Create golden test dataset (100+ annotated documents)
+# - [ ] Configure E2E framework (Playwright)
+# - [ ] Add performance baselines
+# - [ ] Update epics.md documentation
+
+generated: 2025-12-05
+project: A5-PII-Anonymizer
+project_key: a5-pii
+tracking_system: file-system
+story_location: docs/sprint-artifacts/stories
+
+development_status:
+  # Epic 1: Multi-Pass Detection Architecture (Foundation) - COMPLETED
+  epic-1: done
+  1-1-detection-pipeline-orchestrator: done
+  1-2-pass-1-high-recall-entity-detection: done
+  1-3-pass-2-format-validation: done
+  1-4-pass-3-context-scoring: done
+  1-5-pipeline-integration-tests: done
+  1-6-production-integration: done  # Integrated into fileProcessor.js
+  epic-1-retrospective: optional
+
+  # Epic 2: Address Relationship Modeling - COMPLETED
+  epic-2: done
+  2-1-address-component-classifier: done
+  2-2-proximity-based-component-linking: done
+  2-3-address-confidence-scoring: done
+  2-4-address-anonymization-strategy: done
+  epic-2-retrospective: optional
+
+  # Epic 3: Document-Type Detection
+  epic-3: backlog
+  3-1-document-type-classifier: done
+  3-2-invoice-specific-detection-rules: done
+  3-3-letter-specific-detection-rules: done
+  3-4-rule-engine-configuration: done
+  epic-3-retrospective: completed
+
+  # Epic 4: User Review Workflow
+  epic-4: backlog
+  4-1-entity-sidebar-panel: done
+  4-2-entity-type-filtering: done
+  4-3-selective-anonymization: done
+  4-4-manual-pii-marking: done
+  epic-4-retrospective: completed
+
+  # Epic 5: Confidence Scoring & Feedback
+  epic-5: backlog
+  5-1-confidence-score-display: backlog
+  5-2-user-correction-logging: backlog
+  5-3-accuracy-dashboard: backlog
+  epic-5-retrospective: optional
