@@ -86,10 +86,48 @@ Story 4.3 underwent UI simplification mid-implementation. The original checkbox-
 | # | Action | Owner | Priority | Status |
 |---|--------|-------|----------|--------|
 | 1 | Add codebase exploration step before story creation | SM | High | Open |
-| 2 | Create E2E test for file download pipeline | QA | High | Open |
+| 2 | Create E2E test for file download pipeline | QA | High | **DONE** |
 | 3 | Audit `EntityReviewUI.ts` for deprecation vs migration | Architect | Medium | Open |
 | 4 | Document IPC data flow for entity review system | Developer | Medium | Open |
-| 5 | Check existing confidence display code before Epic 5 | Developer | High | Open |
+| 5 | Check existing confidence display code before Epic 5 | Developer | High | **DONE** |
+
+### Action Item #2 Resolution (2025-12-11)
+
+Created comprehensive E2E test suite: `test/integration/downloadPipeline.test.js`
+- 21 tests covering the complete file download pipeline
+- Tests verify the IPC bug fix from Story 4.3 (originalMarkdown passthrough)
+- Coverage includes: all approved, some rejected, all rejected scenarios
+- Edge cases: regex characters, overlapping entities, manual PII, edited replacements
+- Mapping file structure validation
+
+### Action Item #5 Resolution (2025-12-11)
+
+**Codebase Exploration Results for Epic 5:**
+
+**Confidence Display - What Already Exists:**
+- `ReviewableEntity.confidence: number` in `src/types/entityReview.ts:33-34`
+- `EntityFilterOptions.minConfidence: number` in `src/types/entityReview.ts:65-66`
+- CSS classes `.entity-confidence-high/medium/low` in `src/input.css:436-450`
+- Confidence filter slider in `renderer.js:935-949`
+- Low-confidence flagging (< 0.7) in `renderer.js:719`
+
+**What's Missing for Story 5.1:**
+- Confidence badge rendering in `renderEntityItem()` - just needs ~10 lines
+- `getConfidenceClass()` helper function
+- Average confidence in statistics panel
+
+**User Correction Logging - What Already Exists:**
+- `EntityAction` type with timestamp in `src/types/entityReview.ts:145-159`
+- `actionHistory` array in EntityReviewUI session state
+- Callbacks: `onEntityAction()`, `onReviewComplete()`
+
+**What's Missing for Stories 5.2/5.3:**
+- `feedbackLogger.ts` service (file-based persistence)
+- `accuracyAnalyzer.ts` service (statistics aggregation)
+- Dashboard UI component
+- IPC handlers for logging
+
+**Conclusion:** Epic 5 Story 5.1 is largely a verification task (~1 day work). Stories 5.2 and 5.3 require new implementation (~3-4 days each).
 
 ---
 
