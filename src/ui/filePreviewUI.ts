@@ -5,8 +5,8 @@
  * Integrates with the existing renderer.js
  */
 
-import type { FileMetadata, FileMetadataError } from '../types/fileMetadata.js';
-import type { FilePreview, FilePreviewError } from '../types/filePreview.js';
+import type { FileMetadata } from '../types/fileMetadata.js';
+import type { FilePreview } from '../types/filePreview.js';
 import type { BatchQueueItem } from '../types/batchQueue.js';
 
 /**
@@ -109,7 +109,7 @@ export class FilePreviewUI {
     if (this.metadataPanel && this.metadataPanel.parentNode) {
       this.metadataPanel.parentNode.insertBefore(
         panel,
-        this.metadataPanel.nextSibling
+        this.metadataPanel.nextSibling,
       );
     }
   }
@@ -144,7 +144,7 @@ export class FilePreviewUI {
     if (this.previewPanel && this.previewPanel.parentNode) {
       this.previewPanel.parentNode.insertBefore(
         panel,
-        this.previewPanel.nextSibling
+        this.previewPanel.nextSibling,
       );
     }
   }
@@ -165,11 +165,17 @@ export class FilePreviewUI {
   displayMetadata(metadata: FileMetadata): void {
     if (!this.metadataPanel) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('meta-filename')!.textContent = metadata.filename;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('meta-filesize')!.textContent = metadata.fileSizeFormatted;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('meta-modified')!.textContent = metadata.lastModifiedFormatted;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('meta-lines')!.textContent = metadata.lineCount.toString();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('meta-words')!.textContent = metadata.wordCount.toString();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('meta-chars')!.textContent = metadata.charCount.toString();
 
     this.metadataPanel.classList.remove('hidden');
@@ -300,7 +306,7 @@ export class FilePreviewUI {
     // Trigger metadata/preview load for this item
     const item = this.selectedFiles.get(itemId);
     if (item) {
-      this.loadFileInfo(item.filePath);
+      void this.loadFileInfo(item.filePath);
     }
   }
 
@@ -331,6 +337,7 @@ export class FilePreviewUI {
       }
 
       this.displayPreview(preview);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       this.displayError(error.message || 'Failed to load file information');
     }

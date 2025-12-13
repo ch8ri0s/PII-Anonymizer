@@ -94,8 +94,9 @@ describe('AccuracyStats', () => {
     it('should handle empty entries gracefully', () => {
       const emptyEntries = [];
       const total = emptyEntries.length;
-      const fpRate = total > 0 ? 0 : 0;
-      const fnEstimate = total > 0 ? 0 : 0;
+      // When total is 0, rates should be 0
+      const fpRate = total > 0 ? 1 : 0; // Would be 1 if had entries, 0 otherwise
+      const fnEstimate = total > 0 ? 1 : 0; // Would be 1 if had entries, 0 otherwise
       expect(fpRate).to.equal(0);
       expect(fnEstimate).to.equal(0);
     });
@@ -302,7 +303,7 @@ describe('AccuracyStats', () => {
 
     it('should escape special characters in CSV', () => {
       // CSV should escape commas and quotes
-      const entityType = 'PERSON';
+      const _entityType = 'PERSON'; // Prefixed with _ as unused but shows context
       const value = 'John, Doe';
       const escaped = value.includes(',') ? `"${value}"` : value;
       expect(escaped).to.equal('"John, Doe"');
@@ -326,7 +327,7 @@ describe('AccuracyStats', () => {
       const startDate = new Date('2025-01-10');
       const endDate = new Date('2025-01-20');
       const filtered = mockEntries.filter(
-        e => new Date(e.timestamp) >= startDate && new Date(e.timestamp) <= endDate
+        e => new Date(e.timestamp) >= startDate && new Date(e.timestamp) <= endDate,
       );
       expect(filtered).to.have.length(3);
     });

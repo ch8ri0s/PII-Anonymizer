@@ -11,6 +11,7 @@ export interface MarkdownConverterOptions {
   includeFrontmatter?: boolean;
   includeMetadata?: boolean;
   modelName?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -22,6 +23,7 @@ export interface DocumentMetadata {
   sheetCount?: number;
   rowCount?: number;
   conversionWarnings?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -37,7 +39,7 @@ export class MarkdownConverter {
       includeFrontmatter: options.includeFrontmatter !== false,
       includeMetadata: options.includeMetadata !== false,
       modelName: options.modelName || 'betterdataai/PII_DETECTION_MODEL',
-      ...options
+      ...options,
     };
   }
 
@@ -52,7 +54,7 @@ export class MarkdownConverter {
       `source: ${metadata.filename}`,
       `sourceFormat: ${metadata.format}`,
       `processed: ${metadata.timestamp}`,
-      `anonymised: true`,
+      'anonymised: true',
       `piiModel: ${this.options.modelName}`,
     ];
 
@@ -70,6 +72,20 @@ export class MarkdownConverter {
       yaml.push(`conversionWarnings: ${metadata.conversionWarnings}`);
     }
 
+    // Table detection metadata (T044)
+    if ('tablesDetected' in metadata) {
+      yaml.push(`tablesDetected: ${metadata.tablesDetected}`);
+    }
+    if ('tableCount' in metadata) {
+      yaml.push(`tableCount: ${metadata.tableCount}`);
+    }
+    if ('detectionMethod' in metadata) {
+      yaml.push(`detectionMethod: ${metadata.detectionMethod}`);
+    }
+    if ('confidence' in metadata && typeof metadata.confidence === 'number') {
+      yaml.push(`confidence: ${metadata.confidence.toFixed(2)}`);
+    }
+
     yaml.push('---', '');
 
     return yaml.join('\n');
@@ -80,7 +96,7 @@ export class MarkdownConverter {
    */
   async validateMarkdown(markdown: string): Promise<{ valid: boolean; error?: string }> {
     try {
-      marked.parse(markdown);
+      await marked.parse(markdown);
       return { valid: true };
     } catch (error) {
       return { valid: false, error: (error as Error).message };
@@ -124,6 +140,7 @@ export class MarkdownConverter {
   /**
    * Escape pipe characters and newlines in table cells
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   escapeTableCell(text: any): string {
     if (text === null || text === undefined) {
       return '';
@@ -245,7 +262,7 @@ export class MarkdownConverter {
   /**
    * Must be implemented by subclasses
    */
-  async convert(filePath: string): Promise<string> {
+  async convert(_filePath: string): Promise<string> {
     throw new Error('convert() must be implemented by subclass');
   }
 }

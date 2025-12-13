@@ -219,39 +219,39 @@ function renderSummary(summary) {
   summaryPanel.innerHTML = `
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
       ${renderStatCard(
-        t('accuracy.summary.documentsProcessed', 'Documents Processed'),
-        summary.documentsProcessed.toString(),
-        'document'
-      )}
+    t('accuracy.summary.documentsProcessed', 'Documents Processed'),
+    summary.documentsProcessed.toString(),
+    'document',
+  )}
       ${renderStatCard(
-        t('accuracy.summary.totalCorrections', 'Total Corrections'),
-        summary.totalCorrections.toString(),
-        'edit'
-      )}
+    t('accuracy.summary.totalCorrections', 'Total Corrections'),
+    summary.totalCorrections.toString(),
+    'edit',
+  )}
       ${renderStatCard(
-        t('accuracy.summary.falsePositives', 'False Positives'),
-        summary.dismissals.toString(),
-        'dismiss',
-        'text-red-600'
-      )}
+    t('accuracy.summary.falsePositives', 'False Positives'),
+    summary.dismissals.toString(),
+    'dismiss',
+    'text-red-600',
+  )}
       ${renderStatCard(
-        t('accuracy.summary.falseNegatives', 'False Negatives'),
-        summary.manualAdditions.toString(),
-        'add',
-        'text-green-600'
-      )}
+    t('accuracy.summary.falseNegatives', 'False Negatives'),
+    summary.manualAdditions.toString(),
+    'add',
+    'text-green-600',
+  )}
       ${renderStatCard(
-        t('accuracy.summary.fpRate', 'FP Rate'),
-        `${(summary.falsePositiveRate * 100).toFixed(1)}%`,
-        'percent',
-        summary.falsePositiveRate > 0.2 ? 'text-red-600' : 'text-gray-700'
-      )}
+    t('accuracy.summary.fpRate', 'FP Rate'),
+    `${(summary.falsePositiveRate * 100).toFixed(1)}%`,
+    'percent',
+    summary.falsePositiveRate > 0.2 ? 'text-red-600' : 'text-gray-700',
+  )}
       ${renderStatCard(
-        t('accuracy.summary.fnRate', 'FN Rate'),
-        `${(summary.falseNegativeEstimate * 100).toFixed(1)}%`,
-        'percent',
-        summary.falseNegativeEstimate > 0.2 ? 'text-amber-600' : 'text-gray-700'
-      )}
+    t('accuracy.summary.fnRate', 'FN Rate'),
+    `${(summary.falseNegativeEstimate * 100).toFixed(1)}%`,
+    'percent',
+    summary.falseNegativeEstimate > 0.2 ? 'text-amber-600' : 'text-gray-700',
+  )}
     </div>
   `;
 }
@@ -562,7 +562,7 @@ function showNotification(message, type) {
   const toast = document.createElement('div');
   toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white z-50 transition-opacity duration-300 ${
     type === 'success' ? 'bg-green-600' :
-    type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+      type === 'error' ? 'bg-red-600' : 'bg-blue-600'
   }`;
   toast.textContent = message;
 
@@ -575,9 +575,8 @@ function showNotification(message, type) {
   }, 3000);
 }
 
-// Export functions for use in renderer.js
-export {
-  openAccuracyDashboard,
-  closeAccuracyDashboard,
-  isAccuracyDashboardOpen,
-};
+// All functions are exported inline above:
+// - initAccuracyDashboard
+// - isAccuracyDashboardOpen
+// - closeAccuracyDashboard
+// - openAccuracyDashboard
