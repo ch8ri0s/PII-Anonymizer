@@ -318,9 +318,9 @@ function renderBreakdownTable(byEntityType) {
         ${sorted.map(row => `
           <tr class="border-b border-gray-100 hover:bg-gray-50">
             <td class="py-2 px-3 font-medium">${escapeHtml(formatEntityType(row.entityType))}</td>
-            <td class="py-2 px-3 text-right text-red-600">${row.dismissals}</td>
-            <td class="py-2 px-3 text-right text-green-600">${row.additions}</td>
-            <td class="py-2 px-3 text-right font-medium">${row.total}</td>
+            <td class="py-2 px-3 text-right text-red-600">${Number(row.dismissals) || 0}</td>
+            <td class="py-2 px-3 text-right text-green-600">${Number(row.additions) || 0}</td>
+            <td class="py-2 px-3 text-right font-medium">${Number(row.total) || 0}</td>
           </tr>
         `).join('')}
       </tbody>

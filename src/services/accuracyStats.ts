@@ -22,6 +22,75 @@ import type {
 
 const log = createLogger('accuracy-stats');
 
+// Resource limits to prevent memory exhaustion
+const MAX_LOG_FILES = 60; // ~5 years of monthly logs
+const MAX_ENTRIES_PER_FILE = 10000;
+const MAX_TOTAL_ENTRIES = 100000;
+
+/**
+ * Escape CSV cell value to prevent formula injection (CSV injection attack)
+ * Prevents: =cmd|' /C calc'!A1, @SUM(), +cmd, -cmd, etc.
+ */
+function escapeCsvCell(value: string | number): string {
+  const strValue = String(value);
+
+  // Prevent formula injection: escape leading =, +, -, @, tab, carriage return
+  if (/^[=+\-@\t\r]/.test(strValue)) {
+    return `"'${strValue.replace(/"/g, '""')}"`;
+  }
+
+  // Escape commas, quotes, newlines
+  if (/[,"\n]/.test(strValue)) {
+    return `"${strValue.replace(/"/g, '""')}"`;
+  }
+
+  return strValue;
+}
+
+/**
+ * Safely parse JSON log file with prototype pollution protection
+ */
+function safeParseLogFile(content: string): CorrectionLogFile | null {
+  try {
+    const parsed = JSON.parse(content) as unknown;
+
+    // Reject objects with dangerous prototype keys
+    if (parsed && typeof parsed === 'object') {
+      const obj = parsed as Record<string, unknown>;
+      if ('__proto__' in obj || 'constructor' in obj || 'prototype' in obj) {
+        log.warn('Rejected log file with dangerous prototype keys');
+        return null;
+      }
+    }
+
+    // Validate structure
+    const logFile = parsed as CorrectionLogFile;
+    if (!logFile.entries || !Array.isArray(logFile.entries)) {
+      return null;
+    }
+
+    return logFile;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validate ISO 8601 date string
+ */
+function parseIsoDate(dateStr: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/.test(dateStr)) {
+    return null;
+  }
+
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
 /**
  * Get ISO week number from date
  */
@@ -62,31 +131,79 @@ export class AccuracyStats {
 
   /**
    * Load all correction log files from the userData directory
+   * Uses async I/O to avoid blocking the event loop
+   * Applies resource limits to prevent memory exhaustion
    */
   async loadAllCorrectionLogs(): Promise<CorrectionEntry[]> {
     const entries: CorrectionEntry[] = [];
+    let totalEntries = 0;
+    let limitReached = false;
 
     try {
-      const files = fs.readdirSync(this.logDir);
-      const logFiles = files.filter((f) => f.match(/^corrections-\d{4}-\d{2}\.json$/));
+      // Use async readdir to avoid blocking
+      const files = await fs.promises.readdir(this.logDir);
+      let logFiles = files.filter((f) => f.match(/^corrections-\d{4}-\d{2}\.json$/));
+
+      // Apply file limit (most recent files first)
+      logFiles.sort().reverse();
+      if (logFiles.length > MAX_LOG_FILES) {
+        log.warn('Log file limit reached, processing most recent only', {
+          total: logFiles.length,
+          limit: MAX_LOG_FILES,
+        });
+        logFiles = logFiles.slice(0, MAX_LOG_FILES);
+      }
 
       log.debug('Found correction log files', { count: logFiles.length });
 
       for (const filename of logFiles) {
+        // Check if we've hit the total entry limit
+        if (totalEntries >= MAX_TOTAL_ENTRIES) {
+          limitReached = true;
+          log.warn('Total entry limit reached, stopping log loading', {
+            limit: MAX_TOTAL_ENTRIES,
+          });
+          break;
+        }
+
         try {
           const filePath = path.join(this.logDir, filename);
-          const content = fs.readFileSync(filePath, 'utf-8');
-          const logFile = JSON.parse(content) as CorrectionLogFile;
+          // Use async readFile to avoid blocking
+          const content = await fs.promises.readFile(filePath, 'utf-8');
 
-          if (logFile.entries && Array.isArray(logFile.entries)) {
-            entries.push(...logFile.entries);
+          // Use safe JSON parsing with prototype pollution protection
+          const logFile = safeParseLogFile(content);
+          if (!logFile) {
+            log.warn('Failed to parse or validate log file', { filename });
+            continue;
           }
+
+          // Apply per-file entry limit
+          let fileEntries = logFile.entries;
+          if (fileEntries.length > MAX_ENTRIES_PER_FILE) {
+            log.warn('Per-file entry limit exceeded, truncating', {
+              filename,
+              actual: fileEntries.length,
+              limit: MAX_ENTRIES_PER_FILE,
+            });
+            fileEntries = fileEntries.slice(0, MAX_ENTRIES_PER_FILE);
+          }
+
+          // Calculate remaining capacity
+          const remainingCapacity = MAX_TOTAL_ENTRIES - totalEntries;
+          const entriesToAdd = fileEntries.slice(0, remainingCapacity);
+
+          entries.push(...entriesToAdd);
+          totalEntries += entriesToAdd.length;
         } catch (err) {
-          log.warn('Failed to parse log file', { filename, error: (err as Error).message });
+          log.warn('Failed to read log file', { filename, error: (err as Error).message });
         }
       }
 
-      log.info('Loaded correction entries', { total: entries.length });
+      log.info('Loaded correction entries', {
+        total: entries.length,
+        limitReached,
+      });
     } catch (err) {
       log.error('Failed to read log directory', { error: (err as Error).message });
     }
@@ -231,14 +348,22 @@ export class AccuracyStats {
   async calculateStatistics(options?: GetStatsOptions): Promise<AccuracyStatistics> {
     let entries = await this.loadAllCorrectionLogs();
 
-    // Apply date filters if provided
+    // Apply date filters if provided (with validation)
     if (options?.startDate) {
-      const start = new Date(options.startDate);
-      entries = entries.filter((e) => new Date(e.timestamp) >= start);
+      const start = parseIsoDate(options.startDate);
+      if (!start) {
+        log.warn('Invalid startDate format, ignoring filter', { startDate: options.startDate });
+      } else {
+        entries = entries.filter((e) => new Date(e.timestamp) >= start);
+      }
     }
     if (options?.endDate) {
-      const end = new Date(options.endDate);
-      entries = entries.filter((e) => new Date(e.timestamp) <= end);
+      const end = parseIsoDate(options.endDate);
+      if (!end) {
+        log.warn('Invalid endDate format, ignoring filter', { endDate: options.endDate });
+      } else {
+        entries = entries.filter((e) => new Date(e.timestamp) <= end);
+      }
     }
 
     // Calculate period bounds
@@ -288,11 +413,11 @@ export class AccuracyStats {
     lines.push(`False Negative Estimate,${(stats.summary.falseNegativeEstimate * 100).toFixed(2)}%`);
     lines.push('');
 
-    // Entity type breakdown
+    // Entity type breakdown (with CSV injection protection)
     lines.push('## Entity Type Breakdown');
     lines.push('EntityType,Dismissals,Additions,Total');
     for (const typeStats of stats.byEntityType) {
-      lines.push(`${typeStats.entityType},${typeStats.dismissals},${typeStats.additions},${typeStats.total}`);
+      lines.push(`${escapeCsvCell(typeStats.entityType)},${typeStats.dismissals},${typeStats.additions},${typeStats.total}`);
     }
     lines.push('');
 
