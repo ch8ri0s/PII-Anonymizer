@@ -87,6 +87,56 @@
     "piiCount": {
       "detected": "PII entities detected",
       "sanitized": "sanitized"
+    },
+    "modelDownload": {
+      "title": "Downloading AI Model",
+      "subtitle": "One-time download for PII detection (~129 MB)",
+      "initializing": "Initializing...",
+      "downloading": "Downloading",
+      "complete": "Download complete!",
+      "retry": "Retry",
+      "errors": {
+        "network": "Connection failed. Please check your internet connection and try again.",
+        "diskSpace": "Not enough disk space. Please free up at least 150 MB and try again.",
+        "generic": "Download failed. Please try again.",
+        "verification": "Download verification failed. Retrying..."
+      }
+    },
+    "accuracy": {
+      "title": "Accuracy Dashboard",
+      "subtitle": "Detection quality metrics over time",
+      "noData": "No correction data available yet",
+      "noDataHint": "Process documents and make corrections to see accuracy metrics",
+      "summary": {
+        "title": "Summary",
+        "documentsProcessed": "Documents Processed",
+        "totalCorrections": "Total Corrections",
+        "falsePositives": "False Positives",
+        "falseNegatives": "False Negatives",
+        "fpRate": "FP Rate",
+        "fnRate": "FN Rate"
+      },
+      "entityBreakdown": {
+        "title": "Entity Type Breakdown",
+        "entityType": "Entity Type",
+        "dismissals": "Dismissals",
+        "additions": "Additions",
+        "total": "Total"
+      },
+      "trends": {
+        "title": "Correction Trends",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "noTrendData": "Not enough data for trend analysis"
+      },
+      "export": {
+        "button": "Export Report",
+        "success": "Report exported successfully",
+        "cancelled": "Export cancelled",
+        "error": "Export failed"
+      },
+      "refresh": "Refresh",
+      "period": "Period"
     }
   }
 }

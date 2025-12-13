@@ -87,6 +87,56 @@
     "piiCount": {
       "detected": "entités PII détectées",
       "sanitized": "anonymisées"
+    },
+    "modelDownload": {
+      "title": "Téléchargement du modèle IA",
+      "subtitle": "Téléchargement unique pour la détection PII (~129 Mo)",
+      "initializing": "Initialisation...",
+      "downloading": "Téléchargement",
+      "complete": "Téléchargement terminé !",
+      "retry": "Réessayer",
+      "errors": {
+        "network": "Échec de la connexion. Veuillez vérifier votre connexion internet et réessayer.",
+        "diskSpace": "Espace disque insuffisant. Veuillez libérer au moins 150 Mo et réessayer.",
+        "generic": "Échec du téléchargement. Veuillez réessayer.",
+        "verification": "Échec de la vérification du téléchargement. Nouvelle tentative..."
+      }
+    },
+    "accuracy": {
+      "title": "Tableau de bord de précision",
+      "subtitle": "Métriques de qualité de détection au fil du temps",
+      "noData": "Aucune donnée de correction disponible",
+      "noDataHint": "Traitez des documents et effectuez des corrections pour voir les métriques de précision",
+      "summary": {
+        "title": "Résumé",
+        "documentsProcessed": "Documents traités",
+        "totalCorrections": "Corrections totales",
+        "falsePositives": "Faux positifs",
+        "falseNegatives": "Faux négatifs",
+        "fpRate": "Taux FP",
+        "fnRate": "Taux FN"
+      },
+      "entityBreakdown": {
+        "title": "Répartition par type d'entité",
+        "entityType": "Type d'entité",
+        "dismissals": "Rejets",
+        "additions": "Ajouts",
+        "total": "Total"
+      },
+      "trends": {
+        "title": "Tendances des corrections",
+        "weekly": "Hebdomadaire",
+        "monthly": "Mensuel",
+        "noTrendData": "Pas assez de données pour l'analyse des tendances"
+      },
+      "export": {
+        "button": "Exporter le rapport",
+        "success": "Rapport exporté avec succès",
+        "cancelled": "Exportation annulée",
+        "error": "Échec de l'exportation"
+      },
+      "refresh": "Actualiser",
+      "period": "Période"
     }
   }
 }

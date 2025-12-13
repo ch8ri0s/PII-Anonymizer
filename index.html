@@ -3,258 +3,536 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Softcom PII Anonymiser</title>
+  <title>PII Sanitizer</title>
   <link rel="stylesheet" href="output.css" />
-  <link rel="stylesheet" href="ui-components.css" />
-  <link rel="stylesheet" href="all.min.css" />
 </head>
-<body>
-  <div class="app-container">
-    <div class="max-w-7xl">
-      <!-- Header (always visible) -->
-      <div class="app-header">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div style="flex: 1;">
-            <h1 class="app-title">
-              <img src="logo.png" alt="Softcom" class="company-logo" />
-              PII Anonymiser
-            </h1>
-            <p class="app-subtitle">
-              Upload documents to automatically detect and sanitize personally identifiable information
-            </p>
-          </div>
-          <!-- Language Selector Dropdown -->
-          <div id="language-selector" class="dropdown" style="position: relative; margin-top: 0.5rem;">
-            <button id="language-dropdown-trigger" class="dropdown-trigger" type="button">
-              <span id="current-language-flag" style="font-size: 1.25rem;">🇬🇧</span>
-              <span id="current-language-name" style="margin-left: 0.5rem;">English</span>
-              <svg style="margin-left: 0.5rem; width: 1rem; height: 1rem; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div id="language-dropdown-content" class="dropdown-content" style="display: none;">
-              <button class="dropdown-item" data-lang="en" data-flag="🇬🇧" data-name="English">
-                <span style="font-size: 1.25rem;">🇬🇧</span>
-                <span style="margin-left: 0.75rem;">English</span>
-              </button>
-              <button class="dropdown-item" data-lang="fr" data-flag="🇫🇷" data-name="Français">
-                <span style="font-size: 1.25rem;">🇫🇷</span>
-                <span style="margin-left: 0.75rem;">Français</span>
-              </button>
-              <button class="dropdown-item" data-lang="de" data-flag="🇩🇪" data-name="Deutsch">
-                <span style="font-size: 1.25rem;">🇩🇪</span>
-                <span style="margin-left: 0.75rem;">Deutsch</span>
-              </button>
-            </div>
-          </div>
+<body class="bg-gray-50 min-h-screen">
+  <!-- Accuracy Dashboard Modal (Epic 5, Story 5.3) -->
+  <div id="accuracy-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="accuracy-title">
+    <div class="modal-content max-w-4xl">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 id="accuracy-title" class="text-xl font-semibold text-gray-900" data-i18n="accuracy.title">Accuracy Dashboard</h2>
+          <p class="text-sm text-gray-600 mt-1" data-i18n="accuracy.subtitle">Detection quality metrics over time</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="accuracy-refresh-btn" class="btn-ghost btn-sm" aria-label="Refresh statistics">
+            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+            <span data-i18n="accuracy.refresh">Refresh</span>
+          </button>
+          <button id="accuracy-export-btn" class="btn-primary btn-sm" aria-label="Export report">
+            <i class="fas fa-download" aria-hidden="true"></i>
+            <span data-i18n="accuracy.export.button">Export Report</span>
+          </button>
+          <button id="accuracy-close-btn" class="btn-ghost btn-sm" aria-label="Close">
+            <i class="fas fa-times" aria-hidden="true"></i>
+          </button>
         </div>
       </div>
 
-      <!-- Upload Zone (shown before file selection) -->
-      <div id="upload-zone" class="upload-card">
-        <div class="upload-icon-wrapper">
-          <div class="upload-icon-bg">
-            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-          </div>
-        </div>
-
-        <h2 class="upload-heading">Drop your file here</h2>
-        <p class="upload-text">or click to browse from your computer</p>
-
-        <label class="browse-button">
-          <input
-            type="file"
-            id="file-input"
-            accept=".doc,.docx,.xls,.xlsx,.csv,.pdf,.txt"
-            multiple
-          />
-          <span>Browse Files</span>
-        </label>
-
-        <div class="supported-formats">
-          <p>Supported formats:</p>
-          <div class="format-badges">
-            <div class="format-badge">
-              <i class="fas fa-file-pdf" style="color: var(--red-500);"></i>
-              <span class="format-badge-text">PDF</span>
-            </div>
-            <div class="format-badge">
-              <i class="fas fa-file-word" style="color: var(--blue-500);"></i>
-              <span class="format-badge-text">Word</span>
-            </div>
-            <div class="format-badge">
-              <i class="fas fa-file-excel" style="color: var(--green-600);"></i>
-              <span class="format-badge-text">Excel</span>
-            </div>
-            <div class="format-badge">
-              <i class="fas fa-file-csv" style="color: var(--purple-700);"></i>
-              <span class="format-badge-text">CSV</span>
-            </div>
-          </div>
-        </div>
+      <!-- Empty State -->
+      <div id="accuracy-empty-state" class="hidden py-12 text-center">
+        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <p class="text-gray-600 font-medium" data-i18n="accuracy.noData">No correction data available yet</p>
+        <p class="text-sm text-gray-500 mt-1" data-i18n="accuracy.noDataHint">Process documents and make corrections to see accuracy metrics</p>
       </div>
 
-      <!-- Processing View (shown after file selection) -->
-      <div id="processing-view" class="hidden">
-        <div class="grid grid-cols-3 gap-6">
-          <!-- Left Column: Metadata + Preview -->
-          <div class="col-span-1 space-y-6">
-            <!-- File Metadata Panel -->
-            <div class="card">
-              <div class="card-header">
-                <div class="flex items-center justify-between">
-                  <h3 class="card-title">File Details</h3>
-                  <button class="btn btn-ghost btn-sm reset-btn" id="reset-btn" title="Reset">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
-            <div class="card-content">
-              <div>
-                <div class="metadata-row">
-                  <i class="fas fa-file-alt metadata-icon"></i>
-                  <div class="metadata-content">
-                    <p class="metadata-label">File Name</p>
-                    <p class="metadata-value" id="meta-filename">-</p>
-                  </div>
-                </div>
-
-                <hr class="separator" />
-
-                <div class="metadata-row">
-                  <i class="fas fa-file metadata-icon"></i>
-                  <div class="metadata-content">
-                    <p class="metadata-label">Type</p>
-                    <span class="badge badge-slate" id="meta-type-badge">-</span>
-                  </div>
-                </div>
-
-                <hr class="separator" />
-
-                <div class="metadata-row">
-                  <i class="fas fa-hdd metadata-icon"></i>
-                  <div class="metadata-content">
-                    <p class="metadata-label">Size</p>
-                    <p class="metadata-value" id="meta-size">-</p>
-                  </div>
-                </div>
-
-                <hr class="separator" />
-
-                <div class="metadata-row">
-                  <i class="fas fa-calendar metadata-icon"></i>
-                  <div class="metadata-content">
-                    <p class="metadata-label">Last Modified</p>
-                    <p class="metadata-value" id="meta-modified">-</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </div>
-
-            <!-- File Preview Panel -->
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">Preview</h3>
-              </div>
-              <div class="card-content">
-                <div class="scroll-area h-64">
-                  <pre id="preview-content">Select a file to preview...</pre>
-                </div>
-              </div>
-            </div>
+      <!-- Dashboard Content -->
+      <div id="accuracy-content" class="space-y-6">
+        <!-- Summary Cards Row -->
+        <div class="grid grid-cols-3 gap-4">
+          <!-- Documents Processed -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600" data-i18n="accuracy.summary.documentsProcessed">Documents Processed</p>
+            <p class="text-2xl font-bold text-gray-900" id="stat-documents">0</p>
           </div>
-
-          <!-- Right Column: Processing Output -->
-          <div class="col-span-2">
-          <div class="card h-full">
-            <div class="card-header">
-              <div class="card-header-split">
-                <div>
-                  <h3 class="card-title">Sanitization Results</h3>
-                  <p class="card-subtitle" id="pii-count-text">Click "Process File" to begin</p>
-                </div>
-                <div class="button-group" id="download-buttons" style="display: none;">
-                  <button class="btn btn-primary btn-sm" id="download-markdown">
-                    <i class="fas fa-download"></i>
-                    Markdown
-                  </button>
-                  <button class="btn btn-outline btn-sm" id="download-mapping">
-                    <i class="fas fa-download"></i>
-                    Mapping
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="card-content">
-              <!-- Initial State -->
-              <div id="initial-state" class="text-center" style="padding: 3rem 0;">
-                <svg style="width: 4rem; height: 4rem; color: var(--slate-300); margin: 0 auto var(--spacing-4);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p style="color: var(--slate-600); margin-bottom: var(--spacing-4);">Ready to process your file</p>
-                <button class="btn btn-primary" id="process-button" disabled>
-                  <i class="fas fa-file-export"></i>
-                  Process File
-                </button>
-              </div>
-
-              <!-- Loading State -->
-              <div id="processing-spinner" class="loader-container hidden">
-                <i class="fas fa-spinner fa-spin spinner"></i>
-                <p class="loader-text">Processing and sanitizing PII...</p>
-              </div>
-
-              <!-- Success State -->
-              <div id="processing-result" class="hidden">
-                <div class="alert alert-success">
-                  <i class="fas fa-check-circle"></i>
-                  <p>File successfully processed and sanitized. Ready to download.</p>
-                </div>
-
-                <div class="tabs">
-                  <div class="tab-list">
-                    <button class="tab active" data-tab="markdown">Sanitized Markdown</button>
-                    <button class="tab" data-tab="mapping">Change Mapping</button>
-                  </div>
-
-                  <div class="tab-content active" id="tab-markdown">
-                    <div class="scroll-area h-96">
-                      <pre id="sanitized-markdown"></pre>
-                    </div>
-                  </div>
-
-                  <div class="tab-content" id="tab-mapping">
-                    <div class="scroll-area h-96">
-                      <div id="change-list" class="change-list"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- False Positive Rate -->
+          <div class="bg-red-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600" data-i18n="accuracy.summary.fpRate">FP Rate</p>
+            <p class="text-2xl font-bold text-red-600" id="stat-fp-rate">0%</p>
+            <p class="text-xs text-gray-500"><span id="stat-dismissals">0</span> <span data-i18n="accuracy.summary.falsePositives">False Positives</span></p>
           </div>
+          <!-- False Negative Rate -->
+          <div class="bg-amber-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600" data-i18n="accuracy.summary.fnRate">FN Rate</p>
+            <p class="text-2xl font-bold text-amber-600" id="stat-fn-rate">0%</p>
+            <p class="text-xs text-gray-500"><span id="stat-additions">0</span> <span data-i18n="accuracy.summary.falseNegatives">False Negatives</span></p>
           </div>
         </div>
-      </div>
 
-      <!-- Info Footer (always visible) -->
-      <div id="app-footer" style="margin-top: var(--spacing-8); padding-top: var(--spacing-6); border-top: 1px solid var(--slate-200); text-align: center; color: var(--slate-600); font-size: 0.875rem;">
-        <p style="margin: 0 0 var(--spacing-2) 0;">
-          <strong id="footer-output-label">Output:</strong> <span id="footer-output-text">Anonymised Markdown (.md) + Entity Mapping (.json)</span>
-        </p>
-        <p style="margin: 0;">
-          <strong id="footer-license-label">License:</strong> <span id="footer-license-text">Free for non-commercial use (CC BY-NC-SA 4.0)</span> |
-          <strong id="footer-support-label">Support:</strong> <a href="mailto:contact@softcom.pro" style="color: var(--blue-600);">contact@softcom.pro</a>
+        <!-- Trend Chart Section -->
+        <div class="bg-white border border-gray-200 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-medium text-gray-900" data-i18n="accuracy.trends.title">Correction Trends</h3>
+            <div class="flex gap-1">
+              <button id="trend-weekly-btn" class="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700" data-i18n="accuracy.trends.weekly">Weekly</button>
+              <button id="trend-monthly-btn" class="px-3 py-1 text-sm rounded-md text-gray-600 hover:bg-gray-100" data-i18n="accuracy.trends.monthly">Monthly</button>
+            </div>
+          </div>
+          <div id="trend-chart-container" class="h-48">
+            <canvas id="trend-chart" class="w-full h-full"></canvas>
+            <p id="trend-no-data" class="hidden text-center text-gray-500 py-8" data-i18n="accuracy.trends.noTrendData">Not enough data for trend analysis</p>
+          </div>
+        </div>
+
+        <!-- Entity Type Breakdown Table -->
+        <div class="bg-white border border-gray-200 rounded-lg">
+          <div class="px-4 py-3 border-b border-gray-200">
+            <h3 class="font-medium text-gray-900" data-i18n="accuracy.entityBreakdown.title">Entity Type Breakdown</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-4 py-2 text-left font-medium text-gray-600" data-i18n="accuracy.entityBreakdown.entityType">Entity Type</th>
+                  <th class="px-4 py-2 text-right font-medium text-gray-600" data-i18n="accuracy.entityBreakdown.dismissals">Dismissals</th>
+                  <th class="px-4 py-2 text-right font-medium text-gray-600" data-i18n="accuracy.entityBreakdown.additions">Additions</th>
+                  <th class="px-4 py-2 text-right font-medium text-gray-600" data-i18n="accuracy.entityBreakdown.total">Total</th>
+                </tr>
+              </thead>
+              <tbody id="entity-breakdown-tbody">
+                <!-- Rows populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Period Info -->
+        <p class="text-xs text-gray-500 text-right">
+          <span data-i18n="accuracy.period">Period</span>: <span id="stat-period">-</span>
         </p>
       </div>
     </div>
   </div>
 
-  <script src="i18n-init.js"></script>
-  <script src="renderer.js"></script>
-  <!-- filePreviewIntegration.js disabled - functionality integrated into renderer.js -->
-  <!-- <script type="module" src="filePreviewIntegration.js"></script> -->
+  <!-- Model Download Modal (shown on first launch if model missing) -->
+  <div id="model-download-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="model-download-title">
+    <div class="modal-content">
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </div>
+        <h2 id="model-download-title" class="text-xl font-semibold text-gray-900" data-i18n="modelDownload.title">Downloading AI Model</h2>
+        <p class="text-sm text-gray-600 mt-2" data-i18n="modelDownload.subtitle">One-time download for PII detection (~129 MB)</p>
+      </div>
+
+      <!-- Progress Section -->
+      <div id="download-progress-section">
+        <!-- Progress Bar -->
+        <div class="progress-container mb-3">
+          <div class="progress-bar" id="download-progress-bar" style="width: 0%"></div>
+        </div>
+
+        <!-- Progress Info -->
+        <div class="flex items-center justify-between text-sm">
+          <span id="download-file-name" class="text-gray-600 truncate max-w-[200px]">Initializing...</span>
+          <span id="download-percentage" class="text-gray-900 font-medium">0%</span>
+        </div>
+
+        <!-- Download Size Info -->
+        <p id="download-size-info" class="text-xs text-gray-500 mt-2 text-center"></p>
+      </div>
+
+      <!-- Error Section (hidden by default) -->
+      <div id="download-error-section" class="hidden mt-4">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p id="download-error-text" class="text-sm text-red-700"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-center gap-3 mt-6">
+        <button id="download-retry-btn" class="btn-primary hidden" aria-label="Retry download">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span data-i18n="modelDownload.retry">Retry</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-full mx-auto p-8">
+    <!-- Upload Screen (Initial State) -->
+    <div id="upload-screen" class="space-y-8">
+      <!-- Header -->
+      <div class="text-center space-y-2">
+        <h1 class="text-4xl font-bold text-gray-900">PII Sanitizer</h1>
+        <p class="text-lg text-gray-600">Upload documents to automatically detect and sanitize personally identifiable information</p>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="upload-zone" role="button" tabindex="0" aria-label="Upload file zone">
+        <!-- Upload Icon -->
+        <div class="flex justify-center mb-6">
+          <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Upload Text -->
+        <h2 class="text-2xl font-semibold text-gray-900 mb-2">Drop your file here</h2>
+        <p class="text-gray-600 mb-6">or click to browse from your computer</p>
+
+        <!-- Browse Button -->
+        <label class="btn-primary btn-lg cursor-pointer">
+          <input
+            type="file"
+            id="file-input"
+            class="sr-only"
+            accept=".doc,.docx,.xls,.xlsx,.csv,.pdf,.txt"
+            aria-label="Select file to upload"
+          />
+          <span>Browse Files</span>
+        </label>
+
+        <!-- Supported Formats -->
+        <div class="mt-12 pt-8 border-t border-gray-200">
+          <p class="text-sm text-gray-600 mb-4">Supported formats:</p>
+          <div class="flex items-center justify-center gap-4 flex-wrap">
+            <div class="format-badge">
+              <i class="fas fa-file-pdf text-red-500" aria-hidden="true"></i>
+              <span>PDF</span>
+            </div>
+            <div class="format-badge">
+              <i class="fas fa-file-word text-blue-500" aria-hidden="true"></i>
+              <span>Word</span>
+            </div>
+            <div class="format-badge">
+              <i class="fas fa-file-excel text-green-600" aria-hidden="true"></i>
+              <span>Excel</span>
+            </div>
+            <div class="format-badge">
+              <i class="fas fa-file-csv text-purple-700" aria-hidden="true"></i>
+              <span>CSV</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Processing Screen (Results State) -->
+    <div id="processing-screen" class="hidden h-[calc(100vh-6rem)] flex flex-col">
+      <!-- Header with close button -->
+      <div class="flex items-center justify-between mb-6 flex-shrink-0">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">PII Sanitizer</h1>
+          <p class="text-sm text-gray-600 mt-1">Document processing and sanitization</p>
+        </div>
+        <button
+          class="btn-ghost btn-sm"
+          id="reset-btn"
+          aria-label="Close and reset"
+        >
+          <i class="fas fa-times"></i>
+          <span>Close</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 flex-1 min-h-0">
+        <!-- Left Sidebar -->
+        <div class="col-span-3 flex flex-col gap-6">
+          <!-- File Details Card -->
+          <div class="card flex-shrink-0">
+            <div class="card-header">
+              <h3 class="card-title">File Details</h3>
+            </div>
+            <div class="card-content space-y-0">
+              <!-- File Name -->
+              <div class="metadata-row">
+                <i class="fas fa-file-alt metadata-icon" aria-hidden="true"></i>
+                <div class="metadata-content">
+                  <p class="metadata-label">File Name</p>
+                  <p class="metadata-value" id="meta-filename">-</p>
+                </div>
+              </div>
+
+              <div class="separator"></div>
+
+              <!-- Type -->
+              <div class="metadata-row">
+                <i class="fas fa-file metadata-icon" aria-hidden="true"></i>
+                <div class="metadata-content">
+                  <p class="metadata-label">Type</p>
+                  <span class="badge-gray" id="meta-type-badge">-</span>
+                </div>
+              </div>
+
+              <div class="separator"></div>
+
+              <!-- Size -->
+              <div class="metadata-row">
+                <i class="fas fa-hdd metadata-icon" aria-hidden="true"></i>
+                <div class="metadata-content">
+                  <p class="metadata-label">Size</p>
+                  <p class="metadata-value" id="meta-size">-</p>
+                </div>
+              </div>
+
+              <div class="separator"></div>
+
+              <!-- Last Modified -->
+              <div class="metadata-row">
+                <i class="fas fa-calendar metadata-icon" aria-hidden="true"></i>
+                <div class="metadata-content">
+                  <p class="metadata-label">Last Modified</p>
+                  <p class="metadata-value" id="meta-modified">-</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Card -->
+          <div class="card flex-1 flex flex-col">
+            <div class="card-header">
+              <h3 class="card-title">Preview</h3>
+            </div>
+            <div class="card-content p-4 flex-1 flex flex-col min-h-0">
+              <div class="scroll-area flex-1">
+                <pre class="preview-content" id="preview-content">Select a file to preview...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-span-6">
+          <div class="card h-full flex flex-col">
+            <!-- Header -->
+            <div class="card-header">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="card-title">Sanitization Results</h3>
+                  <p class="card-subtitle" id="pii-count-text">Click "Process File" to begin</p>
+                </div>
+                <div class="flex gap-2" id="download-buttons" style="display: none;">
+                  <button class="btn-primary btn-sm" id="download-markdown" aria-label="Download Markdown">
+                    <i class="fas fa-file-arrow-down" aria-hidden="true"></i>
+                    <span>Download Markdown</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="card-content flex-1 flex flex-col">
+              <!-- Initial State -->
+              <div id="initial-state" class="flex-1 flex flex-col items-center justify-center py-16">
+                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="text-gray-600 mb-6">Ready to process your file</p>
+                <button class="btn-primary" id="process-button" disabled aria-label="Process file">
+                  <i class="fas fa-file-export" aria-hidden="true"></i>
+                  <span>Process File</span>
+                </button>
+              </div>
+
+              <!-- Loading State -->
+              <div id="processing-spinner" class="hidden flex-1 flex flex-col items-center justify-center py-16">
+                <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4" aria-hidden="true"></i>
+                <p class="text-gray-700">Processing and sanitizing PII...</p>
+              </div>
+
+              <!-- Success State -->
+              <div id="processing-result" class="hidden flex-1 flex flex-col">
+                <!-- Success Alert -->
+                <div class="alert-success mb-6" role="alert">
+                  <i class="fas fa-check-circle text-xl" aria-hidden="true"></i>
+                  <p>File successfully processed and sanitized. Ready to download.</p>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs flex-1 flex flex-col">
+                  <div class="tab-list" role="tablist">
+                    <button
+                      class="tab tab-active"
+                      data-tab="markdown"
+                      role="tab"
+                      aria-selected="true"
+                      aria-controls="tab-markdown"
+                      id="tab-btn-markdown"
+                    >
+                      Sanitized Markdown
+                    </button>
+                    <button
+                      class="tab"
+                      data-tab="mapping"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="tab-mapping"
+                      id="tab-btn-mapping"
+                    >
+                      Change Mapping
+                    </button>
+                  </div>
+
+                  <div class="flex-1 flex flex-col min-h-0">
+                    <div class="tab-content tab-content-active flex-1 py-4 min-h-0" id="tab-markdown" role="tabpanel" aria-labelledby="tab-btn-markdown">
+                      <div class="scroll-area flex-1">
+                        <pre class="preview-content" id="sanitized-markdown"></pre>
+                      </div>
+                    </div>
+
+                    <div class="tab-content flex-1 py-4 min-h-0" id="tab-mapping" role="tabpanel" aria-labelledby="tab-btn-mapping">
+                      <div class="scroll-area flex-1">
+                        <div id="change-list" class="space-y-2"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entity Review Sidebar (Epic 4) -->
+        <div class="col-span-3">
+          <div class="card h-full flex flex-col" id="entity-review-card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <h3 class="card-title">Entity Review</h3>
+                <div class="flex items-center gap-2">
+                  <!-- Accuracy Dashboard Button (Epic 5.3) -->
+                  <button
+                    id="accuracy-dashboard-btn"
+                    class="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors"
+                    title="View accuracy dashboard"
+                    aria-label="Open accuracy dashboard"
+                  >
+                    <i class="fas fa-chart-line w-4 h-4" aria-hidden="true"></i>
+                  </button>
+                  <!-- Feedback Logging Toggle (Epic 5.2) -->
+                  <button
+                    id="feedback-toggle"
+                    class="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+                    title="Correction logging disabled (click to enable)"
+                    aria-label="Toggle feedback logging"
+                  >
+                    <i class="fas fa-cog w-4 h-4" aria-hidden="true"></i>
+                  </button>
+                  <span class="badge badge-blue" id="entity-review-count">0 entities</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-content flex-1 flex flex-col p-0 min-h-0">
+              <!-- Entity review sidebar will be rendered here by EntityReviewUI -->
+              <div id="entity-review-container" class="flex-1 flex flex-col min-h-0">
+                <!-- Initial state before processing -->
+                <div id="entity-review-empty" class="flex-1 flex flex-col items-center justify-center py-8 text-center px-4">
+                  <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                  <p class="text-sm text-gray-500">Process a file to review detected entities</p>
+                </div>
+                <!-- Active review panel -->
+                <div id="entity-review-panel" class="hidden flex-1 flex flex-col min-h-0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accuracy Dashboard Modal (Epic 5, Story 5.3) -->
+  <div id="accuracy-dashboard-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col m-4">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-blue-600">
+        <div>
+          <h2 class="text-xl font-semibold text-white" data-i18n="accuracy.title">Accuracy Dashboard</h2>
+          <p class="text-indigo-200 text-sm" data-i18n="accuracy.subtitle">Detection quality metrics over time</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            id="accuracy-refresh-btn"
+            class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+            title="Refresh"
+            data-i18n-title="accuracy.refresh"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <button
+            id="accuracy-export-btn"
+            class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+            title="Export CSV"
+            data-i18n-title="accuracy.export.button"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+          <button
+            id="accuracy-close-btn"
+            class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+            title="Close"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Summary Statistics -->
+        <section>
+          <h3 class="text-lg font-medium text-gray-800 mb-3" data-i18n="accuracy.summary.title">Summary</h3>
+          <div id="accuracy-summary">
+            <!-- Summary cards rendered by JS -->
+          </div>
+        </section>
+
+        <!-- Trend Chart -->
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-medium text-gray-800" data-i18n="accuracy.trends.title">Correction Trends</h3>
+            <div class="flex rounded-lg overflow-hidden border border-gray-200">
+              <button
+                data-trend-view="weekly"
+                class="px-3 py-1 text-sm bg-indigo-600 text-white transition-colors"
+                data-i18n="accuracy.trends.weekly"
+              >Weekly</button>
+              <button
+                data-trend-view="monthly"
+                class="px-3 py-1 text-sm bg-gray-200 text-gray-700 transition-colors"
+                data-i18n="accuracy.trends.monthly"
+              >Monthly</button>
+            </div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-4">
+            <canvas id="accuracy-trend-chart" class="w-full h-48"></canvas>
+          </div>
+        </section>
+
+        <!-- Entity Breakdown Table -->
+        <section>
+          <h3 class="text-lg font-medium text-gray-800 mb-3" data-i18n="accuracy.entityBreakdown.title">Entity Type Breakdown</h3>
+          <div id="accuracy-breakdown-table" class="bg-gray-50 rounded-lg overflow-hidden">
+            <!-- Table rendered by JS -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="renderer.js"></script>
 </body>
 </html>

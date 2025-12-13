@@ -87,6 +87,56 @@
     "piiCount": {
       "detected": "PII-Entitäten erkannt",
       "sanitized": "anonymisiert"
+    },
+    "modelDownload": {
+      "title": "KI-Modell wird heruntergeladen",
+      "subtitle": "Einmaliger Download für PII-Erkennung (~129 MB)",
+      "initializing": "Initialisierung...",
+      "downloading": "Wird heruntergeladen",
+      "complete": "Download abgeschlossen!",
+      "retry": "Erneut versuchen",
+      "errors": {
+        "network": "Verbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+        "diskSpace": "Nicht genügend Speicherplatz. Bitte geben Sie mindestens 150 MB frei und versuchen Sie es erneut.",
+        "generic": "Download fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "verification": "Download-Überprüfung fehlgeschlagen. Erneuter Versuch..."
+      }
+    },
+    "accuracy": {
+      "title": "Genauigkeits-Dashboard",
+      "subtitle": "Erkennungsqualitätsmetriken im Zeitverlauf",
+      "noData": "Noch keine Korrekturdaten verfügbar",
+      "noDataHint": "Verarbeiten Sie Dokumente und nehmen Sie Korrekturen vor, um Genauigkeitsmetriken zu sehen",
+      "summary": {
+        "title": "Zusammenfassung",
+        "documentsProcessed": "Verarbeitete Dokumente",
+        "totalCorrections": "Gesamtkorrekturen",
+        "falsePositives": "Falsch-Positive",
+        "falseNegatives": "Falsch-Negative",
+        "fpRate": "FP-Rate",
+        "fnRate": "FN-Rate"
+      },
+      "entityBreakdown": {
+        "title": "Aufschlüsselung nach Entitätstyp",
+        "entityType": "Entitätstyp",
+        "dismissals": "Ablehnungen",
+        "additions": "Hinzufügungen",
+        "total": "Gesamt"
+      },
+      "trends": {
+        "title": "Korrekturtrends",
+        "weekly": "Wöchentlich",
+        "monthly": "Monatlich",
+        "noTrendData": "Nicht genügend Daten für Trendanalyse"
+      },
+      "export": {
+        "button": "Bericht exportieren",
+        "success": "Bericht erfolgreich exportiert",
+        "cancelled": "Export abgebrochen",
+        "error": "Export fehlgeschlagen"
+      },
+      "refresh": "Aktualisieren",
+      "period": "Zeitraum"
     }
   }
 }

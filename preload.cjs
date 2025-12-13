@@ -9,6 +9,21 @@
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
+const log = require('electron-log/renderer');
+
+// Expose electron-log functions for renderer process (not the full object - causes cloning issues)
+contextBridge.exposeInMainWorld('log', {
+  scope: (name) => ({
+    debug: (...args) => log.scope(name).debug(...args),
+    info: (...args) => log.scope(name).info(...args),
+    warn: (...args) => log.scope(name).warn(...args),
+    error: (...args) => log.scope(name).error(...args),
+  }),
+  debug: (...args) => log.debug(...args),
+  info: (...args) => log.info(...args),
+  warn: (...args) => log.warn(...args),
+  error: (...args) => log.error(...args),
+});
 
 // Expose only specific, validated IPC methods to renderer
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -52,32 +67,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return Promise.reject(new Error('Invalid folder path'));
     }
     return ipcRenderer.invoke('open-folder', folderPath);
-  },
-
-  /**
-   * Listen for log messages from main process
-   * @param {Function} callback - Called with (message: string)
-   */
-  onLogMessage: (callback) => {
-    // Validate callback
-    if (typeof callback !== 'function') {
-      throw new Error('Callback must be a function');
-    }
-
-    // Use a wrapper to sanitize incoming messages
-    const wrappedCallback = (event, message) => {
-      // Ensure message is a string
-      if (typeof message === 'string') {
-        callback(message);
-      }
-    };
-
-    ipcRenderer.on('log-message', wrappedCallback);
-
-    // Return cleanup function
-    return () => {
-      ipcRenderer.removeListener('log-message', wrappedCallback);
-    };
   },
 
   /**
@@ -130,7 +119,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return Promise.reject(new Error('Invalid file path'));
     }
     return ipcRenderer.invoke('file:readJson', filePath);
-  }
+  },
 });
 
 // Expose i18n API for internationalization
@@ -153,7 +142,7 @@ contextBridge.exposeInMainWorld('i18nAPI', {
    */
   getDetectedLocale: () => {
     return ipcRenderer.invoke('i18n:getDetectedLocale');
-  }
+  },
 });
 
 // Expose safe Node.js modules (read-only)
@@ -162,8 +151,8 @@ contextBridge.exposeInMainWorld('nodeAPI', {
   versions: {
     node: process.versions.node,
     chrome: process.versions.chrome,
-    electron: process.versions.electron
-  }
+    electron: process.versions.electron,
+  },
 });
 
 // ✅ SECURITY: Expose limited fs and path operations (sandboxed)
@@ -185,7 +174,7 @@ contextBridge.exposeInMainWorld('fsAPI', {
       size: stats.size,
       mtime: stats.mtime,
       ctime: stats.ctime,
-      atime: stats.atime
+      atime: stats.atime,
     };
   },
 
@@ -200,7 +189,7 @@ contextBridge.exposeInMainWorld('fsAPI', {
       size: stats.size,
       mtime: stats.mtime,
       ctime: stats.ctime,
-      atime: stats.atime
+      atime: stats.atime,
     };
   },
 
@@ -217,7 +206,7 @@ contextBridge.exposeInMainWorld('fsAPI', {
   existsSync: (filePath) => {
     if (typeof filePath !== 'string') throw new Error('Invalid path');
     return fs.existsSync(filePath);
-  }
+  },
 });
 
 contextBridge.exposeInMainWorld('pathAPI', {
@@ -227,14 +216,148 @@ contextBridge.exposeInMainWorld('pathAPI', {
   extname: (filePath) => path.extname(filePath),
   normalize: (filePath) => path.normalize(filePath),
   resolve: (...args) => path.resolve(...args),
-  isAbsolute: (filePath) => path.isAbsolute(filePath)
+  isAbsolute: (filePath) => path.isAbsolute(filePath),
 });
 
 contextBridge.exposeInMainWorld('osAPI', {
-  tmpdir: () => os.tmpdir()
+  tmpdir: () => os.tmpdir(),
 });
 
-// Log successful preload
-console.log('✓ Preload script initialized securely');
-console.log('✓ electronAPI methods:', Object.keys(contextBridge.exposeInMainWorld.name || {}));
-console.log('✓ window.electronAPI should be available');
+// Expose Model API for lazy-loading model downloads
+contextBridge.exposeInMainWorld('modelAPI', {
+  /**
+   * Check if the AI model exists and is valid
+   * @returns {Promise<Object>} - { exists: boolean, valid: boolean, path: string, missingFiles: string[] }
+   */
+  checkModel: () => {
+    return ipcRenderer.invoke('model:check');
+  },
+
+  /**
+   * Download the AI model from HuggingFace
+   * @returns {Promise<Object>} - { success: boolean, modelPath?: string, error?: string }
+   */
+  downloadModel: () => {
+    return ipcRenderer.invoke('model:download');
+  },
+
+  /**
+   * Clean up model files (for retry after corruption)
+   * @returns {Promise<Object>} - { success: boolean, error?: string }
+   */
+  cleanupModel: () => {
+    return ipcRenderer.invoke('model:cleanup');
+  },
+
+  /**
+   * Get model paths for debugging
+   * @returns {Promise<Object>} - { basePath: string, modelPath: string }
+   */
+  getPaths: () => {
+    return ipcRenderer.invoke('model:getPaths');
+  },
+
+  /**
+   * Listen for download progress events
+   * @param {Function} callback - Progress callback ({ status, file, progress, loaded, total, error })
+   */
+  onDownloadProgress: (callback) => {
+    ipcRenderer.on('model:download:progress', (_event, data) => callback(data));
+  },
+
+  /**
+   * Remove download progress listener
+   */
+  removeDownloadProgressListener: () => {
+    ipcRenderer.removeAllListeners('model:download:progress');
+  },
+});
+
+// Expose Feedback API for correction logging (Epic 5)
+contextBridge.exposeInMainWorld('feedbackAPI', {
+  /**
+   * Log a user correction (dismissal or manual addition)
+   * @param {Object} input - Correction input with action, entityType, text, etc.
+   * @returns {Promise<Object>} - { success: boolean, entryId?: string, error?: string }
+   */
+  logCorrection: (input) => {
+    if (!input || typeof input !== 'object') {
+      return Promise.reject(new Error('Invalid correction input'));
+    }
+    if (!input.action || !['DISMISS', 'ADD'].includes(input.action)) {
+      return Promise.reject(new Error('Invalid action: must be DISMISS or ADD'));
+    }
+    if (!input.entityType || typeof input.entityType !== 'string') {
+      return Promise.reject(new Error('Invalid entityType'));
+    }
+    if (!input.documentName || typeof input.documentName !== 'string') {
+      return Promise.reject(new Error('Invalid documentName'));
+    }
+    return ipcRenderer.invoke('feedback:log-correction', input);
+  },
+
+  /**
+   * Check if feedback logging is enabled
+   * @returns {Promise<boolean>} - Whether logging is enabled
+   */
+  isEnabled: () => {
+    return ipcRenderer.invoke('feedback:is-enabled');
+  },
+
+  /**
+   * Enable or disable feedback logging
+   * @param {boolean} enabled - Whether to enable logging
+   * @returns {Promise<Object>} - { success: boolean }
+   */
+  setEnabled: (enabled) => {
+    if (typeof enabled !== 'boolean') {
+      return Promise.reject(new Error('Invalid enabled value: must be boolean'));
+    }
+    return ipcRenderer.invoke('feedback:set-enabled', enabled);
+  },
+
+  /**
+   * Get feedback settings
+   * @returns {Promise<Object>} - { enabled: boolean }
+   */
+  getSettings: () => {
+    return ipcRenderer.invoke('feedback:get-settings');
+  },
+
+  /**
+   * Get correction count for current month
+   * @returns {Promise<number>} - Number of corrections logged this month
+   */
+  getCorrectionCount: () => {
+    return ipcRenderer.invoke('feedback:get-count');
+  },
+});
+
+// Expose Accuracy API for dashboard statistics (Epic 5, Story 5.3)
+contextBridge.exposeInMainWorld('accuracyAPI', {
+  /**
+   * Get accuracy statistics
+   * @param {Object} options - Optional filters { startDate?: string, endDate?: string }
+   * @returns {Promise<Object>} - AccuracyStatistics
+   */
+  getStats: (options) => {
+    return ipcRenderer.invoke('accuracy:get-stats', options);
+  },
+
+  /**
+   * Get trend data for charts
+   * @param {string} view - 'weekly' or 'monthly'
+   * @returns {Promise<Object>} - { weekly: TrendPoint[], monthly: TrendPoint[] }
+   */
+  getTrends: (view) => {
+    return ipcRenderer.invoke('accuracy:get-trends', view);
+  },
+
+  /**
+   * Export accuracy report as CSV
+   * @returns {Promise<Object>} - { success: boolean, filePath?: string, error?: string }
+   */
+  exportCsv: () => {
+    return ipcRenderer.invoke('accuracy:export-csv');
+  },
+});
