@@ -18,15 +18,21 @@
         </div>
         <div class="flex items-center gap-2">
           <button id="accuracy-refresh-btn" class="btn-ghost btn-sm" aria-label="Refresh statistics">
-            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             <span data-i18n="accuracy.refresh">Refresh</span>
           </button>
           <button id="accuracy-export-btn" class="btn-primary btn-sm" aria-label="Export report">
-            <i class="fas fa-download" aria-hidden="true"></i>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
             <span data-i18n="accuracy.export.button">Export Report</span>
           </button>
           <button id="accuracy-close-btn" class="btn-ghost btn-sm" aria-label="Close">
-            <i class="fas fa-times" aria-hidden="true"></i>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </div>
@@ -204,19 +210,27 @@
           <p class="text-sm text-gray-600 mb-4">Supported formats:</p>
           <div class="flex items-center justify-center gap-4 flex-wrap">
             <div class="format-badge">
-              <i class="fas fa-file-pdf text-red-500" aria-hidden="true"></i>
+              <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zm-2.5 9.5L8 17h2l1-2 1 2h2l-2.5-3.5L14 10h-2l-1 2-1-2H8l2.5 3.5z"/>
+              </svg>
               <span>PDF</span>
             </div>
             <div class="format-badge">
-              <i class="fas fa-file-word text-blue-500" aria-hidden="true"></i>
+              <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM9 13h6v2H9v-2zm0 4h6v2H9v-2z"/>
+              </svg>
               <span>Word</span>
             </div>
             <div class="format-badge">
-              <i class="fas fa-file-excel text-green-600" aria-hidden="true"></i>
+              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h2v6H8v-6zm3-2h2v8h-2v-8zm3 4h2v4h-2v-4z"/>
+              </svg>
               <span>Excel</span>
             </div>
             <div class="format-badge">
-              <i class="fas fa-file-csv text-purple-700" aria-hidden="true"></i>
+              <svg class="w-4 h-4 text-purple-700" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM7 13h10v2H7v-2zm0 4h7v2H7v-2z"/>
+              </svg>
               <span>CSV</span>
             </div>
           </div>
@@ -237,7 +251,9 @@
           id="reset-btn"
           aria-label="Close and reset"
         >
-          <i class="fas fa-times"></i>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
           <span>Close</span>
         </button>
       </div>
@@ -253,7 +269,9 @@
             <div class="card-content space-y-0">
               <!-- File Name -->
               <div class="metadata-row">
-                <i class="fas fa-file-alt metadata-icon" aria-hidden="true"></i>
+                <svg class="w-4 h-4 metadata-icon text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 <div class="metadata-content">
                   <p class="metadata-label">File Name</p>
                   <p class="metadata-value" id="meta-filename">-</p>
@@ -264,7 +282,9 @@
 
               <!-- Type -->
               <div class="metadata-row">
-                <i class="fas fa-file metadata-icon" aria-hidden="true"></i>
+                <svg class="w-4 h-4 metadata-icon text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
                 <div class="metadata-content">
                   <p class="metadata-label">Type</p>
                   <span class="badge-gray" id="meta-type-badge">-</span>
@@ -275,7 +295,9 @@
 
               <!-- Size -->
               <div class="metadata-row">
-                <i class="fas fa-hdd metadata-icon" aria-hidden="true"></i>
+                <svg class="w-4 h-4 metadata-icon text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
                 <div class="metadata-content">
                   <p class="metadata-label">Size</p>
                   <p class="metadata-value" id="meta-size">-</p>
@@ -286,7 +308,9 @@
 
               <!-- Last Modified -->
               <div class="metadata-row">
-                <i class="fas fa-calendar metadata-icon" aria-hidden="true"></i>
+                <svg class="w-4 h-4 metadata-icon text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
                 <div class="metadata-content">
                   <p class="metadata-label">Last Modified</p>
                   <p class="metadata-value" id="meta-modified">-</p>
@@ -320,7 +344,9 @@
                 </div>
                 <div class="flex gap-2" id="download-buttons" style="display: none;">
                   <button class="btn-primary btn-sm" id="download-markdown" aria-label="Download Markdown">
-                    <i class="fas fa-file-arrow-down" aria-hidden="true"></i>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
                     <span>Download Markdown</span>
                   </button>
                 </div>
@@ -336,14 +362,19 @@
                 </svg>
                 <p class="text-gray-600 mb-6">Ready to process your file</p>
                 <button class="btn-primary" id="process-button" disabled aria-label="Process file">
-                  <i class="fas fa-file-export" aria-hidden="true"></i>
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                   <span>Process File</span>
                 </button>
               </div>
 
               <!-- Loading State -->
               <div id="processing-spinner" class="hidden flex-1 flex flex-col items-center justify-center py-16">
-                <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4" aria-hidden="true"></i>
+                <svg class="w-12 h-12 text-blue-600 mb-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 <p class="text-gray-700">Processing and sanitizing PII...</p>
               </div>
 
@@ -351,7 +382,9 @@
               <div id="processing-result" class="hidden flex-1 flex flex-col">
                 <!-- Success Alert -->
                 <div class="alert-success mb-6" role="alert">
-                  <i class="fas fa-check-circle text-xl" aria-hidden="true"></i>
+                  <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   <p>File successfully processed and sanitized. Ready to download.</p>
                 </div>
 
@@ -413,7 +446,9 @@
                     title="View accuracy dashboard"
                     aria-label="Open accuracy dashboard"
                   >
-                    <i class="fas fa-chart-line w-4 h-4" aria-hidden="true"></i>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                   </button>
                   <!-- Feedback Logging Toggle (Epic 5.2) -->
                   <button
@@ -422,7 +457,10 @@
                     title="Correction logging disabled (click to enable)"
                     aria-label="Toggle feedback logging"
                   >
-                    <i class="fas fa-cog w-4 h-4" aria-hidden="true"></i>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                   </button>
                   <span class="badge badge-blue" id="entity-review-count">0 entities</span>
                 </div>
