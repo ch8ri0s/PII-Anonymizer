@@ -1,0 +1,209 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.4</storyId>
+    <title>Address Anonymization Strategy</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/2-4-address-anonymization-strategy.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>document processor</asA>
+    <iWant>to replace grouped address entities with single unified placeholders and store structured address data in the mapping file</iWant>
+    <soThat>addresses are anonymized coherently without fragmentation and can be fully reconstructed from the mapping</soThat>
+    <tasks>
+      <task id="1" status="pending">Analyze current anonymization flow in fileProcessor.js (AC: all)</task>
+      <task id="2" status="pending">Implement ADDRESS entity placeholder replacement (AC: 2.4.1)</task>
+      <task id="3" status="pending">Extend mapping file schema for addresses (AC: 2.4.2)</task>
+      <task id="4" status="pending">Implement mapping file writer for addresses (AC: 2.4.2)</task>
+      <task id="5" status="pending">Handle fallback for partial/standalone entities (AC: 2.4.3)</task>
+      <task id="6" status="pending">Prevent fragmented anonymization (AC: 2.4.4)</task>
+      <task id="7" status="pending">Update entity processing order (AC: all)</task>
+      <task id="8" status="pending">Integration with detection pipeline (AC: all)</task>
+      <task id="9" status="pending">E2E test suite (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-2.4.1">Given a grouped address entity, the entire address span is replaced with single placeholder [ADDRESS_N]</criterion>
+    <criterion id="AC-2.4.2">Mapping file stores full original address with components (street, number, postal, city)</criterion>
+    <criterion id="AC-2.4.3">Partial matches (standalone postal codes) still work as fallback</criterion>
+    <criterion id="AC-2.4.4">"Rue de Lausanne 12, 1000 Lausanne" becomes "[ADDRESS_1]" not "Rue de Lausanne [NUMBER], [POSTAL] [CITY]"</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification - Address Relationship Modeling</title>
+        <section>Story 2.4: Address Anonymization Strategy</section>
+        <snippet>AC-2.4.1-2.4.4 define unified placeholder replacement for grouped addresses, mapping file storage with components, fallback for standalone entities, and coherent anonymization example.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>A5-PII-Anonymizer Architecture Document</title>
+        <section>Epic 2: Address Modeling, Integration Points</section>
+        <snippet>AddressClassifier.ts groups address components. fileProcessor.js orchestrates anonymization. Mapping file schema extended with components field for structured addresses.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>A5-PII-Anonymizer Product Requirements Document</title>
+        <section>Success Criteria, Quality Gates</section>
+        <snippet>Zero PII Leakage requirement. Reversibility requirement: all anonymizations must be reversible via mapping file. 98%+ detection accuracy target.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/2-3-address-confidence-scoring.md</path>
+        <title>Story 2.3: Address Confidence Scoring (Completed)</title>
+        <section>Dev Agent Record - Learnings</section>
+        <snippet>ScoredAddress extends GroupedAddress with finalConfidence, scoringFactors, flaggedForReview, autoAnonymize. Thresholds: less than 0.6 = review, greater than or equal to 0.8 = auto-anonymize.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>fileProcessor.js</path>
+        <kind>orchestrator</kind>
+        <symbol>FileProcessingSession, anonymizeText, anonymizeMarkdown, getOrCreatePseudonym</symbol>
+        <lines>123-170, 408-519</lines>
+        <reason>Primary file for anonymization logic. FileProcessingSession manages pseudonym counters and mapping. anonymizeText/anonymizeMarkdown are entry points for Story 2.4 ADDRESS handling.</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/passes/AddressRelationshipPass.ts</path>
+        <kind>detection-pass</kind>
+        <symbol>AddressRelationshipPass, AddressRelationshipPassConfig</symbol>
+        <lines>1-100</lines>
+        <reason>Detection pass that produces ScoredAddress entities. Story 2.4 must consume these in anonymization. Config has keepStandaloneComponents flag for fallback handling.</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressScorer.ts</path>
+        <kind>service</kind>
+        <symbol>AddressScorer, ScoredAddress, ScoringFactor, AddressScorerConfig</symbol>
+        <lines>1-100</lines>
+        <reason>Produces ScoredAddress with finalConfidence, flaggedForReview, autoAnonymize flags. Story 2.4 uses these flags for anonymization decisions.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types/detection.ts</path>
+        <kind>types</kind>
+        <symbol>GroupedAddress, AddressComponent, Entity, AddressPatternType</symbol>
+        <lines>54-180</lines>
+        <reason>Type definitions for address entities. GroupedAddress has components (street, number, postal, city, country) and componentEntities array.</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressLinker.ts</path>
+        <kind>service</kind>
+        <symbol>AddressLinker, createAddressLinker, linkAndGroup</symbol>
+        <reason>Groups address components into GroupedAddress entities with linked flag on components.</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressClassifier.ts</path>
+        <kind>service</kind>
+        <symbol>AddressClassifier, createAddressClassifier, classifyComponents</symbol>
+        <reason>Classifies text into address components. Used by AddressRelationshipPass to detect components.</reason>
+      </artifact>
+      <artifact>
+        <path>test/unit/pii/address/AddressScorer.test.js</path>
+        <kind>test</kind>
+        <symbol>AddressScorer tests</symbol>
+        <reason>43 tests for scoring logic. Follow same patterns for anonymization tests.</reason>
+      </artifact>
+      <artifact>
+        <path>test/unit/fileProcessor.session.test.js</path>
+        <kind>test</kind>
+        <symbol>FileProcessingSession tests</symbol>
+        <reason>Tests for session-based pseudonym generation. Reference for ADDRESS counter pattern.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <ecosystem name="node">
+        <package name="typescript" version="^5.9.3" dev="true" />
+        <package name="mocha" version="^11.7.5" dev="true" />
+        <package name="chai" version="^6.2.0" dev="true" />
+        <package name="electron" version="^39.1.1" dev="true" />
+        <package name="@xenova/transformers" version="2.17.2" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="performance">Anonymization latency must not significantly impact overall processing (NFR-P3: 30s for 10 pages total)</constraint>
+    <constraint type="security">No PII logging - only log entity types, positions, and placeholders</constraint>
+    <constraint type="security">Zero PII Leakage - no detected PII should appear in output without anonymization</constraint>
+    <constraint type="architecture">ADDRESS entities must be processed BEFORE individual component entities to prevent fragmentation</constraint>
+    <constraint type="architecture">Mapping file must be backward compatible with existing format</constraint>
+    <constraint type="pattern">Use FileProcessingSession.getOrCreatePseudonym() pattern for ADDRESS_N generation</constraint>
+    <constraint type="pattern">Use TypeScript strict mode for any new types</constraint>
+    <constraint type="testing">All tests must use Mocha + Chai framework</constraint>
+    <constraint type="testing">Maintain 514+ unit tests passing</constraint>
+    <constraint type="testing">Target: 15+ new tests covering all ACs</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>FileProcessingSession.getOrCreatePseudonym</name>
+      <kind>method</kind>
+      <signature>getOrCreatePseudonym(entityText: string, entityType: string): string</signature>
+      <path>fileProcessor.js</path>
+    </interface>
+    <interface>
+      <name>FileProcessingSession.getMapping</name>
+      <kind>method</kind>
+      <signature>getMapping(): Record&lt;string, string&gt;</signature>
+      <path>fileProcessor.js</path>
+    </interface>
+    <interface>
+      <name>ScoredAddress</name>
+      <kind>interface</kind>
+      <signature>interface ScoredAddress extends GroupedAddress { finalConfidence: number; scoringFactors: ScoringFactor[]; flaggedForReview: boolean; autoAnonymize: boolean; }</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>GroupedAddress</name>
+      <kind>interface</kind>
+      <signature>interface GroupedAddress { id: string; type: 'ADDRESS'; text: string; start: number; end: number; confidence: number; source: 'LINKED'; components: { street?: string; number?: string; postal?: string; city?: string; country?: string; }; componentEntities: AddressComponent[]; patternMatched: AddressPatternType; validationStatus: 'valid' | 'partial' | 'uncertain'; }</signature>
+      <path>src/types/detection.ts</path>
+    </interface>
+    <interface>
+      <name>AddressComponent</name>
+      <kind>interface</kind>
+      <signature>interface AddressComponent { type: AddressComponentType; text: string; start: number; end: number; linked?: boolean; linkedToGroupId?: string; }</signature>
+      <path>src/types/detection.ts</path>
+    </interface>
+    <interface>
+      <name>Mapping File Schema (Extended)</name>
+      <kind>json-schema</kind>
+      <signature>{ placeholder: string; type: string; originalText: string; components?: { street?: string; number?: string; postal?: string; city?: string; country?: string; }; confidence?: number; patternMatched?: string; scoringFactors?: ScoringFactor[]; flaggedForReview?: boolean; autoAnonymize?: boolean; }</signature>
+      <path>fileProcessor.js (output)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Tests use Mocha + Chai framework with ES modules. Test files are JavaScript (.js) located in test/unit/ and test/e2e/. Tests follow describe/it pattern with descriptive names. All async operations have 10-second timeout. Tests must verify all acceptance criteria. Follow existing patterns from AddressScorer.test.js (43 tests) and fileProcessor.session.test.js.
+    </standards>
+    <locations>
+      <location>test/unit/anonymization/</location>
+      <location>test/e2e/</location>
+      <location>test/unit/pii/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-2.4.1">Test grouped ADDRESS entity replaced with single [ADDRESS_1] placeholder</idea>
+      <idea ac="AC-2.4.1">Test multiple addresses get sequential placeholders [ADDRESS_1], [ADDRESS_2]</idea>
+      <idea ac="AC-2.4.1">Test ADDRESS counter resets per FileProcessingSession</idea>
+      <idea ac="AC-2.4.2">Test mapping file contains originalText for grouped address</idea>
+      <idea ac="AC-2.4.2">Test mapping file contains components breakdown (street, number, postal, city)</idea>
+      <idea ac="AC-2.4.2">Test mapping file contains confidence and patternMatched metadata</idea>
+      <idea ac="AC-2.4.2">Test mapping file contains scoringFactors array</idea>
+      <idea ac="AC-2.4.3">Test standalone POSTAL_CODE anonymized as [POSTAL_CODE_N] when not grouped</idea>
+      <idea ac="AC-2.4.3">Test standalone CITY anonymized as [CITY_N] when not grouped</idea>
+      <idea ac="AC-2.4.3">Test component with linked=true is NOT anonymized separately</idea>
+      <idea ac="AC-2.4.4">Test "Rue de Lausanne 12, 1000 Lausanne" becomes "[ADDRESS_1]" not fragmented</idea>
+      <idea ac="AC-2.4.4">Test "Bahnhofstrasse 10, 8001 Zürich" becomes single placeholder</idea>
+      <idea ac="AC-2.4.4">Integration test: full document with multiple grouped addresses</idea>
+      <idea ac="AC-2.4.4">Integration test: document with mix of grouped and standalone entities</idea>
+      <idea ac="all">E2E test: Swiss business letter with sender/recipient addresses</idea>
+    </ideas>
+  </tests>
+</story-context>

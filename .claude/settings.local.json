@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run test:i18n:coverage:*)"
+      "Bash(npm run test:i18n:coverage:*)",
+      "Bash(npm run compile:*)",
+      "Bash(npx mocha:*)",
+      "Bash(npm run lint:check:*)",
+      "Bash(cat:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,262 @@
+<story-context id="6-1-factory-central-logger" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>1</storyId>
+    <title>Factory Central Logger</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-1-factory-central-logger.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer maintaining the codebase</asA>
+    <iWant>a centralized logging factory with consistent configuration</iWant>
+    <soThat>all modules use the same logging patterns and levels can be controlled centrally</soThat>
+    <tasks>
+      <task id="1" title="Consolidate Logger Implementations" ac="1,5">
+        <subtask id="1.1">Analyze differences between src/utils/logger.ts and src/config/logging.js</subtask>
+        <subtask id="1.2">Design unified LoggerFactory class with best features from both</subtask>
+        <subtask id="1.3">Implement LoggerFactory in src/utils/LoggerFactory.ts</subtask>
+        <subtask id="1.4">Add TypeScript types for full type safety</subtask>
+      </task>
+      <task id="2" title="Implement Log Level Configuration" ac="3">
+        <subtask id="2.1">Add LOG_LEVEL environment variable support</subtask>
+        <subtask id="2.2">Implement per-scope level override via config</subtask>
+        <subtask id="2.3">Add runtime level change capability</subtask>
+      </task>
+      <task id="3" title="Ensure Multi-Process Compatibility" ac="4">
+        <subtask id="3.1">Verify electron-log IPC works for renderer to main</subtask>
+        <subtask id="3.2">Add console fallback for non-Electron environments</subtask>
+        <subtask id="3.3">Write tests for each environment context</subtask>
+      </task>
+      <task id="4" title="Migrate Existing Usages" ac="5">
+        <subtask id="4.1">Update src/services/*.ts imports (8 files)</subtask>
+        <subtask id="4.2">Update src/converters/*.ts imports (3 files)</subtask>
+        <subtask id="4.3">Update src/main.ts imports</subtask>
+        <subtask id="4.4">Update src/config/logging.js or deprecate</subtask>
+        <subtask id="4.5">Remove redundant src/utils/logger.ts after migration</subtask>
+      </task>
+      <task id="5" title="Testing" ac="1-5">
+        <subtask id="5.1">Unit tests for LoggerFactory</subtask>
+        <subtask id="5.2">Integration tests for log output format</subtask>
+        <subtask id="5.3">Test log level filtering</subtask>
+        <subtask id="5.4">Test console fallback in test environment</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Unified Logger Factory">
+      <requirement>Single LoggerFactory class that creates scoped loggers</requirement>
+      <requirement>Factory pattern: LoggerFactory.create('module-name') returns configured logger</requirement>
+      <requirement>Replaces/consolidates existing createLogger implementations</requirement>
+    </criterion>
+    <criterion id="AC2" title="Consistent Log Format">
+      <requirement>All logs include: timestamp, level, scope, message</requirement>
+      <requirement>Optional metadata object support: log.info('message', { key: 'value' })</requirement>
+      <requirement>Format is consistent across main process and renderer</requirement>
+    </criterion>
+    <criterion id="AC3" title="Configurable Log Levels">
+      <requirement>Supports levels: debug, info, warn, error</requirement>
+      <requirement>Global log level configurable via environment variable (LOG_LEVEL)</requirement>
+      <requirement>Per-scope level override capability</requirement>
+    </criterion>
+    <criterion id="AC4" title="Multi-Process Support">
+      <requirement>Works in Electron main process (electron-log)</requirement>
+      <requirement>Works in renderer process (via IPC or console)</requirement>
+      <requirement>Works in test environment (console fallback)</requirement>
+    </criterion>
+    <criterion id="AC5" title="Migration Complete">
+      <requirement>All existing createLogger imports migrated to use factory</requirement>
+      <requirement>No duplicate logger implementations remain</requirement>
+      <requirement>Backward compatibility maintained during transition</requirement>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Logging Strategy (lines 344-359)</section>
+        <snippet>Structured logging with levels: error, warn, info, debug. Pattern shows metadata logging without PII content. Uses logger from config/logging.</snippet>
+      </doc>
+      <doc>
+        <path>CLAUDE.md</path>
+        <title>Development Guidelines</title>
+        <section>Core Processing and Project Structure</section>
+        <snippet>Shows src/config/logging.js and src/utils/logger.ts as separate logger implementations with different purposes.</snippet>
+      </doc>
+      <doc>
+        <path>docs/CODE_REVIEW.md</path>
+        <title>Code Review Findings</title>
+        <section>Medium Priority Issue #20: No Logging Strategy</section>
+        <snippet>Mix of console.log, console.warn, console.error with no log levels, formatting, rotation, or production vs development modes.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger, Logger interface</symbol>
+        <lines>1-124</lines>
+        <reason>Primary TypeScript logger wrapper with typed interface. Must be consolidated into LoggerFactory.</reason>
+      </file>
+      <file>
+        <path>src/config/logging.js</path>
+        <kind>config</kind>
+        <symbol>configureLogging, createLogger, redactSensitiveData</symbol>
+        <lines>1-179</lines>
+        <reason>JavaScript logging configuration with PII redaction, file rotation, and archiving. Features to incorporate into factory.</reason>
+      </file>
+      <file>
+        <path>src/services/feedbackHandlers.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <lines>10,14</lines>
+        <reason>Example service using current logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/filePreviewHandlers.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>IPC handler using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/i18nHandlers.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>i18n service using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/modelHandlers.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Model handler using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/modelManager.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Model manager using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/accuracyHandlers.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Accuracy handlers using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/accuracyStats.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Accuracy stats service using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/services/feedbackLogger.ts</path>
+        <kind>service</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Feedback logger using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/converters/DocxToMarkdown.ts</path>
+        <kind>converter</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Document converter using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/converters/PdfToMarkdown.ts</path>
+        <kind>converter</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>PDF converter using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/converters/ExcelToMarkdown.ts</path>
+        <kind>converter</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Excel converter using logger. Migration target.</reason>
+      </file>
+      <file>
+        <path>src/main.ts</path>
+        <kind>entry</kind>
+        <symbol>configureLogging, createLogger usage</symbol>
+        <reason>Main entry point using JavaScript logging config. Primary migration target.</reason>
+      </file>
+      <file>
+        <path>fileProcessor.js</path>
+        <kind>processor</kind>
+        <symbol>createLogger usage</symbol>
+        <reason>Core file processor using logger. Migration target.</reason>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="electron-log" version="^5.4.3">Electron logging library with file transport, IPC support</package>
+        <package name="electron" version="^39.1.1">Electron framework (devDependency)</package>
+        <package name="typescript" version="^5.9.3">TypeScript compiler</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Factory pattern: LoggerFactory.create('scope') must return Logger interface</constraint>
+    <constraint type="compatibility">Must support both Electron main process and non-Electron (test) environments</constraint>
+    <constraint type="security">Production logs must redact PII (emails, phones, IBANs, AHV numbers, file paths)</constraint>
+    <constraint type="performance">Lazy initialization - don't load electron-log until needed</constraint>
+    <constraint type="migration">Maintain backward compatibility during transition - old imports should work</constraint>
+    <constraint type="testing">Console fallback must work for Mocha tests without Electron</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Logger</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface Logger {
+  debug(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  info(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  warn(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  error(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+}</signature>
+      <path>src/utils/logger.ts:12-17</path>
+    </interface>
+    <interface>
+      <name>createLogger</name>
+      <kind>function signature</kind>
+      <signature>function createLogger(scope: string): Logger</signature>
+      <path>src/utils/logger.ts:77</path>
+    </interface>
+    <interface>
+      <name>configureLogging</name>
+      <kind>async function</kind>
+      <signature>async function configureLogging(): Promise&lt;typeof log&gt;</signature>
+      <path>src/config/logging.js:66</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing uses Mocha + Chai framework with 10-second timeout for async operations.
+      Tests run outside Electron context, requiring console fallback.
+      Test files follow pattern: test/unit/**/*.test.js or test/unit/**/*.test.ts.
+      Logger tests should verify: scoped logging, level filtering, metadata handling, format consistency.
+    </standards>
+    <locations>
+      <location>test/unit/</location>
+      <location>test/unit/i18n/</location>
+      <location>test/integration/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test LoggerFactory.create() returns Logger interface with all methods</idea>
+      <idea ac="AC1">Test singleton pattern - same scope returns cached instance</idea>
+      <idea ac="AC2">Test log format includes timestamp, level, scope, message</idea>
+      <idea ac="AC2">Test metadata object is properly formatted in output</idea>
+      <idea ac="AC3">Test LOG_LEVEL environment variable filters messages</idea>
+      <idea ac="AC3">Test per-scope level override works independently</idea>
+      <idea ac="AC4">Test console fallback works when not in Electron context</idea>
+      <idea ac="AC4">Test electron-log integration in Electron context</idea>
+      <idea ac="AC5">Test all migrated files compile without errors</idea>
+      <idea ac="AC5">Test no duplicate createLogger implementations exist</idea>
+    </ideas>
+  </tests>
+</story-context>

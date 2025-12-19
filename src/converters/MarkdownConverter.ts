@@ -11,8 +11,8 @@ export interface MarkdownConverterOptions {
   includeFrontmatter?: boolean;
   includeMetadata?: boolean;
   modelName?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  /** Allow additional converter-specific options */
+  [key: string]: boolean | string | number | undefined;
 }
 
 export interface DocumentMetadata {
@@ -23,8 +23,14 @@ export interface DocumentMetadata {
   sheetCount?: number;
   rowCount?: number;
   conversionWarnings?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  /** PDF table detection metadata */
+  tablesDetected?: boolean;
+  tableCount?: number;
+  detectionMethod?: string;
+  confidence?: number;
+  pdfInfo?: Record<string, unknown>;
+  /** Allow additional format-specific metadata */
+  [key: string]: string | number | boolean | Record<string, unknown> | undefined;
 }
 
 export interface TableAlignment {
@@ -139,9 +145,9 @@ export class MarkdownConverter {
 
   /**
    * Escape pipe characters and newlines in table cells
+   * Accepts various types that may appear in spreadsheet/table cells
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  escapeTableCell(text: any): string {
+  escapeTableCell(text: unknown): string {
     if (text === null || text === undefined) {
       return '';
     }

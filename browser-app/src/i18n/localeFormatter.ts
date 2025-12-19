@@ -1,0 +1,196 @@
+/**
+ * Locale Formatter Module (Browser Version)
+ * Formats dates, times, and numbers according to locale conventions
+ * Uses native JavaScript Intl API
+ */
+
+import type { SupportedLocale, DateStyle, BCP47Locale } from './types';
+
+/**
+ * Map locale codes to BCP 47 format
+ */
+const LOCALE_MAP: Record<SupportedLocale, BCP47Locale> = {
+  'en': 'en-US',
+  'fr': 'fr-FR',
+  'de': 'de-DE',
+};
+
+/**
+ * Format options by style
+ */
+const DATE_FORMAT_OPTIONS: Record<DateStyle, Intl.DateTimeFormatOptions> = {
+  short: { year: 'numeric', month: '2-digit', day: '2-digit' },
+  medium: { year: 'numeric', month: 'short', day: 'numeric' },
+  long: { year: 'numeric', month: 'long', day: 'numeric' },
+};
+
+/**
+ * Get BCP 47 locale from supported locale code
+ */
+function getBCP47Locale(locale: string): BCP47Locale {
+  return LOCALE_MAP[locale as SupportedLocale] ?? 'en-US';
+}
+
+/**
+ * Check if a value is a valid Date
+ */
+function isValidDate(date: unknown): date is Date {
+  return date instanceof Date && !isNaN(date.getTime());
+}
+
+/**
+ * Format date according to locale
+ * @param date - Date object to format
+ * @param locale - Locale code ('en', 'fr', 'de')
+ * @param style - Format style ('short', 'medium', 'long')
+ * @returns Formatted date string
+ */
+export function formatDate(date: Date, locale: string = 'en', style: DateStyle = 'short'): string {
+  if (!isValidDate(date)) {
+    return '';
+  }
+
+  const bcp47Locale = getBCP47Locale(locale);
+  const options = DATE_FORMAT_OPTIONS[style] ?? DATE_FORMAT_OPTIONS.short;
+
+  try {
+    return new Intl.DateTimeFormat(bcp47Locale, options).format(date);
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return date.toLocaleDateString();
+  }
+}
+
+/**
+ * Format time according to locale
+ * @param date - Date object to format
+ * @param locale - Locale code ('en', 'fr', 'de')
+ * @returns Formatted time string
+ */
+export function formatTime(date: Date, locale: string = 'en'): string {
+  if (!isValidDate(date)) {
+    return '';
+  }
+
+  const bcp47Locale = getBCP47Locale(locale);
+
+  // English uses 12-hour format, French and German use 24-hour format
+  const options: Intl.DateTimeFormatOptions = {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: locale === 'en',
+  };
+
+  try {
+    return new Intl.DateTimeFormat(bcp47Locale, options).format(date);
+  } catch (error) {
+    console.error('Time formatting error:', error);
+    return date.toLocaleTimeString();
+  }
+}
+
+/**
+ * Format file size with locale-specific number formatting
+ * @param bytes - File size in bytes
+ * @param locale - Locale code ('en', 'fr', 'de')
+ * @returns Formatted file size string
+ */
+export function formatFileSize(bytes: number, locale: string = 'en'): string {
+  if (typeof bytes !== 'number' || bytes < 0) {
+    return '0 B';
+  }
+
+  const bcp47Locale = getBCP47Locale(locale);
+
+  const kb = bytes / 1024;
+  const mb = kb / 1024;
+  const gb = mb / 1024;
+
+  const numberFormatter = new Intl.NumberFormat(bcp47Locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  try {
+    if (gb >= 1) {
+      return `${numberFormatter.format(gb)} GB`;
+    } else if (mb >= 1) {
+      return `${numberFormatter.format(mb)} MB`;
+    } else if (kb >= 1) {
+      return `${numberFormatter.format(kb)} KB`;
+    } else {
+      return `${bytes} B`;
+    }
+  } catch (error) {
+    console.error('File size formatting error:', error);
+    return `${bytes} B`;
+  }
+}
+
+/**
+ * Format number according to locale
+ * @param number - Number to format
+ * @param locale - Locale code ('en', 'fr', 'de')
+ * @param options - Intl.NumberFormat options
+ * @returns Formatted number string
+ */
+export function formatNumber(
+  number: number,
+  locale: string = 'en',
+  options: Intl.NumberFormatOptions = {},
+): string {
+  if (typeof number !== 'number') {
+    return String(number);
+  }
+
+  const bcp47Locale = getBCP47Locale(locale);
+
+  try {
+    return new Intl.NumberFormat(bcp47Locale, options).format(number);
+  } catch (error) {
+    console.error('Number formatting error:', error);
+    return String(number);
+  }
+}
+
+/**
+ * Format date and time together
+ * @param date - Date object to format
+ * @param locale - Locale code ('en', 'fr', 'de')
+ * @returns Formatted date and time string
+ */
+export function formatDateTime(date: Date, locale: string = 'en'): string {
+  const dateStr = formatDate(date, locale);
+  const timeStr = formatTime(date, locale);
+  return `${dateStr} ${timeStr}`;
+}
+
+/**
+ * Format percentage
+ * @param value - Value between 0 and 1 (or 0-100)
+ * @param locale - Locale code
+ * @param decimals - Number of decimal places
+ * @returns Formatted percentage string
+ */
+export function formatPercent(value: number, locale: string = 'en', decimals: number = 0): string {
+  if (typeof value !== 'number') {
+    return '0%';
+  }
+
+  const bcp47Locale = getBCP47Locale(locale);
+
+  // Assume value > 1 means it's already a percentage
+  const normalizedValue = value > 1 ? value / 100 : value;
+
+  try {
+    return new Intl.NumberFormat(bcp47Locale, {
+      style: 'percent',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(normalizedValue);
+  } catch (error) {
+    console.error('Percentage formatting error:', error);
+    return `${(normalizedValue * 100).toFixed(decimals)}%`;
+  }
+}

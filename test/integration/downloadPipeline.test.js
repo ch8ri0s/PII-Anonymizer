@@ -43,7 +43,7 @@ describe('E2E: File Download Pipeline', function () {
   /**
    * Simulate entityReviewState from renderer.js
    */
-  function createMockEntityReviewState(processingResult) {
+  function createMockEntityReviewState(_processingResult) {
     return {
       entities: [
         {

@@ -10,7 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { app } from 'electron';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/LoggerFactory.js';
 import type { CorrectionEntry, CorrectionLogFile } from '../types/feedback.js';
 import type {
   AccuracyStatistics,
@@ -19,13 +19,12 @@ import type {
   TrendPoint,
   GetStatsOptions,
 } from '../types/accuracy.js';
+import { LOGGING } from '../config/constants.js';
 
 const log = createLogger('accuracy-stats');
 
-// Resource limits to prevent memory exhaustion
-const MAX_LOG_FILES = 60; // ~5 years of monthly logs
-const MAX_ENTRIES_PER_FILE = 10000;
-const MAX_TOTAL_ENTRIES = 100000;
+// Story 6.8: Resource limits moved to centralized LOGGING constants
+// These prevent memory exhaustion from excessive log data
 
 /**
  * Escape CSV cell value to prevent formula injection (CSV injection attack)
@@ -146,22 +145,22 @@ export class AccuracyStats {
 
       // Apply file limit (most recent files first)
       logFiles.sort().reverse();
-      if (logFiles.length > MAX_LOG_FILES) {
+      if (logFiles.length > LOGGING.MAX_LOG_FILES) {
         log.warn('Log file limit reached, processing most recent only', {
           total: logFiles.length,
-          limit: MAX_LOG_FILES,
+          limit: LOGGING.MAX_LOG_FILES,
         });
-        logFiles = logFiles.slice(0, MAX_LOG_FILES);
+        logFiles = logFiles.slice(0, LOGGING.MAX_LOG_FILES);
       }
 
       log.debug('Found correction log files', { count: logFiles.length });
 
       for (const filename of logFiles) {
         // Check if we've hit the total entry limit
-        if (totalEntries >= MAX_TOTAL_ENTRIES) {
+        if (totalEntries >= LOGGING.MAX_TOTAL_ENTRIES) {
           limitReached = true;
           log.warn('Total entry limit reached, stopping log loading', {
-            limit: MAX_TOTAL_ENTRIES,
+            limit: LOGGING.MAX_TOTAL_ENTRIES,
           });
           break;
         }
@@ -180,17 +179,17 @@ export class AccuracyStats {
 
           // Apply per-file entry limit
           let fileEntries = logFile.entries;
-          if (fileEntries.length > MAX_ENTRIES_PER_FILE) {
+          if (fileEntries.length > LOGGING.MAX_ENTRIES_PER_FILE) {
             log.warn('Per-file entry limit exceeded, truncating', {
               filename,
               actual: fileEntries.length,
-              limit: MAX_ENTRIES_PER_FILE,
+              limit: LOGGING.MAX_ENTRIES_PER_FILE,
             });
-            fileEntries = fileEntries.slice(0, MAX_ENTRIES_PER_FILE);
+            fileEntries = fileEntries.slice(0, LOGGING.MAX_ENTRIES_PER_FILE);
           }
 
           // Calculate remaining capacity
-          const remainingCapacity = MAX_TOTAL_ENTRIES - totalEntries;
+          const remainingCapacity = LOGGING.MAX_TOTAL_ENTRIES - totalEntries;
           const entriesToAdd = fileEntries.slice(0, remainingCapacity);
 
           entries.push(...entriesToAdd);

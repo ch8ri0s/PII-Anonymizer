@@ -1,0 +1,243 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.1</storyId>
+    <title>Entity Sidebar Panel</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-1-entity-sidebar-panel.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user reviewing detected PII</asA>
+    <iWant>a sidebar showing all detected entities with their types</iWant>
+    <soThat>I can quickly see what was found and filter by type</soThat>
+    <tasks>
+      <task id="1" status="pending">Review existing EntityReviewUI implementation (AC: all)</task>
+      <task id="2" status="pending">Verify sidebar panel rendering (AC: 4.1.1, 4.1.7)</task>
+      <task id="3" status="pending">Verify entity grouping by type (AC: 4.1.2, 4.1.5)</task>
+      <task id="4" status="pending">Verify entity display content (AC: 4.1.3)</task>
+      <task id="5" status="pending">Verify scroll-to-entity functionality (AC: 4.1.4)</task>
+      <task id="6" status="pending">Verify statistics panel (AC: 4.1.6)</task>
+      <task id="7" status="pending">Verify renderer.js integration (AC: 4.1.8)</task>
+      <task id="8" status="pending">Run full test suite (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-4.1.1">Given a document with detected PII, when the preview panel loads, then a collapsible sidebar appears on the right side</criterion>
+    <criterion id="AC-4.1.2">Entities are grouped by type (PERSON, ORG, ADDRESS, etc.)</criterion>
+    <criterion id="AC-4.1.3">Each entity shows: text, confidence score, position link</criterion>
+    <criterion id="AC-4.1.4">Clicking an entity scrolls preview to that location</criterion>
+    <criterion id="AC-4.1.5">Entity count badge shows per-type totals</criterion>
+    <criterion id="AC-4.1.6">Sidebar shows statistics: total, pending, approved, rejected, flagged counts</criterion>
+    <criterion id="AC-4.1.7">Sidebar is responsive and collapsible on mobile</criterion>
+    <criterion id="AC-4.1.8">Integration with renderer.js for entity review state management</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>A5-PII-Anonymizer Epic Breakdown</title>
+        <section>Epic 4: User Review Workflow - Story 4.1</section>
+        <snippet>Entity sidebar showing all detected entities with their types, grouped by type with count badges, click-to-scroll to entity position, collapsible on mobile.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 4: User Review</section>
+        <snippet>src/ui/EntitySidebar.ts - Entity review panel. Integration with renderer.js and IPC handlers via contextBridge for secure communication.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-5.7: Entity sidebar with type filters</section>
+        <snippet>Users can view detected entities in a sidebar, filter by type and confidence, and click to scroll to entity location in preview.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/ui/EntityReviewUI.ts</path>
+        <kind>ui-component</kind>
+        <symbol>EntityReviewUI class</symbol>
+        <lines>1-1043</lines>
+        <reason>PRIMARY IMPLEMENTATION - ALREADY EXISTS. Complete sidebar component with initialize() (69-77), loadEntities() (103-173), render() (268-297), renderHeader() (302-317), renderStats() (323-358), renderFilters() (364-407), renderEntityList() (413-432), renderEntityGroup() (437-459), renderEntityItem() (465-517), handleScrollTo() (786-791), calculateStatistics() (219-263).</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>ReviewableEntity, EntityFilterOptions, ReviewSession, ReviewResult</symbol>
+        <lines>1-317</lines>
+        <reason>Type definitions for entity review system - ALREADY EXISTS. Includes ReviewableEntity interface with position tracking, EntityGroup for type grouping, ReviewStatistics for counts, ENTITY_TYPE_LABELS and ENTITY_TYPE_COLORS constants.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>integration</kind>
+        <symbol>entityReviewState</symbol>
+        <lines>24-35</lines>
+        <reason>Entity review state management in renderer process. Stores entities, filters, and groupExpanded state. Integration point for EntityReviewUI.</reason>
+      </file>
+      <file>
+        <path>index.html</path>
+        <kind>template</kind>
+        <symbol>entity-review-container</symbol>
+        <lines>305-327</lines>
+        <reason>HTML container for entity review sidebar - ALREADY EXISTS. Entity Review card with entity-review-count badge, entity-review-container div for UI mounting, entity-review-empty placeholder, entity-review-panel for active review.</reason>
+      </file>
+      <file>
+        <path>test/unit/entityReview.test.js</path>
+        <kind>test</kind>
+        <symbol>Epic 4: User Review Workflow</symbol>
+        <lines>1-701</lines>
+        <reason>Comprehensive test suite for all Epic 4 stories including Story 4.1 Entity Sidebar Panel tests (lines 86-195). Tests entity state structure, statistics calculation, and entity grouping by type.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <purpose>Desktop application framework - renderer process hosts UI</purpose>
+      </node>
+      <node>
+        <package>tailwindcss</package>
+        <version>3.4.1</version>
+        <purpose>Utility-first CSS for responsive sidebar layout and collapsible design</purpose>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>5.9.3</version>
+        <purpose>Type-safe development for EntityReviewUI component</purpose>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>11.7.5</version>
+        <purpose>Test framework</purpose>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>6.2.0</version>
+        <purpose>Assertion library</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">TypeScript strict mode enabled - all UI components must be type-safe</constraint>
+    <constraint source="architecture">IPC isolation required - use contextBridge for renderer communication, no nodeIntegration</constraint>
+    <constraint source="architecture">Never log PII content - only metadata (type, position, confidence)</constraint>
+    <constraint source="prd">100% local processing - no network calls for entity review functionality</constraint>
+    <constraint source="story">Must integrate with existing renderer.js entityReviewState (lines 24-35)</constraint>
+    <constraint source="story">CRITICAL: Implementation already exists - story is VERIFICATION task</constraint>
+    <constraint source="security">XSS prevention - use escapeHtml() for all entity text display (implemented at line 38-42)</constraint>
+    <constraint source="ux">Responsive design - sidebar must be collapsible on mobile (toggle-sidebar action)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>EntityReviewUI.initialize()</name>
+      <kind>public-method</kind>
+      <signature>initialize(containerId: string): void</signature>
+      <path>src/ui/EntityReviewUI.ts:69-77</path>
+    </interface>
+    <interface>
+      <name>EntityReviewUI.loadEntities()</name>
+      <kind>public-method</kind>
+      <signature>loadEntities(entities: Record&lt;string, string&gt;, metadata?: { originalFile: string; entityDetails?: Array&lt;{ text: string; type: EntityType; confidence: number; source: string; start?: number; end?: number; flaggedForReview?: boolean }&gt; }): void</signature>
+      <path>src/ui/EntityReviewUI.ts:103-173</path>
+    </interface>
+    <interface>
+      <name>EntityReviewUI.setOnScrollToEntity()</name>
+      <kind>public-method</kind>
+      <signature>setOnScrollToEntity(callback: (start: number, end: number) =&gt; void): void</signature>
+      <path>src/ui/EntityReviewUI.ts:96-98</path>
+    </interface>
+    <interface>
+      <name>EntityReviewUI.setOnEntityAction()</name>
+      <kind>public-method</kind>
+      <signature>setOnEntityAction(callback: (entityId: string, action: string, data?: unknown) =&gt; void): void</signature>
+      <path>src/ui/EntityReviewUI.ts:82-84</path>
+    </interface>
+    <interface>
+      <name>ReviewableEntity</name>
+      <kind>interface</kind>
+      <signature>{ id: string; originalText: string; replacement: string; type: EntityType; confidence: number; source: 'ML' | 'RULE' | 'BOTH' | 'MANUAL'; status: ReviewStatus; position?: { start: number; end: number }; flaggedForReview: boolean; editedReplacement?: string; context?: string }</signature>
+      <path>src/types/entityReview.ts:20-56</path>
+    </interface>
+    <interface>
+      <name>EntityFilterOptions</name>
+      <kind>interface</kind>
+      <signature>{ types: EntityType[]; minConfidence: number; showFlaggedOnly: boolean; statusFilter: ReviewStatus | 'all'; searchText: string }</signature>
+      <path>src/types/entityReview.ts:61-76</path>
+    </interface>
+    <interface>
+      <name>ReviewStatistics</name>
+      <kind>interface</kind>
+      <signature>{ total: number; pending: number; approved: number; rejected: number; edited: number; flagged: number; manual: number; byType: Record&lt;EntityType, number&gt; }</signature>
+      <path>src/types/entityReview.ts:118-142</path>
+    </interface>
+    <interface>
+      <name>ENTITY_TYPE_LABELS</name>
+      <kind>constant</kind>
+      <signature>Record&lt;EntityType, string&gt;</signature>
+      <path>src/types/entityReview.ts:257-284</path>
+    </interface>
+    <interface>
+      <name>ENTITY_TYPE_COLORS</name>
+      <kind>constant</kind>
+      <signature>Record&lt;EntityType, string&gt;</signature>
+      <path>src/types/entityReview.ts:289-316</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Mocha + Chai test framework with 10-second timeout. Tests follow TDD Red-Green-Refactor cycle. 80%+ code coverage target. All tests must pass before story completion. Story 4.1 tests already exist (lines 86-195 in entityReview.test.js).</standards>
+    <locations>
+      <location>test/unit/entityReview.test.js (Story 4.1: Entity Sidebar Panel, lines 86-195)</location>
+      <location>test/unit/entityReview.test.js (Full Epic 4 coverage, 700+ lines)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-4.1.1">Verify EntityReviewUI.initialize() creates sidebar in DOM container - DONE: Test at lines 89-101</idea>
+      <idea ac="AC-4.1.2">Verify groupEntitiesByType() groups entities correctly - DONE: Tests at lines 167-193</idea>
+      <idea ac="AC-4.1.3">Verify renderEntityItem() displays text, confidence, source - Check implementation</idea>
+      <idea ac="AC-4.1.4">Verify handleScrollTo() calls onScrollToEntity callback with position - Integration test needed</idea>
+      <idea ac="AC-4.1.5">Verify renderEntityGroup() shows count badges - Check implementation</idea>
+      <idea ac="AC-4.1.6">Verify calculateStatistics() computes all counts - DONE: Tests at lines 131-164</idea>
+      <idea ac="AC-4.1.7">Verify toggle-sidebar action collapses sidebar - Manual UI verification</idea>
+      <idea ac="AC-4.1.8">Verify renderer.js entityReviewState initialization - Code review verification</idea>
+    </ideas>
+  </tests>
+
+  <key-methods>
+    <method name="initialize" location="src/ui/EntityReviewUI.ts:69-77" purpose="Setup sidebar in DOM container" />
+    <method name="loadEntities" location="src/ui/EntityReviewUI.ts:103-173" purpose="Load entities into review session" />
+    <method name="render" location="src/ui/EntityReviewUI.ts:268-297" purpose="Main render function building full sidebar" />
+    <method name="renderHeader" location="src/ui/EntityReviewUI.ts:302-317" purpose="Title and collapse button" />
+    <method name="renderStats" location="src/ui/EntityReviewUI.ts:323-358" purpose="Statistics panel with counts" />
+    <method name="renderFilters" location="src/ui/EntityReviewUI.ts:364-407" purpose="Filter controls (Story 4.2 foundation)" />
+    <method name="renderEntityList" location="src/ui/EntityReviewUI.ts:413-432" purpose="Grouped entity list" />
+    <method name="renderEntityGroup" location="src/ui/EntityReviewUI.ts:437-459" purpose="Single type group with collapse" />
+    <method name="renderEntityItem" location="src/ui/EntityReviewUI.ts:465-517" purpose="Single entity row with actions" />
+    <method name="handleScrollTo" location="src/ui/EntityReviewUI.ts:786-791" purpose="Scroll-to-entity callback" />
+    <method name="calculateStatistics" location="src/ui/EntityReviewUI.ts:219-263" purpose="Compute statistics from entities" />
+    <method name="groupEntitiesByType" location="src/ui/EntityReviewUI.ts:686-704" purpose="Group entities for sidebar display" />
+    <method name="getFilteredEntities" location="src/ui/EntityReviewUI.ts:646-681" purpose="Apply filters to entity list" />
+  </key-methods>
+
+  <implementation-status>
+    <summary>VERIFICATION TASK - Implementation already exists and is complete</summary>
+    <coverage>
+      <ac id="AC-4.1.1" status="implemented" evidence="initialize() at 69-77, index.html container at 305-327" />
+      <ac id="AC-4.1.2" status="implemented" evidence="groupEntitiesByType() at 686-704, renderEntityGroup() at 437-459" />
+      <ac id="AC-4.1.3" status="implemented" evidence="renderEntityItem() at 465-517 shows text, confidence, source" />
+      <ac id="AC-4.1.4" status="implemented" evidence="handleScrollTo() at 786-791 with onScrollToEntity callback" />
+      <ac id="AC-4.1.5" status="implemented" evidence="renderEntityGroup() shows group-count badge at line 449" />
+      <ac id="AC-4.1.6" status="implemented" evidence="renderStats() at 323-358 with total/pending/approved/rejected/flagged" />
+      <ac id="AC-4.1.7" status="implemented" evidence="toggle-sidebar action at line 311, responsive Tailwind classes" />
+      <ac id="AC-4.1.8" status="implemented" evidence="renderer.js entityReviewState at lines 24-35" />
+    </coverage>
+  </implementation-status>
+</story-context>

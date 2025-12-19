@@ -1,0 +1,235 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.3</storyId>
+    <title>Address Confidence Scoring</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/2-3-address-confidence-scoring.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>PII detection system</asA>
+    <iWant>to calculate confidence scores for grouped addresses based on component completeness, pattern matching, and validation</iWant>
+    <soThat>high-confidence addresses are auto-anonymized while uncertain groupings are flagged for user review</soThat>
+    <tasks>
+      <task id="1" status="pending">Extend AddressScorer configuration (AC: 2.3.1, 2.3.2, 2.3.3, 2.3.4)</task>
+      <task id="2" status="pending">Implement component completeness scoring (AC: 2.3.1)</task>
+      <task id="3" status="pending">Implement pattern match scoring (AC: 2.3.2)</task>
+      <task id="4" status="pending">Implement postal code validation scoring (AC: 2.3.3)</task>
+      <task id="5" status="pending">Implement city validation scoring (AC: 2.3.4)</task>
+      <task id="6" status="pending">Implement country presence scoring (AC: 2.3.1)</task>
+      <task id="7" status="pending">Calculate final confidence score (AC: 2.3.5, 2.3.6)</task>
+      <task id="8" status="pending">Update Entity with scoring results (AC: all)</task>
+      <task id="9" status="pending">Integration with AddressRelationshipPass (AC: all)</task>
+      <task id="10" status="pending">Test suite (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-2.3.1">Given a grouped address entity, confidence score includes +0.2 per component (max 5 components)</criterion>
+    <criterion id="AC-2.3.2">Pattern match adds +0.3 if matches known Swiss/EU format</criterion>
+    <criterion id="AC-2.3.3">Postal code validation adds +0.2 if valid Swiss/EU postal code</criterion>
+    <criterion id="AC-2.3.4">City validation adds +0.1 if matches known city</criterion>
+    <criterion id="AC-2.3.5">Addresses with confidence less than 0.6 are flagged for user review</criterion>
+    <criterion id="AC-2.3.6">High-confidence addresses (greater than or equal to 0.8) are auto-anonymized</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification - Address Relationship Modeling</title>
+        <section>Story 2.3: Address Confidence Scoring</section>
+        <snippet>Implements confidence scoring based on component completeness (+0.2 per component), pattern match (+0.3 for Swiss/EU), postal validation (+0.2), and city validation (+0.1). Thresholds: greater than 0.8 = auto-anonymize, less than 0.6 = flag for review.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>A5-PII-Anonymizer Architecture Document</title>
+        <section>Address Component Linking (Epic 2), ADR-005</section>
+        <snippet>Groups address components into unified ADDRESS entities using proximity-based linking and confidence scoring to determine auto-anonymization vs user review.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/2-2-proximity-based-component-linking.md</path>
+        <title>Story 2.2: Proximity-Based Component Linking (Completed)</title>
+        <section>Dev Agent Record - Learnings</section>
+        <snippet>GroupedAddress uses `components` for breakdown object (street, number, postal, city, country) and `componentEntities` for array. AddressPatternType enum: SWISS, EU, ALTERNATIVE, PARTIAL, NONE.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>src/pii/AddressScorer.ts</path>
+        <kind>service</kind>
+        <symbol>AddressScorer, ScoredAddress, ScoringFactor, AddressScorerConfig</symbol>
+        <lines>1-392</lines>
+        <reason>Primary implementation file - already has base scoring logic from Story 2.2, needs enhancement for configurable weights and detailed scoring factors per AC requirements</reason>
+      </artifact>
+      <artifact>
+        <path>src/types/detection.ts</path>
+        <kind>types</kind>
+        <symbol>GroupedAddress, AddressComponent, AddressPatternType, Entity</symbol>
+        <lines>54-180</lines>
+        <reason>Type definitions for address scoring - GroupedAddress interface with components/componentEntities/patternMatched fields</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressClassifier.ts</path>
+        <kind>service</kind>
+        <symbol>AddressClassifier, isValidSwissPostalCode, getCantonForPostalCode, isKnownSwissCity</symbol>
+        <reason>Provides postal code and city validation methods used by scorer</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressLinker.ts</path>
+        <kind>service</kind>
+        <symbol>AddressLinker, groupByProximity, detectPattern, linkAndGroup</symbol>
+        <reason>Story 2.2 implementation - provides GroupedAddress entities that AddressScorer scores</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/passes/AddressRelationshipPass.ts</path>
+        <kind>service</kind>
+        <symbol>AddressRelationshipPass, createAddressRelationshipPass</symbol>
+        <lines>1-255</lines>
+        <reason>Pipeline integration - uses AddressScorer.scoreAddresses() to score grouped addresses</reason>
+      </artifact>
+      <artifact>
+        <path>test/unit/pii/address/AddressLinker.test.js</path>
+        <kind>test</kind>
+        <symbol>AddressLinker tests</symbol>
+        <reason>Story 2.2 tests - follow same patterns for AddressScorer tests</reason>
+      </artifact>
+      <artifact>
+        <path>test/unit/pii/address/AddressComponentDetector.test.js</path>
+        <kind>test</kind>
+        <symbol>AddressComponentDetector tests</symbol>
+        <reason>Story 2.1 tests - provides component detection test patterns</reason>
+      </artifact>
+      <artifact>
+        <path>test/unit/pii/address/SwissPostalDatabase.test.js</path>
+        <kind>test</kind>
+        <symbol>SwissPostalDatabase tests</symbol>
+        <reason>Postal code validation tests - patterns for testing postal code scoring</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <ecosystem name="node">
+        <package name="typescript" version="^5.9.3" dev="true" />
+        <package name="mocha" version="^11.7.5" dev="true" />
+        <package name="chai" version="^6.2.0" dev="true" />
+        <package name="electron" version="^39.1.1" dev="true" />
+        <package name="@xenova/transformers" version="2.17.2" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="performance">Address scoring latency must be less than 100ms per document (NFR-P3: 30s for 10 pages total)</constraint>
+    <constraint type="performance">Scoring algorithm must be O(n) where n = number of addresses</constraint>
+    <constraint type="security">No external API calls - all validation local (Swiss postal database embedded)</constraint>
+    <constraint type="security">No PII logging - only log entity types, positions, and scores</constraint>
+    <constraint type="architecture">AddressScorer runs within AddressRelationshipPass (Pass 2.5) in DetectionPipeline</constraint>
+    <constraint type="architecture">Must use existing GroupedAddress type structure from Story 2.2</constraint>
+    <constraint type="pattern">Use TypeScript strict mode with explicit types</constraint>
+    <constraint type="pattern">Follow factory function pattern (createAddressScorer)</constraint>
+    <constraint type="testing">All tests must use Mocha + Chai framework</constraint>
+    <constraint type="testing">Tests located in test/unit/pii/address/</constraint>
+    <constraint type="testing">Target: 20+ tests covering all ACs</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AddressScorer.scoreAddress</name>
+      <kind>method</kind>
+      <signature>scoreAddress(address: GroupedAddress): ScoredAddress</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>AddressScorer.scoreAddresses</name>
+      <kind>method</kind>
+      <signature>scoreAddresses(addresses: GroupedAddress[]): ScoredAddress[]</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>AddressScorer.updateEntityWithScore</name>
+      <kind>method</kind>
+      <signature>updateEntityWithScore(entity: Entity, scoredAddress: ScoredAddress): Entity</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>ScoredAddress</name>
+      <kind>interface</kind>
+      <signature>interface ScoredAddress extends GroupedAddress { finalConfidence: number; scoringFactors: ScoringFactor[]; flaggedForReview: boolean; autoAnonymize: boolean; }</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>ScoringFactor</name>
+      <kind>interface</kind>
+      <signature>interface ScoringFactor { name: string; score: number; maxScore: number; matched: boolean; description: string; }</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>AddressScorerConfig</name>
+      <kind>interface</kind>
+      <signature>interface AddressScorerConfig { reviewThreshold: number; autoAnonymizeThreshold: number; weights: { componentCompleteness: number; patternMatch: number; postalCodeValidation: number; cityValidation: number; countryPresent: number; }; }</signature>
+      <path>src/pii/AddressScorer.ts</path>
+    </interface>
+    <interface>
+      <name>AddressClassifier.isValidSwissPostalCode</name>
+      <kind>method</kind>
+      <signature>isValidSwissPostalCode(code: number): boolean</signature>
+      <path>src/pii/AddressClassifier.ts</path>
+    </interface>
+    <interface>
+      <name>AddressClassifier.getCantonForPostalCode</name>
+      <kind>method</kind>
+      <signature>getCantonForPostalCode(code: number): string</signature>
+      <path>src/pii/AddressClassifier.ts</path>
+    </interface>
+    <interface>
+      <name>AddressClassifier.isKnownSwissCity</name>
+      <kind>method</kind>
+      <signature>isKnownSwissCity(city: string): boolean</signature>
+      <path>src/pii/AddressClassifier.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Tests use Mocha + Chai framework with ES modules. Test files are JavaScript (.js) located in test/unit/pii/address/. Tests follow describe/it pattern with descriptive names. All async operations have 10-second timeout. Tests must verify all acceptance criteria. Follow existing patterns from AddressLinker.test.js (26 tests).
+    </standards>
+    <locations>
+      <location>test/unit/pii/address/AddressScorer.test.js</location>
+      <location>test/unit/pii/address/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-2.3.1">Test scoreComponentCompleteness returns +0.2 per unique component type</idea>
+      <idea ac="AC-2.3.1">Test maximum score capped at 1.0 for 5+ components</idea>
+      <idea ac="AC-2.3.1">Test scoring for 1, 2, 3, 4, 5 component addresses</idea>
+      <idea ac="AC-2.3.1">Test country presence adds +0.1</idea>
+      <idea ac="AC-2.3.2">Test scorePatternMatch returns +0.3 for SWISS pattern</idea>
+      <idea ac="AC-2.3.2">Test scorePatternMatch returns +0.3 for EU pattern</idea>
+      <idea ac="AC-2.3.2">Test scorePatternMatch returns +0.24 for ALTERNATIVE pattern (0.3 * 0.8)</idea>
+      <idea ac="AC-2.3.2">Test scorePatternMatch returns +0.15 for PARTIAL pattern (0.3 * 0.5)</idea>
+      <idea ac="AC-2.3.2">Test scorePatternMatch returns 0 for NONE pattern</idea>
+      <idea ac="AC-2.3.3">Test scorePostalCode returns +0.2 for valid Swiss postal code (1000-9999)</idea>
+      <idea ac="AC-2.3.3">Test scorePostalCode returns +0.16 for EU postal code format (5 digits)</idea>
+      <idea ac="AC-2.3.3">Test scorePostalCode returns +0.14 for possible Austrian postal code</idea>
+      <idea ac="AC-2.3.3">Test scorePostalCode returns +0.06 for unverified postal code</idea>
+      <idea ac="AC-2.3.3">Test scorePostalCode returns 0 when no postal code present</idea>
+      <idea ac="AC-2.3.4">Test scoreCityValidation returns +0.1 for known Swiss city</idea>
+      <idea ac="AC-2.3.4">Test scoreCityValidation returns +0.05 for city after postal code</idea>
+      <idea ac="AC-2.3.4">Test scoreCityValidation returns +0.03 for unverified city</idea>
+      <idea ac="AC-2.3.4">Test scoreCityValidation returns 0 when no city present</idea>
+      <idea ac="AC-2.3.5">Test flaggedForReview = true when finalConfidence less than 0.6</idea>
+      <idea ac="AC-2.3.5">Test flaggedForReview = false when finalConfidence greater than or equal to 0.6</idea>
+      <idea ac="AC-2.3.6">Test autoAnonymize = true when finalConfidence greater than or equal to 0.8</idea>
+      <idea ac="AC-2.3.6">Test autoAnonymize = false when finalConfidence less than 0.8</idea>
+      <idea ac="all">Integration test: complete Swiss address scores greater than 0.8</idea>
+      <idea ac="all">Integration test: partial address scores less than 0.6</idea>
+      <idea ac="all">Test configurable weights override defaults</idea>
+      <idea ac="all">Test configurable thresholds override defaults</idea>
+      <idea ac="all">Test updateEntityWithScore copies all scoring metadata to entity</idea>
+    </ideas>
+  </tests>
+</story-context>

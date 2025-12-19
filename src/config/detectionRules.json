@@ -1,0 +1,235 @@
+{
+  "$schema": "./detectionRulesSchema.json",
+  "version": "1.0.0",
+  "description": "Default detection rules configuration for document type-specific PII detection",
+
+  "documentTypes": {
+    "INVOICE": {
+      "enabled": true,
+      "rules": [
+        "invoiceNumber",
+        "amount",
+        "vatNumber",
+        "paymentRef",
+        "iban",
+        "vendorName"
+      ],
+      "confidenceBoosts": {
+        "header": 0.2,
+        "table": 0.1,
+        "footer": 0.05
+      },
+      "entityTypeMapping": {
+        "INVOICE_NUMBER": "REFERENCE",
+        "AMOUNT": "FINANCIAL",
+        "VAT_NUMBER": "TAX_ID",
+        "PAYMENT_REF": "REFERENCE",
+        "IBAN": "FINANCIAL",
+        "VENDOR_NAME": "ORGANIZATION"
+      },
+      "thresholds": {
+        "autoAnonymize": 0.85,
+        "flagForReview": 0.6,
+        "minConfidence": 0.4
+      }
+    },
+
+    "LETTER": {
+      "enabled": true,
+      "rules": [
+        "sender",
+        "recipient",
+        "salutation",
+        "signature",
+        "letterDate",
+        "referenceLine"
+      ],
+      "confidenceBoosts": {
+        "header": 0.15,
+        "salutationArea": 0.2,
+        "signatureArea": 0.25
+      },
+      "entityTypeMapping": {
+        "SENDER": "PERSON",
+        "RECIPIENT": "ADDRESS",
+        "SALUTATION_NAME": "PERSON",
+        "SIGNATURE": "PERSON",
+        "LETTER_DATE": "DATE",
+        "REFERENCE_LINE": "REFERENCE"
+      },
+      "thresholds": {
+        "autoAnonymize": 0.8,
+        "flagForReview": 0.55,
+        "minConfidence": 0.35
+      }
+    },
+
+    "FORM": {
+      "enabled": true,
+      "rules": [
+        "formField",
+        "checkbox",
+        "signature",
+        "dateField"
+      ],
+      "confidenceBoosts": {
+        "labeledField": 0.3,
+        "requiredField": 0.15
+      },
+      "entityTypeMapping": {
+        "FORM_FIELD": "MIXED",
+        "CHECKBOX": "PREFERENCE",
+        "SIGNATURE": "PERSON",
+        "DATE_FIELD": "DATE"
+      },
+      "thresholds": {
+        "autoAnonymize": 0.75,
+        "flagForReview": 0.5,
+        "minConfidence": 0.3
+      }
+    },
+
+    "CONTRACT": {
+      "enabled": true,
+      "rules": [
+        "parties",
+        "clauses",
+        "signature",
+        "date",
+        "witness"
+      ],
+      "confidenceBoosts": {
+        "partiesClause": 0.25,
+        "signatureBlock": 0.2,
+        "witnessBlock": 0.15
+      },
+      "entityTypeMapping": {
+        "PARTY": "ORGANIZATION",
+        "CLAUSE_REFERENCE": "REFERENCE",
+        "SIGNATURE": "PERSON",
+        "CONTRACT_DATE": "DATE",
+        "WITNESS": "PERSON"
+      },
+      "thresholds": {
+        "autoAnonymize": 0.85,
+        "flagForReview": 0.6,
+        "minConfidence": 0.4
+      }
+    },
+
+    "REPORT": {
+      "enabled": true,
+      "rules": [
+        "author",
+        "sections",
+        "references",
+        "citations"
+      ],
+      "confidenceBoosts": {
+        "titlePage": 0.2,
+        "authorBlock": 0.25,
+        "bibliography": 0.1
+      },
+      "entityTypeMapping": {
+        "AUTHOR": "PERSON",
+        "SECTION_TITLE": "REFERENCE",
+        "CITATION": "REFERENCE"
+      },
+      "thresholds": {
+        "autoAnonymize": 0.8,
+        "flagForReview": 0.55,
+        "minConfidence": 0.35
+      }
+    },
+
+    "UNKNOWN": {
+      "enabled": true,
+      "rules": [],
+      "confidenceBoosts": {},
+      "entityTypeMapping": {},
+      "thresholds": {
+        "autoAnonymize": 0.8,
+        "flagForReview": 0.6,
+        "minConfidence": 0.4
+      },
+      "note": "Uses default detection rules without type-specific enhancements"
+    }
+  },
+
+  "globalSettings": {
+    "enableDocumentTypeDetection": true,
+    "fallbackToUnknown": true,
+    "minClassificationConfidence": 0.4,
+    "logClassificationResults": true,
+    "cacheClassificationResults": true
+  },
+
+  "ruleDefinitions": {
+    "invoiceNumber": {
+      "description": "Detect invoice/reference numbers",
+      "patterns": ["invoice_number"],
+      "entityType": "INVOICE_NUMBER",
+      "baseConfidence": 0.85
+    },
+    "amount": {
+      "description": "Detect monetary amounts with currency",
+      "patterns": ["amount_chf", "amount_eur", "amount_generic"],
+      "entityType": "AMOUNT",
+      "baseConfidence": 0.75
+    },
+    "vatNumber": {
+      "description": "Detect Swiss and EU VAT numbers",
+      "patterns": ["swiss_vat", "eu_vat"],
+      "entityType": "VAT_NUMBER",
+      "baseConfidence": 0.9
+    },
+    "paymentRef": {
+      "description": "Detect payment references (QR, ESR)",
+      "patterns": ["qr_reference", "esr_reference"],
+      "entityType": "PAYMENT_REF",
+      "baseConfidence": 0.85
+    },
+    "iban": {
+      "description": "Detect IBAN bank account numbers",
+      "patterns": ["iban"],
+      "entityType": "IBAN",
+      "baseConfidence": 0.95
+    },
+    "sender": {
+      "description": "Detect sender information in header",
+      "patterns": ["letterhead", "sender_block"],
+      "entityType": "SENDER",
+      "baseConfidence": 0.7
+    },
+    "recipient": {
+      "description": "Detect recipient address block",
+      "patterns": ["recipient_block", "attention_line"],
+      "entityType": "RECIPIENT",
+      "baseConfidence": 0.8
+    },
+    "salutation": {
+      "description": "Detect salutation with names",
+      "patterns": ["salutation_en", "salutation_fr", "salutation_de"],
+      "entityType": "SALUTATION_NAME",
+      "baseConfidence": 0.85
+    },
+    "signature": {
+      "description": "Detect signature after closing",
+      "patterns": ["closing_signature"],
+      "entityType": "SIGNATURE",
+      "baseConfidence": 0.9
+    },
+    "letterDate": {
+      "description": "Detect letter date",
+      "patterns": ["date_formal"],
+      "entityType": "LETTER_DATE",
+      "baseConfidence": 0.8
+    },
+    "referenceLine": {
+      "description": "Detect Re:/Betreff:/Objet: lines",
+      "patterns": ["reference_line"],
+      "entityType": "REFERENCE_LINE",
+      "baseConfidence": 0.75
+    }
+  }
+}

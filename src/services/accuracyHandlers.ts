@@ -4,13 +4,16 @@
  * Provides secure IPC handlers for accuracy dashboard operations.
  *
  * Security: Validates all inputs before processing.
+ *
+ * Story 6.3: Added sender verification
  */
 
-import { ipcMain, dialog, BrowserWindow } from 'electron';
+import { ipcMain, dialog, BrowserWindow, IpcMainInvokeEvent } from 'electron';
 import * as fs from 'fs';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/LoggerFactory.js';
 import { getAccuracyStats } from './accuracyStats.js';
 import type { AccuracyStatistics, ExportResult, GetStatsOptions } from '../types/accuracy.js';
+import { verifySender } from '../utils/ipcValidator.js';
 
 const log = createLogger('accuracy-handlers');
 
@@ -52,7 +55,13 @@ export function registerAccuracyHandlers(mainWindow: BrowserWindow | null): void
   }
 
   // Handler: Get accuracy statistics
-  ipcMain.handle('accuracy:get-stats', async (_event, options?: unknown): Promise<AccuracyStatistics> => {
+  ipcMain.handle('accuracy:get-stats', async (event: IpcMainInvokeEvent, options?: unknown): Promise<AccuracyStatistics> => {
+    // ✅ SECURITY: Verify sender (Story 6.3)
+    if (!verifySender(event)) {
+      log.warn('accuracy:get-stats: Unauthorized sender rejected');
+      throw new Error('Unauthorized request');
+    }
+
     log.debug('Received accuracy stats request');
 
     if (!validateGetStatsOptions(options)) {
@@ -64,7 +73,13 @@ export function registerAccuracyHandlers(mainWindow: BrowserWindow | null): void
   });
 
   // Handler: Get monthly trend data
-  ipcMain.handle('accuracy:get-trends', async (_event, view: unknown): Promise<AccuracyStatistics['trends']> => {
+  ipcMain.handle('accuracy:get-trends', async (event: IpcMainInvokeEvent, view: unknown): Promise<AccuracyStatistics['trends']> => {
+    // ✅ SECURITY: Verify sender (Story 6.3)
+    if (!verifySender(event)) {
+      log.warn('accuracy:get-trends: Unauthorized sender rejected');
+      throw new Error('Unauthorized request');
+    }
+
     log.debug('Received accuracy trends request', { view });
 
     const stats = await accuracyStats.calculateStatistics();
@@ -72,7 +87,13 @@ export function registerAccuracyHandlers(mainWindow: BrowserWindow | null): void
   });
 
   // Handler: Export CSV report
-  ipcMain.handle('accuracy:export-csv', async (): Promise<ExportResult> => {
+  ipcMain.handle('accuracy:export-csv', async (event: IpcMainInvokeEvent): Promise<ExportResult> => {
+    // ✅ SECURITY: Verify sender (Story 6.3)
+    if (!verifySender(event)) {
+      log.warn('accuracy:export-csv: Unauthorized sender rejected');
+      return { success: false, error: 'Unauthorized request' };
+    }
+
     log.debug('Received CSV export request');
 
     try {

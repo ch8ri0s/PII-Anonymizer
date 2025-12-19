@@ -8,6 +8,9 @@ import mammoth from 'mammoth';
 import TurndownService from 'turndown';
 import path from 'path';
 import { MarkdownConverter } from './MarkdownConverter.js';
+import { createLogger } from '../utils/LoggerFactory.js';
+
+const log = createLogger('converter:docx');
 
 export class DocxToMarkdown extends MarkdownConverter {
   private turndown: TurndownService;
@@ -32,7 +35,8 @@ export class DocxToMarkdown extends MarkdownConverter {
     // Handle images
     this.turndown.addRule('images', {
       filter: 'img',
-      replacement: (content: string, node: any) => {
+      // Turndown library uses untyped 'node' parameter - using unknown with type assertion
+      replacement: (_content: string, node: unknown) => {
         const imgNode = node as HTMLImageElement;
         const alt = imgNode.getAttribute('alt') || 'Image';
         const src = imgNode.getAttribute('src') || '';
@@ -43,33 +47,34 @@ export class DocxToMarkdown extends MarkdownConverter {
         }
 
         return `\n\n![${alt}](${src})\n\n`;
-      }
+      },
     });
 
     // Preserve line breaks
     this.turndown.addRule('lineBreaks', {
       filter: 'br',
-      replacement: () => '  \n'
+      replacement: () => '  \n',
     });
   }
 
-  async convert(filePath: string): Promise<string> {
+  override async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
 
     try {
       // Extract DOCX as HTML
       const result = await mammoth.convertToHtml({
         path: filePath,
+        // mammoth.images.imgElement callback has no type definitions - using unknown
         // @ts-expect-error - convertImage is valid but not in mammoth type definitions
-        convertImage: mammoth.images.imgElement((image: any) => {
+        convertImage: mammoth.images.imgElement((image: { read: (format: string) => Promise<string> }) => {
           return image.read('base64').then((imageBuffer: string) => {
             // Describe image instead of embedding
             return {
               src: `data:image/png;base64,${imageBuffer.substring(0, 100)}...`,
-              alt: 'Embedded image from DOCX'
+              alt: 'Embedded image from DOCX',
             };
           });
-        })
+        }),
       });
 
       const html = result.value;
@@ -77,7 +82,7 @@ export class DocxToMarkdown extends MarkdownConverter {
 
       // Log any conversion warnings
       if (messages.length > 0) {
-        console.warn(`DOCX conversion warnings for ${filename}:`, messages);
+        log.warn('DOCX conversion warnings', { filename, warningCount: messages.length, warnings: messages });
       }
 
       // Convert HTML to Markdown
@@ -88,7 +93,7 @@ export class DocxToMarkdown extends MarkdownConverter {
         filename: this.sanitizeFilename(filename),
         format: 'docx',
         timestamp: new Date().toISOString(),
-        conversionWarnings: messages.length
+        conversionWarnings: messages.length,
       });
 
       // Add title if not present
@@ -100,7 +105,7 @@ export class DocxToMarkdown extends MarkdownConverter {
       return frontmatter + markdown;
 
     } catch (error) {
-      console.error(`Error converting DOCX ${filename}:`, error);
+      log.error('Error converting DOCX', { filename, error: (error as Error).message });
       throw new Error(`Failed to convert DOCX: ${(error as Error).message}`);
     }
   }

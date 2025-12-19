@@ -57,7 +57,7 @@ export interface FilePreviewError {
  * Type guard to check if result is an error
  */
 export function isFilePreviewError(
-  result: FilePreview | FilePreviewError
+  result: FilePreview | FilePreviewError,
 ): result is FilePreviewError {
   return 'error' in result && !('content' in result);
 }

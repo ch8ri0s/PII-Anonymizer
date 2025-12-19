@@ -39,7 +39,7 @@ export interface PathValidationOptions {
 export class PathValidationError extends Error {
   constructor(
     message: string,
-    public readonly code: FileErrorCode
+    public readonly code: FileErrorCode,
   ) {
     super(message);
     this.name = 'PathValidationError';
@@ -74,7 +74,7 @@ const DEFAULT_MAX_FILE_SIZE = 1024 * 1024 * 1024;
  */
 export function validateFilePath(
   filePath: string,
-  options: PathValidationOptions = {}
+  options: PathValidationOptions = {},
 ): string {
   const {
     mustExist = true,
@@ -87,7 +87,7 @@ export function validateFilePath(
   if (filePath.includes('\0')) {
     throw new PathValidationError(
       'Invalid path: contains null byte',
-      'INVALID_PATH'
+      'INVALID_PATH',
     );
   }
 
@@ -98,7 +98,7 @@ export function validateFilePath(
   if (!path.isAbsolute(absolutePath)) {
     throw new PathValidationError(
       'Path must be absolute',
-      'INVALID_PATH'
+      'INVALID_PATH',
     );
   }
 
@@ -107,7 +107,7 @@ export function validateFilePath(
   if (allowedExtensions.length > 0 && !allowedExtensions.includes(extension)) {
     throw new PathValidationError(
       `File type not supported. Accepted formats: ${allowedExtensions.join(', ')}`,
-      'UNSUPPORTED_TYPE'
+      'UNSUPPORTED_TYPE',
     );
   }
 
@@ -115,7 +115,7 @@ export function validateFilePath(
   if (mustExist && !fs.existsSync(absolutePath)) {
     throw new PathValidationError(
       'File not found',
-      'FILE_NOT_FOUND'
+      'FILE_NOT_FOUND',
     );
   }
 
@@ -123,10 +123,10 @@ export function validateFilePath(
   if (mustBeReadable) {
     try {
       fs.accessSync(absolutePath, fs.constants.R_OK);
-    } catch (error) {
+    } catch {
       throw new PathValidationError(
         'Permission denied',
-        'PERMISSION_DENIED'
+        'PERMISSION_DENIED',
       );
     }
   }
@@ -140,7 +140,7 @@ export function validateFilePath(
       if (!stats.isFile()) {
         throw new PathValidationError(
           'Path is not a file',
-          'INVALID_PATH'
+          'INVALID_PATH',
         );
       }
 
@@ -148,7 +148,7 @@ export function validateFilePath(
       if (stats.size > maxFileSize) {
         throw new PathValidationError(
           `File too large (max ${formatFileSize(maxFileSize)})`,
-          'FILE_TOO_LARGE'
+          'FILE_TOO_LARGE',
         );
       }
     } catch (error) {
@@ -157,7 +157,7 @@ export function validateFilePath(
       }
       throw new PathValidationError(
         'Cannot access file',
-        'READ_ERROR'
+        'READ_ERROR',
       );
     }
   }
@@ -190,7 +190,7 @@ function formatFileSize(bytes: number): string {
  */
 export function validateFilePaths(
   filePaths: string[],
-  options: PathValidationOptions = {}
+  options: PathValidationOptions = {},
 ): Array<{ path: string; valid: boolean; error?: string; code?: FileErrorCode }> {
   return filePaths.map((filePath) => {
     try {

@@ -1,0 +1,201 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.4</storyId>
+    <title>Rule Engine Configuration</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/3-4-rule-engine-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>to configure which detection rules apply to each document type</iWant>
+    <soThat>detection behavior can be customized per organization</soThat>
+    <tasks>
+      <task id="1" status="pending">Review existing RuleEngine configuration (AC: all)</task>
+      <task id="2" status="pending">Verify default configuration loading (AC: 3.4.1, 3.4.2)</task>
+      <task id="3" status="pending">Verify custom configuration override (AC: 3.4.3)</task>
+      <task id="4" status="pending">Verify invalid configuration fallback (AC: 3.4.4, 3.4.5)</task>
+      <task id="5" status="pending">Verify threshold application (AC: 3.4.6)</task>
+      <task id="6" status="pending">Verify confidence boost application (AC: 3.4.7)</task>
+      <task id="7" status="pending">Verify entity type mapping (AC: 3.4.8)</task>
+      <task id="8" status="pending">Update tests to validate all ACs (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-3.4.1">Given a document type, rule configuration is loaded from JSON file</criterion>
+    <criterion id="AC-3.4.2">Default configuration provided out-of-box with all document types</criterion>
+    <criterion id="AC-3.4.3">Custom configuration file path can override defaults</criterion>
+    <criterion id="AC-3.4.4">Invalid configuration is logged and falls back to defaults</criterion>
+    <criterion id="AC-3.4.5">Configuration validation reports errors without crashing</criterion>
+    <criterion id="AC-3.4.6">Per-document-type confidence thresholds applied (autoAnonymize, flagForReview, minConfidence)</criterion>
+    <criterion id="AC-3.4.7">Per-document-type confidence boosts applied (header, footer, table)</criterion>
+    <criterion id="AC-3.4.8">Entity type mapping configurable per document type</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>A5-PII-Anonymizer Epic Breakdown</title>
+        <section>Story 3.4: Rule Engine Configuration</section>
+        <snippet>Configurable rule engine behavior per document type. Load configuration from JSON, support custom config paths, validate configuration, apply thresholds and boosts.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 3: Document-Type Detection</section>
+        <snippet>RuleEngine.ts coordinates document-type-specific rule application. Configuration loaded from detectionRules.json with embedded defaults as fallback.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>PII Detection Accuracy</section>
+        <snippet>Target 98%+ detection accuracy, less than 2% false positive rate. Per-document-type thresholds enable tuning accuracy vs false positives.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/pii/RuleEngine.ts</path>
+        <kind>orchestrator</kind>
+        <symbol>RuleEngine class</symbol>
+        <lines>1-429</lines>
+        <reason>Primary implementation - ALREADY EXISTS. Configuration loading (167-197), validation (388-420), threshold application (284-310), confidence boosts (315-347), entity type mapping (381-383).</reason>
+      </file>
+      <file>
+        <path>src/config/detectionRules.json</path>
+        <kind>configuration</kind>
+        <symbol>RulesConfiguration</symbol>
+        <lines>1-235</lines>
+        <reason>External JSON configuration - ALREADY EXISTS. All 6 document types configured with rules, confidenceBoosts, entityTypeMapping, thresholds. Global settings and rule definitions included.</reason>
+      </file>
+      <file>
+        <path>src/pii/DocumentClassifier.ts</path>
+        <kind>classifier</kind>
+        <symbol>DocumentClassifier class</symbol>
+        <lines>all</lines>
+        <reason>Provides document classification result (type, confidence, language) used by RuleEngine to select appropriate configuration.</reason>
+      </file>
+      <file>
+        <path>src/pii/passes/DocumentTypePass.ts</path>
+        <kind>pipeline-pass</kind>
+        <symbol>DocumentTypePass</symbol>
+        <lines>all</lines>
+        <reason>Orchestrates document classification and rule application in multi-pass pipeline. Integrates RuleEngine with detection pipeline.</reason>
+      </file>
+      <file>
+        <path>test/unit/pii/DocumentTypeDetection.test.js</path>
+        <kind>test</kind>
+        <symbol>Story 3.4: Rule Engine Configuration</symbol>
+        <lines>566-663</lines>
+        <reason>Test suite for all Story 3.4 acceptance criteria - configuration loading, validation, rule application, thresholds. ALREADY EXISTS with 9 tests.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>@xenova/transformers</package>
+        <version>2.17.2</version>
+        <purpose>ML-based NER detection (base entities)</purpose>
+      </node>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <purpose>Desktop application framework</purpose>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>5.9.3</version>
+        <purpose>Type-safe development for converters and PII detection</purpose>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>11.7.5</version>
+        <purpose>Test framework</purpose>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>6.2.0</version>
+        <purpose>Assertion library</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">TypeScript strict mode enabled - all new code must be type-safe</constraint>
+    <constraint source="architecture">IPC isolation required - use contextBridge for renderer communication</constraint>
+    <constraint source="architecture">Never log PII content - only metadata (type, position, confidence)</constraint>
+    <constraint source="prd">100% local processing - no network calls for detection or configuration</constraint>
+    <constraint source="prd">Target 98%+ detection accuracy, less than 2% false positive rate</constraint>
+    <constraint source="story">Must maintain backward compatibility with existing RuleEngine API</constraint>
+    <constraint source="story">CRITICAL: Implementation already exists - story is VERIFICATION task</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>RuleEngine.loadConfiguration()</name>
+      <kind>private-method</kind>
+      <signature>private loadConfiguration(engineConfig: RuleEngineConfig): RulesConfiguration</signature>
+      <path>src/pii/RuleEngine.ts:167-197</path>
+    </interface>
+    <interface>
+      <name>RuleEngine.validateConfiguration()</name>
+      <kind>public-method</kind>
+      <signature>validateConfiguration(): { valid: boolean; errors: string[] }</signature>
+      <path>src/pii/RuleEngine.ts:388-420</path>
+    </interface>
+    <interface>
+      <name>RuleEngine.getTypeConfig()</name>
+      <kind>public-method</kind>
+      <signature>getTypeConfig(docType: DocumentType): DocumentTypeRuleConfig</signature>
+      <path>src/pii/RuleEngine.ts:352-354</path>
+    </interface>
+    <interface>
+      <name>RuleEngine.getEntityTypeMapping()</name>
+      <kind>public-method</kind>
+      <signature>getEntityTypeMapping(docType: DocumentType): Record&lt;string, string&gt;</signature>
+      <path>src/pii/RuleEngine.ts:381-383</path>
+    </interface>
+    <interface>
+      <name>RuleEngineConfig</name>
+      <kind>interface</kind>
+      <signature>{ configPath?: string; overrides?: Partial&lt;RulesConfiguration&gt;; debug?: boolean }</signature>
+      <path>src/pii/RuleEngine.ts:68-77</path>
+    </interface>
+    <interface>
+      <name>DocumentTypeRuleConfig</name>
+      <kind>interface</kind>
+      <signature>{ enabled: boolean; rules: string[]; confidenceBoosts: Record&lt;string, number&gt;; entityTypeMapping: Record&lt;string, string&gt;; thresholds: { autoAnonymize, flagForReview, minConfidence } }</signature>
+      <path>src/pii/RuleEngine.ts:20-31</path>
+    </interface>
+    <interface>
+      <name>RulesConfiguration</name>
+      <kind>interface</kind>
+      <signature>{ version: string; description: string; documentTypes: Record&lt;DocumentType, DocumentTypeRuleConfig&gt;; globalSettings: GlobalRuleSettings; ruleDefinitions: Record&lt;string, RuleDefinition&gt; }</signature>
+      <path>src/pii/RuleEngine.ts:47-53</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Mocha + Chai test framework with 10-second timeout. Tests follow TDD Red-Green-Refactor cycle. 80%+ code coverage target. All tests must pass before story completion. Story 3.4 tests already exist and pass (9 tests).</standards>
+    <locations>
+      <location>test/unit/pii/DocumentTypeDetection.test.js (lines 566-663)</location>
+      <location>test/unit/pii/*.test.js</location>
+      <location>test/integration/*.test.js</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-3.4.1">Verify config loaded from JSON file - DONE: getTypeConfig() returns config</idea>
+      <idea ac="AC-3.4.2">Verify default config for all 6 document types - DONE: INVOICE, LETTER, FORM, CONTRACT, REPORT, UNKNOWN</idea>
+      <idea ac="AC-3.4.3">Test custom configPath override - Available via RuleEngineConfig.configPath</idea>
+      <idea ac="AC-3.4.4">Test invalid config fallback - loadConfiguration() catches errors, uses defaults</idea>
+      <idea ac="AC-3.4.5">Test validateConfiguration() - DONE: Returns { valid: boolean, errors: string[] }</idea>
+      <idea ac="AC-3.4.6">Test threshold application - DONE: applyThresholds() filters/flags entities</idea>
+      <idea ac="AC-3.4.7">Test confidence boost application - DONE: applyTypeConfidenceBoosts() adds header/footer boosts</idea>
+      <idea ac="AC-3.4.8">Test entity type mapping retrieval - DONE: getEntityTypeMapping() returns mapping</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,15 @@
+Sample Text Document
+
+This is a test document for the PII Anonymizer browser application.
+
+Contact Information:
+- Name: Hans Müller
+- Email: hans.mueller@example.ch
+- Phone: +41 79 123 45 67
+- Address: Bahnhofstrasse 42, 8001 Zürich
+
+The document contains various PII elements that should be detected
+and anonymized before being processed by an LLM.
+
+Special characters test: äöü ß éèê çñ
+Unicode test: 日本語 中文 한국어

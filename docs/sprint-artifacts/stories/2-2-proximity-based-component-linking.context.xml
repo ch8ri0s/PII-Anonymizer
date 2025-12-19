@@ -1,0 +1,219 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.2</storyId>
+    <title>Proximity-Based Component Linking</title>
+    <status>review</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/2-2-proximity-based-component-linking.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>PII detection system</asA>
+    <iWant>to group address components that are spatially close together using proximity analysis and pattern matching</iWant>
+    <soThat>complete addresses are anonymized as unified entities rather than fragmented pieces</soThat>
+    <tasks>
+      <task id="1" status="done">Create TypeScript types for linked addresses (AC: 2.2.5, 2.2.6)</task>
+      <task id="2" status="done">Implement proximity-based grouping (AC: 2.2.1)</task>
+      <task id="3" status="done">Implement Swiss address pattern matching (AC: 2.2.2)</task>
+      <task id="4" status="done">Implement EU address pattern matching (AC: 2.2.3)</task>
+      <task id="5" status="done">Implement alternative pattern matching (AC: 2.2.4)</task>
+      <task id="6" status="done">Create GroupedAddress entities (AC: 2.2.5)</task>
+      <task id="7" status="done">Mark original components as linked (AC: 2.2.6)</task>
+      <task id="8" status="done">Integration with AddressClassifier (AC: all)</task>
+      <task id="9" status="done">Test suite (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-2.2.1">Given classified address components, when proximity linking runs, then components within 50 characters are grouped as candidates</criterion>
+    <criterion id="AC-2.2.2">Swiss address patterns are recognized: [Street] [Number], [PostalCode] [City]</criterion>
+    <criterion id="AC-2.2.3">EU address patterns are recognized: [Street] [Number], [PostalCode] [City], [Country]</criterion>
+    <criterion id="AC-2.2.4">Alternative patterns are recognized: [PostalCode] [City], [Street] [Number]</criterion>
+    <criterion id="AC-2.2.5">Grouped components create a single ADDRESS entity with sub-components</criterion>
+    <criterion id="AC-2.2.6">Original component entities are marked as "linked" (not standalone)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification - Address Relationship Modeling</title>
+        <section>Story 2.2: Proximity-Based Component Linking</section>
+        <snippet>Implements proximity-based component linking within spatial proximity (50 characters). Supports Swiss/EU patterns with confidence scoring.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>A5-PII-Anonymizer Architecture Document</title>
+        <section>Address Component Linking (Epic 2)</section>
+        <snippet>Groups address components into unified ADDRESS entities using proximity analysis and pattern matching (ADR-005).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/2-1-address-component-classifier.md</path>
+        <title>Story 2.1: Address Component Classifier</title>
+        <section>Completed Story</section>
+        <snippet>Provides AddressClassifier.classifyComponents() which detects individual address components (STREET_NAME, STREET_NUMBER, POSTAL_CODE, CITY, COUNTRY).</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>src/pii/AddressLinker.ts</path>
+        <kind>service</kind>
+        <symbol>AddressLinker</symbol>
+        <lines>1-620</lines>
+        <reason>Primary implementation file for Story 2.2 - contains groupByProximity(), detectPattern(), matchPatterns(), createGroupedAddressFromLinked(), linkAndGroup()</reason>
+      </artifact>
+      <artifact>
+        <path>src/types/detection.ts</path>
+        <kind>types</kind>
+        <symbol>GroupedAddress, LinkedAddressGroup, AddressPatternType, AddressComponent</symbol>
+        <lines>54-129</lines>
+        <reason>Type definitions for address linking - GroupedAddress interface, LinkedAddressGroup, AddressPatternType enum, linked flag on AddressComponent</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressClassifier.ts</path>
+        <kind>service</kind>
+        <symbol>AddressClassifier</symbol>
+        <reason>Dependency - provides classifyComponents() for detecting individual address components (Story 2.1)</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/AddressScorer.ts</path>
+        <kind>service</kind>
+        <symbol>AddressScorer</symbol>
+        <lines>1-392</lines>
+        <reason>Updated to use new GroupedAddress type structure - uses componentEntities and components fields</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/passes/AddressRelationshipPass.ts</path>
+        <kind>service</kind>
+        <symbol>AddressRelationshipPass</symbol>
+        <lines>1-255</lines>
+        <reason>Integration with detection pipeline - uses AddressLinker.linkComponents() and AddressScorer</reason>
+      </artifact>
+      <artifact>
+        <path>src/pii/DetectionPipeline.ts</path>
+        <kind>service</kind>
+        <symbol>generateEntityId</symbol>
+        <reason>Utility function for generating unique entity IDs for grouped addresses</reason>
+      </artifact>
+      <artifact>
+        <path>test/unit/pii/address/AddressLinker.test.js</path>
+        <kind>test</kind>
+        <symbol>AddressLinker tests</symbol>
+        <lines>1-500+</lines>
+        <reason>26 test cases covering all acceptance criteria for Story 2.2</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <ecosystem name="node">
+        <package name="typescript" version="^5.9.3" dev="true" />
+        <package name="mocha" version="^11.7.5" dev="true" />
+        <package name="chai" version="^6.2.0" dev="true" />
+        <package name="electron" version="^39.1.1" dev="true" />
+        <package name="@xenova/transformers" version="2.17.2" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="performance">Component detection latency must be less than 100ms per document</constraint>
+    <constraint type="performance">Proximity linking must use O(n log n) complexity (sort-based algorithm)</constraint>
+    <constraint type="security">No external API calls - all processing must be local</constraint>
+    <constraint type="security">No PII logging - only log entity types and positions</constraint>
+    <constraint type="architecture">Runs as part of AddressRelationshipPass (Pass 2.5) in DetectionPipeline</constraint>
+    <constraint type="architecture">Must integrate with existing AddressClassifier from Story 2.1</constraint>
+    <constraint type="pattern">Use TypeScript strict mode with explicit types</constraint>
+    <constraint type="pattern">Follow factory function pattern (createAddressLinker)</constraint>
+    <constraint type="testing">All tests must use Mocha + Chai framework</constraint>
+    <constraint type="testing">Tests located in test/unit/pii/address/</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AddressLinker.groupByProximity</name>
+      <kind>method</kind>
+      <signature>groupByProximity(components: AddressComponent[], text: string): AddressComponent[][]</signature>
+      <path>src/pii/AddressLinker.ts</path>
+    </interface>
+    <interface>
+      <name>AddressLinker.detectPattern</name>
+      <kind>method</kind>
+      <signature>detectPattern(components: AddressComponent[]): AddressPatternType</signature>
+      <path>src/pii/AddressLinker.ts</path>
+    </interface>
+    <interface>
+      <name>AddressLinker.matchPatterns</name>
+      <kind>method</kind>
+      <signature>matchPatterns(groups: AddressComponent[][]): LinkedAddressGroup[]</signature>
+      <path>src/pii/AddressLinker.ts</path>
+    </interface>
+    <interface>
+      <name>AddressLinker.createGroupedAddressFromLinked</name>
+      <kind>method</kind>
+      <signature>createGroupedAddressFromLinked(linkedGroup: LinkedAddressGroup, text: string): GroupedAddress</signature>
+      <path>src/pii/AddressLinker.ts</path>
+    </interface>
+    <interface>
+      <name>AddressLinker.linkAndGroup</name>
+      <kind>method</kind>
+      <signature>linkAndGroup(components: AddressComponent[], text: string): { groupedAddresses: GroupedAddress[]; unlinkedComponents: AddressComponent[]; linkedComponents: AddressComponent[] }</signature>
+      <path>src/pii/AddressLinker.ts</path>
+    </interface>
+    <interface>
+      <name>AddressLinker.linkComponents</name>
+      <kind>method</kind>
+      <signature>linkComponents(text: string, components: AddressComponent[]): GroupedAddress[]</signature>
+      <path>src/pii/AddressLinker.ts</path>
+    </interface>
+    <interface>
+      <name>GroupedAddress</name>
+      <kind>interface</kind>
+      <signature>interface GroupedAddress { id: string; type: 'ADDRESS'; text: string; start: number; end: number; confidence: number; source: 'LINKED'; components: { street?: string; number?: string; postal?: string; city?: string; country?: string }; componentEntities: AddressComponent[]; patternMatched: AddressPatternType; validationStatus: 'valid' | 'partial' | 'uncertain' }</signature>
+      <path>src/types/detection.ts</path>
+    </interface>
+    <interface>
+      <name>LinkedAddressGroup</name>
+      <kind>interface</kind>
+      <signature>interface LinkedAddressGroup { components: AddressComponent[]; pattern: AddressPatternType; start: number; end: number; isValid: boolean }</signature>
+      <path>src/types/detection.ts</path>
+    </interface>
+    <interface>
+      <name>AddressPatternType</name>
+      <kind>type</kind>
+      <signature>type AddressPatternType = 'SWISS' | 'EU' | 'ALTERNATIVE' | 'PARTIAL' | 'NONE'</signature>
+      <path>src/types/detection.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Tests use Mocha + Chai framework with ES modules. Test files are JavaScript (.js) located in test/unit/pii/address/. Tests follow describe/it pattern with descriptive names. All async operations have 10-second timeout. Tests must verify all acceptance criteria.
+    </standards>
+    <locations>
+      <location>test/unit/pii/address/AddressLinker.test.js</location>
+      <location>test/unit/pii/address/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-2.2.1">Test groupByProximity groups components within 50-char threshold</idea>
+      <idea ac="AC-2.2.1">Test groupByProximity handles newline expansion to 100-char threshold</idea>
+      <idea ac="AC-2.2.1">Test groupByProximity starts new group when gap exceeds threshold</idea>
+      <idea ac="AC-2.2.2">Test detectPattern returns 'SWISS' for [Street][Number],[Postal][City] pattern</idea>
+      <idea ac="AC-2.2.2">Integration test: "Rue de Lausanne 12, 1000 Lausanne" detected as SWISS</idea>
+      <idea ac="AC-2.2.3">Test detectPattern returns 'EU' for pattern with country component</idea>
+      <idea ac="AC-2.2.3">Integration test: "Bahnhofstrasse 1, 8001 Zurich, Schweiz" detected as EU</idea>
+      <idea ac="AC-2.2.4">Test detectPattern returns 'ALTERNATIVE' for [Postal][City],[Street][Number]</idea>
+      <idea ac="AC-2.2.4">Integration test: "1000 Lausanne, Rue de Lausanne 12" detected as ALTERNATIVE</idea>
+      <idea ac="AC-2.2.5">Test createGroupedAddressFromLinked creates correct GroupedAddress structure</idea>
+      <idea ac="AC-2.2.5">Test GroupedAddress has components breakdown and componentEntities array</idea>
+      <idea ac="AC-2.2.6">Test linked flag is set to true on original components</idea>
+      <idea ac="AC-2.2.6">Test linkedToGroupId references the parent GroupedAddress id</idea>
+      <idea ac="AC-2.2.6">Test unlinked components are returned separately</idea>
+      <idea ac="all">Integration test: full pipeline from text to grouped addresses</idea>
+      <idea ac="all">Edge case: overlapping addresses handled correctly</idea>
+      <idea ac="all">Edge case: scattered components beyond threshold not grouped</idea>
+    </ideas>
+  </tests>
+</story-context>

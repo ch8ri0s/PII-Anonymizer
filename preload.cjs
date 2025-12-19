@@ -334,6 +334,21 @@ contextBridge.exposeInMainWorld('feedbackAPI', {
 });
 
 // Expose Accuracy API for dashboard statistics (Epic 5, Story 5.3)
+// Expose application constants (Story 6.8)
+// Import compiled constants from dist/ directory
+const CONSTANTS = require('./dist/config/constants.js');
+
+contextBridge.exposeInMainWorld('constants', {
+  // Preview limits
+  PREVIEW: CONSTANTS.PREVIEW,
+  // Timeout configuration
+  TIMEOUT: CONSTANTS.TIMEOUT,
+  // Processing parameters
+  PROCESSING: CONSTANTS.PROCESSING,
+  // UI configuration
+  UI: CONSTANTS.UI,
+});
+
 contextBridge.exposeInMainWorld('accuracyAPI', {
   /**
    * Get accuracy statistics

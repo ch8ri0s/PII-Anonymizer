@@ -1,0 +1,218 @@
+<story-context id="5-2-user-correction-logging" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5.2</storyId>
+    <title>User Correction Logging</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-2-user-correction-logging.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system improving accuracy</asA>
+    <iWant>to log user corrections (dismissals and manual additions)</iWant>
+    <soThat>patterns can be analyzed for future improvements</soThat>
+    <tasks>
+      <task id="1" ac="5.2.1,5.2.2,5.2.3">Create FeedbackLogger service</task>
+      <task id="2" ac="5.2.4">Implement PII anonymization for logs</task>
+      <task id="3" ac="5.2.1,5.2.2">Add IPC handlers for logging</task>
+      <task id="4" ac="5.2.1">Integrate with entity selection changes (DISMISS)</task>
+      <task id="5" ac="5.2.2">Integrate with manual PII marking (ADD)</task>
+      <task id="6" ac="5.2.5">Add privacy opt-out setting</task>
+      <task id="7" ac="all">Add unit tests for FeedbackLogger</task>
+      <task id="8" ac="all">Run test suite and verify no regression</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-5.2.1">Given user dismisses a false positive, when correction is made, then correction is logged with entity data, action type (DISMISS), and document context</criterion>
+    <criterion id="AC-5.2.2">Given user marks new PII manually, when correction is made, then correction is logged with marked text, action type (ADD), user-assigned type, and context</criterion>
+    <criterion id="AC-5.2.3">Logs are stored locally in app data directory as JSON files (corrections-YYYY-MM.json)</criterion>
+    <criterion id="AC-5.2.4">Logged data is anonymized - no actual PII stored, only patterns and type markers</criterion>
+    <criterion id="AC-5.2.5">User can opt-out of logging via settings toggle</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 5.2: User Correction Logging</section>
+        <snippet>Log user corrections (dismissals and manual additions) with anonymized data for pattern analysis. Store locally with opt-out capability.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic to Architecture Mapping - Epic 5</section>
+        <snippet>FeedbackLogger service location: src/services/feedbackLogger.ts. AccuracyDashboard: src/ui/AccuracyDashboard.ts. Uses localStorage and electron app data.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-1-confidence-score-display.md</path>
+        <title>Previous Story (5.1)</title>
+        <section>Dev Agent Record</section>
+        <snippet>Added getConfidenceClass() and getSourceClass() helpers to renderer.js. Entity rendering in renderEntityItem() includes confidence, source badges. 28 tests added.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>renderer.js</path>
+        <kind>ui-controller</kind>
+        <symbol>handleEntitySelectionToggle</symbol>
+        <lines>1194-1202</lines>
+        <reason>Integration point for DISMISS action logging when entity is deselected</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>ui-controller</kind>
+        <symbol>handleManualPiiMark</symbol>
+        <lines>1598+</lines>
+        <reason>Integration point for ADD action logging when manual PII is marked</reason>
+      </file>
+      <file>
+        <path>preload.cjs</path>
+        <kind>ipc-bridge</kind>
+        <symbol>contextBridge.exposeInMainWorld</symbol>
+        <lines>29-123</lines>
+        <reason>Pattern for exposing new IPC method (feedback:log-correction)</reason>
+      </file>
+      <file>
+        <path>main.js</path>
+        <kind>main-process</kind>
+        <symbol>ipcMain.handle</symbol>
+        <reason>Add new IPC handler for feedback:log-correction</reason>
+      </file>
+      <file>
+        <path>src/services/modelHandlers.ts</path>
+        <kind>service</kind>
+        <reason>Reference pattern for creating TypeScript services with IPC handlers</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>types</kind>
+        <symbol>ReviewableEntity, ManualMarkRequest</symbol>
+        <lines>20-56, 164-179</lines>
+        <reason>Existing entity types to reference for CorrectionEntry interface</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <usage>app.getPath('userData') for log file storage</usage>
+      </node>
+      <node>
+        <package>crypto</package>
+        <version>builtin</version>
+        <usage>SHA-256 for document hash (anonymization)</usage>
+      </node>
+      <node>
+        <package>uuid</package>
+        <version>devDep (@types/uuid)</version>
+        <usage>Generate unique correction entry IDs</usage>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface>
+      <name>CorrectionEntry</name>
+      <kind>TypeScript interface</kind>
+      <signature><![CDATA[
+interface CorrectionEntry {
+  id: string;                              // UUID
+  timestamp: string;                       // ISO 8601
+  action: 'DISMISS' | 'ADD';              // Correction type
+  entityType: string;                      // PERSON, EMAIL, etc.
+  originalSource?: 'ML' | 'RULE' | 'BOTH'; // For DISMISS only
+  confidence?: number;                     // For DISMISS only
+  context: string;                         // Anonymized surrounding text
+  documentHash: string;                    // SHA-256 of filename
+  position?: { start: number; end: number };
+}
+      ]]></signature>
+      <path>src/types/feedback.ts (NEW) or src/types/index.ts</path>
+    </interface>
+    <interface>
+      <name>feedback:log-correction</name>
+      <kind>IPC channel</kind>
+      <signature><![CDATA[
+// preload.cjs
+logCorrection: (entry: CorrectionEntry) => ipcRenderer.invoke('feedback:log-correction', entry)
+
+// main.js
+ipcMain.handle('feedback:log-correction', async (event, entry) => { ... })
+      ]]></signature>
+      <path>preload.cjs, main.js</path>
+    </interface>
+    <interface>
+      <name>FeedbackLogger</name>
+      <kind>TypeScript class</kind>
+      <signature><![CDATA[
+class FeedbackLogger {
+  private logDir: string;
+  private enabled: boolean;
+
+  constructor(app: Electron.App);
+  async logCorrection(entry: CorrectionEntry): Promise<void>;
+  private getLogFilePath(): string;
+  private anonymizeForLog(text: string, entityType: string): string;
+  isEnabled(): boolean;
+  setEnabled(enabled: boolean): void;
+}
+      ]]></signature>
+      <path>src/services/feedbackLogger.ts (NEW)</path>
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint source="docs/architecture.md">
+      <rule>Security: Never log actual PII content - only type markers and patterns</rule>
+    </constraint>
+    <constraint source="docs/architecture.md">
+      <rule>IPC Pattern: Use contextBridge with explicit validation in preload.cjs</rule>
+    </constraint>
+    <constraint source="docs/architecture.md">
+      <rule>TypeScript: New services must be in TypeScript with strict types</rule>
+    </constraint>
+    <constraint source="docs/architecture.md">
+      <rule>Naming: TypeScript files use PascalCase, IPC channels use kebab-case</rule>
+    </constraint>
+    <constraint source="existing codebase">
+      <rule>File storage: Use app.getPath('userData') for user data, not app data root</rule>
+    </constraint>
+    <constraint source="docs/epics.md">
+      <rule>Privacy: User must be able to opt-out of logging via settings</rule>
+    </constraint>
+    <constraint source="existing codebase">
+      <rule>Settings: Store in localStorage (renderer) or electron-store if main process needed</rule>
+    </constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      Mocha + Chai for all tests. 10-second timeout for async operations.
+      Tests located in test/ directory mirroring src/ structure.
+      Mock file system operations for unit tests.
+      Follow patterns from test/unit/entityReview.test.js for testing UI-related logic.
+    </standards>
+    <locations>
+      <location>test/unit/feedbackLogger.test.js</location>
+      <location>test/unit/services/feedbackLogger.test.ts (alternative)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-5.2.1">Test DISMISS action creates log entry with correct structure</idea>
+      <idea ac="AC-5.2.2">Test ADD action creates log entry with user-assigned type</idea>
+      <idea ac="AC-5.2.3">Test log file is created in app data directory with YYYY-MM format</idea>
+      <idea ac="AC-5.2.3">Test monthly file rotation creates new file when month changes</idea>
+      <idea ac="AC-5.2.4">Test anonymizeForLog replaces PII with type markers</idea>
+      <idea ac="AC-5.2.4">Test document hash is SHA-256 of filename, not content</idea>
+      <idea ac="AC-5.2.5">Test opt-out setting prevents logging when disabled</idea>
+      <idea ac="AC-5.2.5">Test opt-out setting is respected across sessions</idea>
+      <idea ac="all">Test IPC handler validates input and rejects invalid entries</idea>
+      <idea ac="all">Test corrupted log file is handled gracefully (reset or backup)</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -3,13 +3,13 @@
  *
  * Requirements:
  * 1. Each file processing operation must have isolated pseudonym mappings
- * 2. File A's "John Doe" → PER_1 should NOT affect File B's "John Doe"
+ * 2. File A's "John Doe" → PERSON_1 should NOT affect File B's "John Doe"
  * 3. Multiple files processed sequentially should have independent mappings
  * 4. Batch processing should maintain isolation between files
  * 5. The same PII entity in different files should get different pseudonyms
  *
- * Current Bug: Global state causes cross-contamination between files
- * Expected: These tests will FAIL until FileProcessor is refactored
+ * Note: Uses multi-pass detection pipeline (v3.0) which outputs full entity type names:
+ *       PERSON (not PER), ORGANIZATION (not ORG), LOCATION (not LOC)
  */
 
 import { describe, it, beforeEach } from 'mocha';
@@ -23,14 +23,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('FileProcessor Session Isolation (CRITICAL)', () => {
-  const testDataDir = path.join(__dirname, '../data');
+  const _testDataDir = path.join(__dirname, '../data');
   const outputDir = path.join(__dirname, '../output');
 
   beforeEach(async () => {
     // Clean output directory
     try {
       await fs.rm(outputDir, { recursive: true, force: true });
-    } catch (err) {
+    // eslint-disable-next-line no-unused-vars
+    } catch (_err) {
       // Ignore if doesn't exist
     }
     await fs.mkdir(outputDir, { recursive: true });
@@ -70,9 +71,9 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const mapping2Data = await fs.readFile(mapping2Path, 'utf8');
     const mapping2 = JSON.parse(mapping2Data);
 
-    // Get first detected person entity from each file
-    const entities1 = Object.entries(mapping1.entities).filter(([k, v]) => v.startsWith('PER'));
-    const entities2 = Object.entries(mapping2.entities).filter(([k, v]) => v.startsWith('PER'));
+    // Get first detected person entity from each file (PERSON_ prefix in v3.0 pipeline)
+    const entities1 = Object.entries(mapping1.entities).filter(([_k, v]) => v.startsWith('PERSON'));
+    const entities2 = Object.entries(mapping2.entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
     console.log('File 1 entities:', entities1);
     console.log('File 2 entities:', entities2);
@@ -82,7 +83,7 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     expect(entities2.length).to.be.greaterThan(0, 'File 2 should have detected entities');
 
     // CRITICAL TEST: Each file should have independent counters starting at 1
-    // If isolation works, both should have PER_1 (counter restarted for each file)
+    // If isolation works, both should have PERSON_1 (counter restarted for each file)
     const pseudonym1 = entities1[0][1];
     const pseudonym2 = entities2[0][1];
 
@@ -90,8 +91,8 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     console.log('File 2 first person pseudonym:', pseudonym2);
 
     // Each file's counter should restart at 1 (proves isolation)
-    expect(pseudonym1).to.equal('PER_1', 'File 1 should start counter at 1');
-    expect(pseudonym2).to.equal('PER_1', 'File 2 should restart counter at 1 (isolated session)');
+    expect(pseudonym1).to.equal('PERSON_1', 'File 1 should start counter at 1');
+    expect(pseudonym2).to.equal('PERSON_1', 'File 2 should restart counter at 1 (isolated session)');
   });
 
   it('should not leak pseudonyms between sequential file processing', async function() {
@@ -122,10 +123,10 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
       results.push(mapping);
     }
 
-    // Each file should have independent PER_1 counters (proves isolation)
-    const file1Persons = Object.entries(results[0].entities).filter(([k, v]) => v.startsWith('PER'));
-    const file2Persons = Object.entries(results[1].entities).filter(([k, v]) => v.startsWith('PER'));
-    const file3Persons = Object.entries(results[2].entities).filter(([k, v]) => v.startsWith('PER'));
+    // Each file should have independent PERSON_1 counters (proves isolation)
+    const file1Persons = Object.entries(results[0].entities).filter(([_k, v]) => v.startsWith('PERSON'));
+    const file2Persons = Object.entries(results[1].entities).filter(([_k, v]) => v.startsWith('PERSON'));
+    const file3Persons = Object.entries(results[2].entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
     console.log('File 1 persons:', file1Persons);
     console.log('File 2 persons:', file2Persons);
@@ -136,10 +137,10 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     expect(file2Persons.length).to.be.greaterThan(0);
     expect(file3Persons.length).to.be.greaterThan(0);
 
-    // CRITICAL: Each file should have PER_1 (counter restarts - proves isolation)
-    expect(file1Persons[0][1]).to.equal('PER_1', 'File 1 starts at PER_1');
-    expect(file2Persons[0][1]).to.equal('PER_1', 'File 2 restarts at PER_1');
-    expect(file3Persons[0][1]).to.equal('PER_1', 'File 3 restarts at PER_1');
+    // CRITICAL: Each file should have PERSON_1 (counter restarts - proves isolation)
+    expect(file1Persons[0][1]).to.equal('PERSON_1', 'File 1 starts at PERSON_1');
+    expect(file2Persons[0][1]).to.equal('PERSON_1', 'File 2 restarts at PERSON_1');
+    expect(file3Persons[0][1]).to.equal('PERSON_1', 'File 3 restarts at PERSON_1');
   });
 
   it('should allow concurrent file processing without state collision', async function() {
@@ -167,9 +168,9 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
 
     const mappings = await Promise.all(processPromises);
 
-    // Check that each file has its own PER_1 (proves session isolation)
+    // Check that each file has its own PERSON_1 (proves session isolation)
     const personPseudonyms = mappings.map(m => {
-      const persons = Object.entries(m.entities).filter(([k, v]) => v.startsWith('PER'));
+      const persons = Object.entries(m.entities).filter(([_k, v]) => v.startsWith('PERSON'));
       return persons.length > 0 ? persons[0][1] : null;
     });
 
@@ -180,10 +181,10 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
       expect(p).to.not.equal(null, `File ${i} should have detected person`);
     });
 
-    // CRITICAL: Each concurrent file should have PER_1 (proves isolation)
-    // If state was shared, they'd have PER_1, PER_2, PER_3, PER_4, PER_5
+    // CRITICAL: Each concurrent file should have PERSON_1 (proves isolation)
+    // If state was shared, they'd have PERSON_1, PERSON_2, PERSON_3, PERSON_4, PERSON_5
     personPseudonyms.forEach((p, i) => {
-      expect(p).to.equal('PER_1', `Concurrent file ${i} should have isolated PER_1`);
+      expect(p).to.equal('PERSON_1', `Concurrent file ${i} should have isolated PERSON_1`);
     });
   });
 
@@ -216,17 +217,17 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const mapping2 = JSON.parse(mapping2Data);
 
     // Get first person from each file
-    const persons1 = Object.entries(mapping1.entities).filter(([k, v]) => v.startsWith('PER'));
-    const persons2 = Object.entries(mapping2.entities).filter(([k, v]) => v.startsWith('PER'));
+    const persons1 = Object.entries(mapping1.entities).filter(([_k, v]) => v.startsWith('PERSON'));
+    const persons2 = Object.entries(mapping2.entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
     console.log('Before reset persons:', persons1);
     console.log('After reset persons:', persons2);
 
     // resetMappings() is now a no-op since isolation is automatic
-    // Both files should independently start at PER_1
+    // Both files should independently start at PERSON_1
     if (persons1.length > 0 && persons2.length > 0) {
-      expect(persons1[0][1]).to.equal('PER_1', 'File 1 starts at PER_1');
-      expect(persons2[0][1]).to.equal('PER_1', 'File 2 restarts at PER_1 (isolation)');
+      expect(persons1[0][1]).to.equal('PERSON_1', 'File 1 starts at PERSON_1');
+      expect(persons2[0][1]).to.equal('PERSON_1', 'File 2 restarts at PERSON_1 (isolation)');
     }
   });
 
@@ -259,13 +260,13 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     }
 
     // Each invoice should have independent counters
-    const invoice1Persons = Object.entries(results[0].mapping.entities).filter(([k, v]) => v.startsWith('PER'));
-    const invoice2Persons = Object.entries(results[1].mapping.entities).filter(([k, v]) => v.startsWith('PER'));
-    const invoice3Persons = Object.entries(results[2].mapping.entities).filter(([k, v]) => v.startsWith('PER'));
+    const invoice1Persons = Object.entries(results[0].mapping.entities).filter(([_k, v]) => v.startsWith('PERSON'));
+    const invoice2Persons = Object.entries(results[1].mapping.entities).filter(([_k, v]) => v.startsWith('PERSON'));
+    const invoice3Persons = Object.entries(results[2].mapping.entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
-    const invoice1Orgs = Object.entries(results[0].mapping.entities).filter(([k, v]) => v.startsWith('ORG'));
-    const invoice2Orgs = Object.entries(results[1].mapping.entities).filter(([k, v]) => v.startsWith('ORG'));
-    const invoice3Orgs = Object.entries(results[2].mapping.entities).filter(([k, v]) => v.startsWith('ORG'));
+    const invoice1Orgs = Object.entries(results[0].mapping.entities).filter(([_k, v]) => v.startsWith('ORGANIZATION'));
+    const invoice2Orgs = Object.entries(results[1].mapping.entities).filter(([_k, v]) => v.startsWith('ORGANIZATION'));
+    const invoice3Orgs = Object.entries(results[2].mapping.entities).filter(([_k, v]) => v.startsWith('ORGANIZATION'));
 
     console.log('Invoice 1 - Persons:', invoice1Persons);
     console.log('Invoice 2 - Persons:', invoice2Persons);
@@ -275,18 +276,18 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     console.log('Invoice 3 - Orgs:', invoice3Orgs);
 
     // CRITICAL: Each invoice should have independent counters starting at 1
-    // Invoice 1 and 3 have same content but should have isolated PER_1, ORG_1
+    // Invoice 1 and 3 have same content but should have isolated PERSON_1, ORGANIZATION_1
     if (invoice1Persons.length > 0) {
-      expect(invoice1Persons[0][1]).to.equal('PER_1', 'Invoice 1 PER starts at 1');
+      expect(invoice1Persons[0][1]).to.equal('PERSON_1', 'Invoice 1 PERSON starts at 1');
     }
     if (invoice3Persons.length > 0) {
-      expect(invoice3Persons[0][1]).to.equal('PER_1', 'Invoice 3 PER restarts at 1');
+      expect(invoice3Persons[0][1]).to.equal('PERSON_1', 'Invoice 3 PERSON restarts at 1');
     }
     if (invoice1Orgs.length > 0) {
-      expect(invoice1Orgs[0][1]).to.equal('ORG_1', 'Invoice 1 ORG starts at 1');
+      expect(invoice1Orgs[0][1]).to.equal('ORGANIZATION_1', 'Invoice 1 ORGANIZATION starts at 1');
     }
     if (invoice3Orgs.length > 0) {
-      expect(invoice3Orgs[0][1]).to.equal('ORG_1', 'Invoice 3 ORG restarts at 1');
+      expect(invoice3Orgs[0][1]).to.equal('ORGANIZATION_1', 'Invoice 3 ORGANIZATION restarts at 1');
     }
   });
 });

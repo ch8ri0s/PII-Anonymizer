@@ -10,39 +10,39 @@ import {
   setLocale,
   getLocale,
   setFallback,
-  has
-} from '../../../src/i18n/i18nService.js';
+  has,
+} from '../../../dist/i18n/i18nService.js';
 
 describe('i18n Service', () => {
   // Sample translation data for testing
   const enTranslations = {
     app: {
       title: 'PII Anonymiser',
-      subtitle: 'Privacy-First Document Processing'
+      subtitle: 'Privacy-First Document Processing',
     },
     upload: {
       title: 'Drop your file here',
-      browse: 'Browse files'
+      browse: 'Browse files',
     },
     metadata: {
       filename: 'Filename',
-      size: 'Size'
-    }
+      size: 'Size',
+    },
   };
 
   const frTranslations = {
     app: {
       title: 'Anonymiseur PII',
-      subtitle: 'Traitement de documents axé sur la confidentialité'
+      subtitle: 'Traitement de documents axé sur la confidentialité',
     },
     upload: {
       title: 'Déposez votre fichier ici',
-      browse: 'Parcourir les fichiers'
+      browse: 'Parcourir les fichiers',
     },
     metadata: {
       filename: 'Nom du fichier',
-      size: 'Taille'
-    }
+      size: 'Taille',
+    },
   };
 
   beforeEach(() => {
@@ -121,13 +121,13 @@ describe('i18n Service', () => {
       // Initialize with French, but missing some keys
       const incompleteFrTranslations = {
         app: {
-          title: 'Anonymiseur PII'
+          title: 'Anonymiseur PII',
           // subtitle missing
         },
         upload: {
-          title: 'Déposez votre fichier ici'
+          title: 'Déposez votre fichier ici',
           // browse missing
-        }
+        },
       };
 
       init('fr', incompleteFrTranslations, enTranslations);
@@ -156,7 +156,7 @@ describe('i18n Service', () => {
     });
 
     it('should handle invalid locale gracefully', () => {
-      const originalLocale = getLocale();
+      const _originalLocale = getLocale();
       setLocale(null, frTranslations);
       // Should not crash but locale might not change
       expect(getLocale()).to.be.a('string');
@@ -198,8 +198,8 @@ describe('i18n Service', () => {
       // Create incomplete French translations
       const incompleteFr = {
         app: {
-          title: 'Anonymiseur PII'
-        }
+          title: 'Anonymiseur PII',
+        },
       };
       setLocale('fr', incompleteFr);
 
@@ -229,8 +229,8 @@ describe('i18n Service', () => {
     it('should check fallback translations', () => {
       const incompleteFr = {
         app: {
-          title: 'Anonymiseur PII'
-        }
+          title: 'Anonymiseur PII',
+        },
       };
       init('fr', incompleteFr, enTranslations);
 
@@ -263,8 +263,8 @@ describe('i18n Service', () => {
     it('should handle missing translations with fallback chain', () => {
       const incompleteFr = {
         app: {
-          title: 'Anonymiseur PII'
-        }
+          title: 'Anonymiseur PII',
+        },
       };
 
       init('fr', incompleteFr, enTranslations);
@@ -303,8 +303,8 @@ describe('i18n Service', () => {
       const badTranslations = {
         app: {
           title: 123, // Number instead of string
-          subtitle: null // Null value
-        }
+          subtitle: null, // Null value
+        },
       };
       init('en', badTranslations);
 
@@ -316,8 +316,8 @@ describe('i18n Service', () => {
     it('should handle keys with special characters', () => {
       const specialTranslations = {
         'special-key': {
-          'with.dots': 'Special value'
-        }
+          'with.dots': 'Special value',
+        },
       };
       init('en', specialTranslations);
 
@@ -332,11 +332,11 @@ describe('i18n Service', () => {
           level2: {
             level3: {
               level4: {
-                level5: 'Deep value'
-              }
-            }
-          }
-        }
+                level5: 'Deep value',
+              },
+            },
+          },
+        },
       };
       init('en', deepTranslations);
 

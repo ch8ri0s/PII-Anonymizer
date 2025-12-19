@@ -1,0 +1,188 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.2</storyId>
+    <title>Invoice-Specific Detection Rules</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/3-2-invoice-specific-detection-rules.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user processing invoices</asA>
+    <iWant>invoice-optimized PII detection</iWant>
+    <soThat>vendor details, amounts, and reference numbers are accurately identified</soThat>
+    <tasks>
+      <task id="1" status="done">Review existing InvoiceRules implementation (AC: all)</task>
+      <task id="2" status="done">Verify INVOICE_NUMBER detection (AC: 3.2.3)</task>
+      <task id="3" status="done">Verify AMOUNT detection (AC: 3.2.4)</task>
+      <task id="4" status="done">Verify VAT_NUMBER detection (AC: 3.2.5)</task>
+      <task id="5" status="done">Verify PAYMENT_REF detection (AC: 3.2.6)</task>
+      <task id="6" status="done">Verify position-based confidence boosting (AC: 3.2.7)</task>
+      <task id="7" status="done">Integration with DocumentTypePass (AC: 3.2.1, 3.2.8)</task>
+      <task id="8" status="done">Update tests to validate all ACs (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-3.2.1">Given document classified as INVOICE, invoice-specific patterns are active</criterion>
+    <criterion id="AC-3.2.2">VENDOR_NAME: Company in header position is detected</criterion>
+    <criterion id="AC-3.2.3">INVOICE_NUMBER: Reference patterns (INV-xxx, RE-xxx, FAC-xxx) in EN/DE/FR</criterion>
+    <criterion id="AC-3.2.4">AMOUNT: Currency + number patterns (CHF 1'234.56, EUR 1.234,56, USD)</criterion>
+    <criterion id="AC-3.2.5">VAT_NUMBER: Swiss format (CHE-xxx.xxx.xxx MWST/TVA) and EU formats</criterion>
+    <criterion id="AC-3.2.6">PAYMENT_REF: Swiss QR reference (26-27 digits), IBAN, ISO 11649 reference</criterion>
+    <criterion id="AC-3.2.7">Header/footer areas receive position-based confidence boost</criterion>
+    <criterion id="AC-3.2.8">Table cells are processed individually with table confidence boost</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>A5-PII-Anonymizer Epic Breakdown</title>
+        <section>Story 3.2: Invoice-Specific Detection Rules</section>
+        <snippet>Invoice-optimized PII detection for vendor details, amounts, reference numbers. Patterns include INV-xxx, RE-xxx, FAC-xxx, CHF/EUR amounts, Swiss/EU VAT numbers, QR references.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Novel Pattern Designs - Document Type Detection</section>
+        <snippet>Document-type classification (invoice, letter, form) applies type-specific rules. RuleEngine coordinates via src/pii/rules/InvoiceRules.ts for INVOICE documents.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-2.11 Document-type-aware detection rules</section>
+        <snippet>Planned feature for document-type-aware detection rules. Invoice processing requires special patterns for amounts, VAT, and payment references.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/pii/rules/InvoiceRules.ts</path>
+        <kind>rule-engine</kind>
+        <symbol>InvoiceRules class</symbol>
+        <lines>1-536</lines>
+        <reason>Primary implementation - invoice number, amount, VAT, IBAN, QR reference patterns with header confidence boosting</reason>
+      </file>
+      <file>
+        <path>src/pii/RuleEngine.ts</path>
+        <kind>orchestrator</kind>
+        <symbol>RuleEngine class</symbol>
+        <lines>149-279</lines>
+        <reason>Calls InvoiceRules.applyRules() for INVOICE document type, applies thresholds and confidence boosts</reason>
+      </file>
+      <file>
+        <path>src/pii/passes/DocumentTypePass.ts</path>
+        <kind>pipeline-pass</kind>
+        <symbol>DocumentTypePass</symbol>
+        <lines>all</lines>
+        <reason>Orchestrates document classification and rule application in multi-pass pipeline</reason>
+      </file>
+      <file>
+        <path>src/pii/DocumentClassifier.ts</path>
+        <kind>classifier</kind>
+        <symbol>DocumentClassifier class</symbol>
+        <lines>all</lines>
+        <reason>Classifies documents as INVOICE based on keywords and structure (prerequisite for Story 3.1)</reason>
+      </file>
+      <file>
+        <path>test/unit/pii/DocumentTypeDetection.test.js</path>
+        <kind>test</kind>
+        <symbol>Story 3.2: Invoice-Specific Detection Rules</symbol>
+        <lines>313-458</lines>
+        <reason>Test suite for all Story 3.2 acceptance criteria - invoice numbers, amounts, VAT, IBAN, payment refs</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>@xenova/transformers</package>
+        <version>2.17.2</version>
+        <purpose>ML-based NER detection (base entities)</purpose>
+      </node>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <purpose>Desktop application framework</purpose>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>5.9.3</version>
+        <purpose>Type-safe development for converters and PII detection</purpose>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>11.7.5</version>
+        <purpose>Test framework</purpose>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>6.2.0</version>
+        <purpose>Assertion library</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">TypeScript strict mode enabled - all new code must be type-safe</constraint>
+    <constraint source="architecture">IPC isolation required - use contextBridge for renderer communication</constraint>
+    <constraint source="architecture">Never log PII content - only metadata (type, position, confidence)</constraint>
+    <constraint source="prd">100% local processing - no network calls for detection</constraint>
+    <constraint source="prd">Target 98%+ detection accuracy, &lt;2% false positive rate</constraint>
+    <constraint source="story">Must integrate with existing RuleEngine.applyRules() flow</constraint>
+    <constraint source="story">CRITICAL: Implementation already exists - story is verification task</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>InvoiceRules.applyRules()</name>
+      <kind>class-method</kind>
+      <signature>applyRules(text: string, existingEntities: Entity[]): Entity[]</signature>
+      <path>src/pii/rules/InvoiceRules.ts</path>
+    </interface>
+    <interface>
+      <name>RuleEngine.applyRules()</name>
+      <kind>class-method</kind>
+      <signature>applyRules(text: string, classification: DocumentClassification, existingEntities: Entity[]): Entity[]</signature>
+      <path>src/pii/RuleEngine.ts</path>
+    </interface>
+    <interface>
+      <name>createInvoiceRules</name>
+      <kind>factory-function</kind>
+      <signature>createInvoiceRules(config?: Partial&lt;InvoiceRulesConfig&gt;): InvoiceRules</signature>
+      <path>src/pii/rules/InvoiceRules.ts</path>
+    </interface>
+    <interface>
+      <name>InvoiceRulesConfig</name>
+      <kind>interface</kind>
+      <signature>{ extractAmounts: boolean, extractVatNumbers: boolean, extractPaymentRefs: boolean, headerConfidenceBoost: number, tableConfidenceBoost: number }</signature>
+      <path>src/pii/rules/InvoiceRules.ts</path>
+    </interface>
+    <interface>
+      <name>InvoiceEntityType</name>
+      <kind>type-alias</kind>
+      <signature>'VENDOR_NAME' | 'INVOICE_NUMBER' | 'AMOUNT' | 'VAT_NUMBER' | 'PAYMENT_REF' | 'IBAN' | 'QR_REFERENCE'</signature>
+      <path>src/pii/rules/InvoiceRules.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Mocha + Chai test framework with 10-second timeout. Tests follow TDD Red-Green-Refactor cycle. 80%+ code coverage target. All tests must pass before story completion. Story 3.2 tests already exist and pass.</standards>
+    <locations>
+      <location>test/unit/pii/DocumentTypeDetection.test.js (lines 313-458)</location>
+      <location>test/unit/pii/*.test.js</location>
+      <location>test/integration/*.test.js</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-3.2.1">Verify InvoiceRules is activated when document classified as INVOICE - DONE in existing tests</idea>
+      <idea ac="AC-3.2.3">Test EN/DE/FR invoice number patterns - DONE: Invoice #INV-xxx, Rechnung Nr. RE-xxx, Facture N° FAC-xxx</idea>
+      <idea ac="AC-3.2.4">Test CHF/EUR/USD amount detection with various formats - DONE: CHF 1'234.56, EUR 1.234,56</idea>
+      <idea ac="AC-3.2.5">Test Swiss VAT (CHE-xxx.xxx.xxx MWST) and EU VAT (DE, FR) - DONE in existing tests</idea>
+      <idea ac="AC-3.2.6">Test IBAN with checksum validation, ISO 11649 reference - DONE: CH93, DE89 IBANs tested</idea>
+      <idea ac="AC-3.2.7">Test header position confidence boost (+0.2) - DONE: headerConfidenceBoost in InvoiceRulesConfig</idea>
+      <idea ac="AC-3.2.8">Test table confidence boost configuration - Available via tableConfidenceBoost config option</idea>
+    </ideas>
+  </tests>
+</story-context>

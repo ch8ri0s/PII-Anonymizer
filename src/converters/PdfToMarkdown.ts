@@ -9,9 +9,9 @@ import pdfParse from 'pdf-parse';
 import fs from 'fs/promises';
 import path from 'path';
 import { MarkdownConverter, type DocumentMetadata } from './MarkdownConverter.js';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/LoggerFactory.js';
 import { TableDetector, TableToMarkdownConverter } from '../utils/pdfTableDetector.js';
-import type { TableStructure, PdfTextItem } from '../types/index.js';
+import type { TableStructure, PdfTextItem } from '../types/pdfTable.js';
 
 const log = createLogger('converter:pdf');
 
@@ -36,8 +36,8 @@ export class PdfToMarkdown extends MarkdownConverter {
   private collectedTextItems: PdfTextItem[] = [];
   private currentPageNumber = 0;
 
-  constructor() {
-    super();
+  constructor(options: import('./MarkdownConverter.js').MarkdownConverterOptions = {}) {
+    super(options);
     this.tableDetector = new TableDetector();
     this.tableConverter = new TableToMarkdownConverter();
   }
@@ -46,14 +46,19 @@ export class PdfToMarkdown extends MarkdownConverter {
    * Custom page render function to extract positioned text items (T041)
    * This replaces the default pdf-parse render to capture text positions
    * for table detection while still returning text for fallback.
+   *
+   * pageData is pdf-parse internal structure (pdf.js based) with no published types.
+   * Using interface inline to document the structure we rely on.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private createPageRenderer(): (pageData: any) => Promise<string> {
-     
+  private createPageRenderer(): (pageData: {
+    getTextContent(options: { normalizeWhitespace: boolean; disableCombineTextItems: boolean }): Promise<{ items: PdfJsTextItem[] }>;
+  }) => Promise<string> {
+
     const self = this;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return async function(pageData: any): Promise<string> {
+    return async function(pageData: {
+      getTextContent(options: { normalizeWhitespace: boolean; disableCombineTextItems: boolean }): Promise<{ items: PdfJsTextItem[] }>;
+    }): Promise<string> {
       self.currentPageNumber++;
 
       const renderOptions = {

@@ -83,3 +83,25 @@ development_status:
   5-2-user-correction-logging: done
   5-3-accuracy-dashboard: done  # Completed 2025-12-13
   epic-5-retrospective: optional
+
+  # Epic 6: Infrastructure & Developer Experience (from CODE_REVIEW.md)
+  epic-6: backlog
+  6-1-factory-central-logger: done  # Approved 2025-12-14
+  6-2-redos-vulnerability-fix: done  # Critical security fix - APPROVED 2025-12-15
+  6-3-ipc-input-validation: done  # Security hardening - COMPLETED 2025-12-17
+  6-4-typescript-strict-mode: done  # Type safety - APPROVED 2025-12-18
+  6-5-async-operation-timeouts: done  # UX improvement - APPROVED 2025-12-18
+  6-6-global-state-refactoring: done  # Already implemented in fileProcessor.js:141-288
+  6-7-error-handling-standardization: done  # Consistency - APPROVED 2025-12-18
+  6-8-constants-magic-numbers: done  # Code quality - APPROVED 2025-12-18
+  epic-6-retrospective: completed  # Completed 2025-12-18
+
+  # Epic 7: Browser Migration - Zero-install browser version
+  epic-7: backlog
+  7-1-document-converter-testing-fixes: done  # Completed 2025-12-19 - 203 tests passing
+  7-2-ml-model-browser-integration: done  # Completed 2025-12-19 - 246 tests passing
+  7-3-pii-detection-pipeline-browser-port: backlog
+  7-4-entity-review-ui-implementation: backlog
+  7-5-file-download-batch-processing: backlog
+  7-6-pwa-deployment-readiness: backlog
+  epic-7-retrospective: optional

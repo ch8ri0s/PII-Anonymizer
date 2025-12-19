@@ -2,49 +2,636 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom component classes for consistent UI */
+/* Design System - Matching exact mockup specifications */
 @layer components {
+  /* Buttons */
   .btn {
-    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply btn bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500 shadow-sm hover:shadow;
   }
 
   .btn-secondary {
-    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+    @apply btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 focus:ring-gray-400 shadow-sm;
   }
 
-  .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  .btn-ghost {
+    @apply btn bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200 focus:ring-gray-400;
   }
 
-  .btn:disabled {
-    @apply opacity-50 cursor-not-allowed;
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
   }
 
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  /* Cards */
   .card {
-    @apply bg-white rounded-lg shadow-md border border-gray-200;
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden;
   }
 
-  .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50;
   }
 
-  .drop-zone {
-    @apply border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-colors;
+  .card-title {
+    @apply text-lg font-semibold text-gray-900;
   }
 
-  .drop-zone-active {
-    @apply border-primary-500 bg-primary-50;
+  .card-subtitle {
+    @apply text-sm text-gray-600 mt-1;
+  }
+
+  .card-content {
+    @apply px-6 py-5;
+  }
+
+  /* Upload Zone */
+  .upload-zone {
+    @apply relative border-2 border-dashed border-gray-300 rounded-2xl p-16 text-center transition-all duration-300 cursor-pointer hover:border-gray-400 hover:bg-gray-50 focus-within:border-blue-500 focus-within:bg-blue-50;
+  }
+
+  .upload-zone-active {
+    @apply border-blue-500 bg-blue-50;
+  }
+
+  /* Alerts */
+  .alert {
+    @apply flex items-start gap-3 px-4 py-3 rounded-lg;
+  }
+
+  .alert-success {
+    @apply alert bg-green-50 text-green-800 border border-green-200;
+  }
+
+  .alert-error {
+    @apply alert bg-red-50 text-red-800 border border-red-200;
+  }
+
+  .alert-warning {
+    @apply alert bg-yellow-50 text-yellow-800 border border-yellow-200;
+  }
+
+  .alert-info {
+    @apply alert bg-blue-50 text-blue-800 border border-blue-200;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium;
+  }
+
+  .badge-red {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+
+  .badge-green {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-purple {
+    @apply badge bg-purple-100 text-purple-800;
+  }
+
+  .badge-gray {
+    @apply badge bg-gray-100 text-gray-800;
+  }
+
+  /* Tabs */
+  .tabs {
+    @apply space-y-4;
+  }
+
+  .tab-list {
+    @apply flex border-b border-gray-200;
+  }
+
+  .tab {
+    @apply px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300 focus:outline-none focus:text-gray-900 transition-colors cursor-pointer;
+  }
+
+  .tab-active {
+    @apply text-blue-600 border-blue-600 hover:border-blue-600;
+  }
+
+  .tab-content {
+    @apply hidden flex-col;
+  }
+
+  .tab-content-active {
+    @apply flex;
+  }
+
+  /* Metadata */
+  .metadata-row {
+    @apply flex items-start gap-3 py-3;
+  }
+
+  .metadata-icon {
+    @apply w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0;
+  }
+
+  .metadata-content {
+    @apply flex-1 min-w-0;
   }
 
   .metadata-label {
-    @apply text-sm font-medium text-gray-500;
+    @apply text-xs font-medium text-gray-500 uppercase tracking-wider mb-1;
   }
 
   .metadata-value {
+    @apply text-sm font-medium text-gray-900;
+  }
+
+  /* Separator */
+  .separator {
+    @apply border-t border-gray-200;
+  }
+
+  /* Format Badges (for file types) */
+  .format-badge {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700;
+  }
+
+  /* Scroll Areas */
+  .scroll-area {
+    @apply overflow-y-auto;
+  }
+
+  /* Code/Preview blocks */
+  .preview-content {
+    @apply font-mono text-sm text-gray-800 whitespace-pre-wrap break-words bg-gray-50 p-4 rounded-lg;
+  }
+
+  /* Modal Overlay (for model download) */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm;
+  }
+
+  .modal-content {
+    @apply bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4;
+  }
+
+  /* Progress Bar */
+  .progress-container {
+    @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .progress-bar {
+    @apply h-full bg-blue-600 rounded-full transition-all duration-300 ease-out;
+  }
+
+  /* Entity Review Sidebar (Epic 4) */
+  .entity-review-sidebar {
+    @apply flex flex-col h-full bg-white border-l border-gray-200;
+  }
+
+  .review-header {
+    @apply px-4 py-3 border-b border-gray-200 bg-gray-50;
+  }
+
+  .review-title {
     @apply text-base font-semibold text-gray-900;
   }
+
+  .review-subtitle {
+    @apply text-xs text-gray-500 mt-0.5;
+  }
+
+  /* Review Statistics */
+  .review-stats {
+    @apply px-4 py-3 border-b border-gray-200 bg-gray-50;
+  }
+
+  .stats-grid {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .stat-item {
+    @apply text-center p-2 rounded-lg bg-white border border-gray-100;
+  }
+
+  .stat-value {
+    @apply text-lg font-bold text-gray-900;
+  }
+
+  .stat-label {
+    @apply text-xs text-gray-500;
+  }
+
+  .stat-approved {
+    @apply text-green-600;
+  }
+
+  .stat-rejected {
+    @apply text-red-600;
+  }
+
+  .stat-pending {
+    @apply text-yellow-600;
+  }
+
+  .stat-selected {
+    @apply text-primary-600 font-semibold;
+  }
+
+  /* Review Filters */
+  .review-filters {
+    @apply px-4 py-3 border-b border-gray-200 space-y-3;
+  }
+
+  .filter-section {
+    @apply space-y-2;
+  }
+
+  .filter-label {
+    @apply text-xs font-medium text-gray-700 uppercase tracking-wider;
+  }
+
+  .filter-group {
+    @apply flex flex-wrap gap-1.5;
+  }
+
+  .filter-checkbox {
+    @apply inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium cursor-pointer transition-colors;
+  }
+
+  .filter-checkbox-unchecked {
+    @apply bg-gray-100 text-gray-600 hover:bg-gray-200;
+  }
+
+  .filter-checkbox-checked {
+    @apply bg-blue-100 text-blue-700;
+  }
+
+  .filter-checkbox input {
+    @apply sr-only;
+  }
+
+  .filter-slider-container {
+    @apply flex items-center gap-2;
+  }
+
+  .filter-slider {
+    @apply flex-1 h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer;
+  }
+
+  .filter-slider::-webkit-slider-thumb {
+    @apply appearance-none w-3 h-3 bg-blue-600 rounded-full cursor-pointer;
+  }
+
+  .filter-slider-value {
+    @apply text-xs font-medium text-gray-600 w-8 text-right;
+  }
+
+  .filter-toggle {
+    @apply flex items-center gap-2;
+  }
+
+  .filter-toggle-switch {
+    @apply relative w-8 h-4 bg-gray-300 rounded-full cursor-pointer transition-colors;
+  }
+
+  .filter-toggle-switch.active {
+    @apply bg-blue-600;
+  }
+
+  .filter-toggle-switch::after {
+    content: '';
+    @apply absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform;
+  }
+
+  .filter-toggle-switch.active::after {
+    @apply translate-x-4;
+  }
+
+  .filter-search {
+    @apply w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500;
+  }
+
+  /* Entity List */
+  .entity-list {
+    @apply flex-1 overflow-y-auto;
+  }
+
+  .entity-group {
+    @apply border-b border-gray-100;
+  }
+
+  .entity-group-header {
+    @apply flex items-center justify-between px-4 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors;
+  }
+
+  .entity-group-title {
+    @apply flex items-center gap-2 cursor-pointer;
+  }
+
+  .entity-group-icon {
+    @apply w-4 h-4 text-gray-400 transition-transform;
+  }
+
+  .entity-group-icon.expanded {
+    @apply rotate-90;
+  }
+
+  .entity-group-name {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  /* Story 4.3: Group header actions */
+  .entity-group-actions {
+    @apply flex items-center gap-2;
+  }
+
+  .entity-group-selection-count {
+    @apply text-xs text-gray-500;
+  }
+
+  .entity-group-select-btn {
+    @apply p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors;
+  }
+
+  .entity-group-select-btn.hidden {
+    @apply invisible;
+  }
+
+  .entity-group-count {
+    @apply text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded;
+  }
+
+  .entity-group-content {
+    @apply hidden;
+  }
+
+  .entity-group-content.expanded {
+    @apply block;
+  }
+
+  /* Entity Items */
+  .entity-item {
+    @apply px-4 py-2 border-b border-gray-50 hover:bg-gray-50 transition-colors;
+  }
+
+  .entity-item.entity-approved {
+    @apply bg-green-50 border-l-2 border-l-green-500;
+  }
+
+  .entity-item.entity-rejected {
+    @apply bg-red-50 border-l-2 border-l-red-500 opacity-60;
+  }
+
+  .entity-item.entity-edited {
+    @apply bg-blue-50 border-l-2 border-l-blue-500;
+  }
+
+  .entity-item.entity-flagged {
+    @apply bg-yellow-50;
+  }
+
+  /* Story 4.3: Selection states */
+  .entity-item.entity-unselected {
+    @apply opacity-50;
+  }
+
+  .entity-item.entity-unselected .entity-text {
+    @apply line-through;
+  }
+
+  .entity-select-checkbox {
+    @apply flex-shrink-0 mr-2 cursor-pointer;
+  }
+
+  .entity-checkbox {
+    @apply w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer;
+  }
+
+  .entity-item-content {
+    @apply flex-1 min-w-0;
+  }
+
+  .entity-item-header {
+    @apply flex items-start justify-between gap-2;
+  }
+
+  .entity-text {
+    @apply text-sm font-medium text-gray-900 break-all;
+  }
+
+  .entity-replacement {
+    @apply text-xs text-gray-500 font-mono;
+  }
+
+  .entity-meta {
+    @apply flex items-center gap-2 mt-1;
+  }
+
+  .entity-confidence {
+    @apply text-xs text-gray-500;
+  }
+
+  .entity-confidence-high {
+    @apply text-green-600;
+  }
+
+  .entity-confidence-medium {
+    @apply text-yellow-600;
+  }
+
+  .entity-confidence-low {
+    @apply text-red-600;
+  }
+
+  .entity-source {
+    @apply text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600;
+  }
+
+  .entity-source-ml {
+    @apply text-xs font-medium px-1.5 py-0.5 rounded bg-blue-100 text-blue-700;
+  }
+
+  .entity-source-rule {
+    @apply text-xs font-medium px-1.5 py-0.5 rounded bg-purple-100 text-purple-700;
+  }
+
+  .entity-source-both {
+    @apply text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700;
+  }
+
+  .entity-source-manual {
+    @apply text-xs font-medium px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700;
+  }
+
+  .entity-flag {
+    @apply text-yellow-500;
+  }
+
+  .entity-warning {
+    @apply text-xs;
+  }
+
+  /* Flagged entity distinction */
+  .entity-flagged {
+    @apply border-l-4 border-yellow-500 pl-2;
+  }
+
+  .entity-context {
+    @apply text-xs text-gray-400 mt-1 italic truncate;
+  }
+
+  /* Entity Actions */
+  .entity-actions {
+    @apply flex items-center gap-1 mt-2;
+  }
+
+  .entity-action-btn {
+    @apply p-1 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-offset-1;
+  }
+
+  .entity-action-btn.approve {
+    @apply text-gray-400 hover:text-green-600 hover:bg-green-50 focus:ring-green-500;
+  }
+
+  .entity-action-btn.approve.active {
+    @apply text-green-600 bg-green-100;
+  }
+
+  .entity-action-btn.reject {
+    @apply text-gray-400 hover:text-red-600 hover:bg-red-50 focus:ring-red-500;
+  }
+
+  .entity-action-btn.reject.active {
+    @apply text-red-600 bg-red-100;
+  }
+
+  .entity-action-btn.edit {
+    @apply text-gray-400 hover:text-blue-600 hover:bg-blue-50 focus:ring-blue-500;
+  }
+
+  .entity-action-btn.scroll-to {
+    @apply text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:ring-gray-500;
+  }
+
+  /* Review Actions (bottom bar) */
+  .review-actions {
+    @apply px-4 py-3 border-t border-gray-200 bg-gray-50 space-y-2;
+  }
+
+  .bulk-actions {
+    @apply flex gap-2;
+  }
+
+  .bulk-action-btn {
+    @apply flex-1 px-2 py-1.5 text-xs font-medium rounded border transition-colors focus:outline-none focus:ring-1 focus:ring-offset-1;
+  }
+
+  .bulk-action-btn.approve-all {
+    @apply border-green-300 text-green-700 hover:bg-green-50 focus:ring-green-500;
+  }
+
+  .bulk-action-btn.reset-all {
+    @apply border-gray-300 text-gray-600 hover:bg-gray-100 focus:ring-gray-500;
+  }
+
+  .complete-review-btn {
+    @apply w-full py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Entity Edit Modal */
+  .entity-edit-modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50;
+  }
+
+  .entity-edit-content {
+    @apply bg-white rounded-lg shadow-xl p-4 w-80;
+  }
+
+  .entity-edit-title {
+    @apply text-sm font-semibold text-gray-900 mb-3;
+  }
+
+  .entity-edit-input {
+    @apply w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  }
+
+  .entity-edit-actions {
+    @apply flex justify-end gap-2 mt-3;
+  }
+
+  /* Manual PII Context Menu */
+  .pii-context-menu {
+    @apply fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-48;
+  }
+
+  .pii-context-menu-item {
+    @apply px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center gap-2;
+  }
+
+  .pii-context-menu-item-icon {
+    @apply w-4 h-4 text-gray-400;
+  }
+
+  .pii-context-menu-divider {
+    @apply border-t border-gray-100 my-1;
+  }
+
+  .pii-context-submenu {
+    @apply relative;
+  }
+
+  .pii-context-submenu-content {
+    @apply absolute left-full top-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-40 hidden;
+  }
+
+  .pii-context-submenu:hover .pii-context-submenu-content {
+    @apply block;
+  }
+
+  /* Badge colors for entity types (extending existing) */
+  .badge-yellow {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-orange {
+    @apply badge bg-orange-100 text-orange-800;
+  }
+
+  /* Empty state */
+  .entity-list-empty {
+    @apply flex flex-col items-center justify-center py-8 text-center;
+  }
+
+  .entity-list-empty-icon {
+    @apply w-12 h-12 text-gray-300 mb-2;
+  }
+
+  .entity-list-empty-text {
+    @apply text-sm text-gray-500;
+  }
+}
+
+/* Custom scrollbar styles */
+.scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+  background-color: #f3f4f6; /* gray-100 */
+  border-radius: 9999px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: #d1d5db; /* gray-300 */
+  border-radius: 9999px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af; /* gray-400 */
 }

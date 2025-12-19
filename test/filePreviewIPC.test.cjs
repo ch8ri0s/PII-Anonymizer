@@ -30,14 +30,15 @@ describe('File Preview IPC Integration', function() {
 
   describe('Path Validator (Unit Tests)', function() {
     // We'll import and test the compiled TypeScript modules
-    let validateFilePath, PathValidationError;
+    let validateFilePath, _PathValidationError;
 
     before(function() {
       try {
         const pathValidatorModule = require('../dist/utils/pathValidator.js');
         validateFilePath = pathValidatorModule.validateFilePath;
-        PathValidationError = pathValidatorModule.PathValidationError;
-      } catch (error) {
+        _PathValidationError = pathValidatorModule.PathValidationError;
+      // eslint-disable-next-line no-unused-vars
+      } catch (_error) {
         this.skip(); // Skip if TypeScript not compiled yet
       }
     });
@@ -48,7 +49,7 @@ describe('File Preview IPC Integration', function() {
       const testFile = path.join(testDataDir, 'sample.txt');
       const validPath = validateFilePath(testFile, {
         mustExist: true,
-        mustBeReadable: true
+        mustBeReadable: true,
       });
 
       expect(validPath).to.be.a('string');
@@ -73,7 +74,7 @@ describe('File Preview IPC Integration', function() {
       expect(() => {
         validateFilePath(testFile, {
           mustExist: false,
-          allowedExtensions: ['.txt', '.pdf']
+          allowedExtensions: ['.txt', '.pdf'],
         });
       }).to.throw();
     });
@@ -94,7 +95,8 @@ describe('File Preview IPC Integration', function() {
       try {
         const metadataModule = require('../dist/utils/metadataExtractor.js');
         getFileMetadata = metadataModule.getFileMetadata;
-      } catch (error) {
+      // eslint-disable-next-line no-unused-vars
+      } catch (_error) {
         this.skip();
       }
     });
@@ -152,7 +154,8 @@ describe('File Preview IPC Integration', function() {
       try {
         const previewModule = require('../dist/utils/previewGenerator.js');
         getFilePreview = previewModule.getFilePreview;
-      } catch (error) {
+      // eslint-disable-next-line no-unused-vars
+      } catch (_error) {
         this.skip();
       }
     });

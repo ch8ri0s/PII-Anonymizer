@@ -4,7 +4,7 @@
  */
 
 import { expect } from 'chai';
-import { detectLanguage, getLocaleInfo, isValidLocale } from '../../../src/i18n/languageDetector.js';
+import { detectLanguage, getLocaleInfo, isValidLocale } from '../../../dist/i18n/languageDetector.js';
 
 describe('Language Detector', () => {
   describe('detectLanguage()', () => {

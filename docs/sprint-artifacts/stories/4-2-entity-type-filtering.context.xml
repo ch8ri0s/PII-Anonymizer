@@ -1,0 +1,209 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.2</storyId>
+    <title>Entity Type Filtering</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-2-entity-type-filtering.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user reviewing detected PII</asA>
+    <iWant>to filter entities by type and confidence level</iWant>
+    <soThat>I can focus on specific entity types or uncertain detections</soThat>
+    <tasks>
+      <task id="1" status="pending">Review existing filter implementation (AC: all)</task>
+      <task id="2" status="pending">Verify type checkbox filtering (AC: 4.2.1)</task>
+      <task id="3" status="pending">Verify confidence slider filtering (AC: 4.2.2)</task>
+      <task id="4" status="pending">Verify flagged-only toggle (AC: 4.2.3)</task>
+      <task id="5" status="pending">Verify filter state persistence (AC: 4.2.4)</task>
+      <task id="6" status="pending">Verify preview highlighting sync (AC: 4.2.5)</task>
+      <task id="7" status="pending">Run test suite and verify Story 4.2 tests (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-4.2.1">Given the entity sidebar, when type checkboxes are toggled, then visibility of entity types is updated accordingly</criterion>
+    <criterion id="AC-4.2.2">Confidence slider filters entities below the selected threshold</criterion>
+    <criterion id="AC-4.2.3">"Show flagged only" toggle shows only entities flagged for review</criterion>
+    <criterion id="AC-4.2.4">Filter state persists during the session</criterion>
+    <criterion id="AC-4.2.5">Preview highlighting updates to match applied filters</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>A5-PII-Anonymizer Epic Breakdown</title>
+        <section>Epic 4: User Review Workflow - Story 4.2</section>
+        <snippet>Entity type filtering with checkboxes for each detected type, confidence slider (0-100), "Show flagged only" toggle, filter state persists during session.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 4: User Review</section>
+        <snippet>Filter controls integrated into entity sidebar. State managed via entityReviewState.filters object with types, minConfidence, showFlaggedOnly, statusFilter, searchText properties.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-5.7: Entity sidebar with type filters</section>
+        <snippet>Users can filter detected entities by type checkboxes, confidence threshold slider, and flagged-only toggle for focused review.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>entityReviewState.filters</symbol>
+        <lines>24-35</lines>
+        <reason>PRIMARY FILTER STATE - stores filter configuration: types[], minConfidence, showFlaggedOnly, statusFilter, searchText. This is the central state object for all filtering functionality.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>getFilteredEntities()</symbol>
+        <lines>808-844</lines>
+        <reason>CORE FILTER LOGIC - applies all filter conditions (type, confidence, flagged, status, search) to entity list. Returns filtered array for rendering.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>renderReviewFilters()</symbol>
+        <lines>903-955</lines>
+        <reason>FILTER UI RENDERING - renders search input, type checkboxes (dynamic from unique types), confidence slider (0-100%), and flagged toggle. Each control has data-filter attribute for event binding.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>attachEntityReviewListeners()</symbol>
+        <lines>1086-1160</lines>
+        <reason>FILTER EVENT HANDLERS - handles search input (1119-1126), type checkbox changes (1128-1141), confidence slider (1143-1150), flagged toggle (1152-1159). All handlers update state and trigger re-render.</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>EntityFilterOptions</symbol>
+        <lines>61-76</lines>
+        <reason>TYPE DEFINITION - TypeScript interface for filter state: types: EntityType[], minConfidence: number (0-1), showFlaggedOnly: boolean, statusFilter: ReviewStatus | 'all', searchText: string.</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>DEFAULT_FILTER_OPTIONS</symbol>
+        <lines>81-86</lines>
+        <reason>DEFAULT VALUES - Initial filter state: types=[], minConfidence=0, showFlaggedOnly=false, statusFilter='all', searchText=''.</reason>
+      </file>
+      <file>
+        <path>test/unit/entityReview.test.js</path>
+        <kind>test</kind>
+        <symbol>Story 4.2: Entity Type Filtering</symbol>
+        <lines>197-354</lines>
+        <reason>COMPREHENSIVE TEST SUITE - 15+ tests covering: type filtering (single/multiple), confidence filtering (threshold/exclusion), flagged filter, status filter (pending/approved), search filter (original text/replacement/case insensitive), combined filters.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <purpose>Desktop application framework - renderer process hosts filter UI</purpose>
+      </node>
+      <node>
+        <package>tailwindcss</package>
+        <version>3.4.1</version>
+        <purpose>Utility-first CSS for filter controls (checkboxes, slider, toggle styling)</purpose>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>11.7.5</version>
+        <purpose>Test framework for Story 4.2 tests</purpose>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>6.2.0</version>
+        <purpose>Assertion library for filter logic testing</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">IPC isolation required - filter state lives in renderer process, no direct Node.js access</constraint>
+    <constraint source="architecture">Never log PII content - only filter metadata (types selected, threshold values)</constraint>
+    <constraint source="prd">100% local processing - no network calls for filter operations</constraint>
+    <constraint source="story">Must integrate with existing entityReviewState.filters (renderer.js lines 24-35)</constraint>
+    <constraint source="story">CRITICAL: Implementation already exists - story is VERIFICATION task</constraint>
+    <constraint source="security">XSS prevention - use escapeHtml() for any user-provided search text display</constraint>
+    <constraint source="ux">Real-time filtering - all filter changes immediately update entity list without submit button</constraint>
+    <constraint source="ux">Filter state persists during session but resets on new file processing</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>entityReviewState.filters</name>
+      <kind>state-object</kind>
+      <signature>{ types: string[], minConfidence: number, showFlaggedOnly: boolean, statusFilter: string, searchText: string }</signature>
+      <path>renderer.js:24-35</path>
+    </interface>
+    <interface>
+      <name>getFilteredEntities()</name>
+      <kind>function</kind>
+      <signature>() => ReviewableEntity[]</signature>
+      <path>renderer.js:808-844</path>
+    </interface>
+    <interface>
+      <name>renderReviewFilters()</name>
+      <kind>function</kind>
+      <signature>() => string (HTML)</signature>
+      <path>renderer.js:903-955</path>
+    </interface>
+    <interface>
+      <name>attachEntityReviewListeners()</name>
+      <kind>function</kind>
+      <signature>() => void</signature>
+      <path>renderer.js:1086-1160</path>
+    </interface>
+    <interface>
+      <name>EntityFilterOptions</name>
+      <kind>interface</kind>
+      <signature>{ types: EntityType[]; minConfidence: number; showFlaggedOnly: boolean; statusFilter: ReviewStatus | 'all'; searchText: string }</signature>
+      <path>src/types/entityReview.ts:61-76</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Mocha + Chai test framework with 10-second timeout. Tests follow TDD Red-Green-Refactor cycle. 80%+ code coverage target. All tests must pass before story completion. Story 4.2 tests already exist (lines 197-354 in entityReview.test.js).</standards>
+    <locations>
+      <location>test/unit/entityReview.test.js (Story 4.2: Entity Type Filtering, lines 197-354)</location>
+      <location>test/unit/entityReview.test.js (Full Epic 4 coverage, 700+ lines)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-4.2.1">Verify type checkbox toggles filter entities by type - DONE: Tests at lines 235-259</idea>
+      <idea ac="AC-4.2.2">Verify confidence slider filters below threshold - DONE: Tests at lines 261-281</idea>
+      <idea ac="AC-4.2.3">Verify flagged toggle shows only flagged entities - DONE: Tests at lines 283-292</idea>
+      <idea ac="AC-4.2.4">Verify filter state persists in entityReviewState during session - Code review verification</idea>
+      <idea ac="AC-4.2.5">Verify filtered entities update preview highlighting - Integration test verification</idea>
+    </ideas>
+  </tests>
+
+  <key-methods>
+    <method name="getFilteredEntities" location="renderer.js:808-844" purpose="Apply all filter conditions to entity list" />
+    <method name="renderReviewFilters" location="renderer.js:903-955" purpose="Render filter controls UI" />
+    <method name="attachEntityReviewListeners" location="renderer.js:1086-1160" purpose="Bind filter event handlers" />
+    <method name="renderEntityReviewPanel" location="renderer.js:780-803" purpose="Re-render panel on filter changes" />
+  </key-methods>
+
+  <implementation-status>
+    <summary>VERIFICATION TASK - Implementation already exists and is complete</summary>
+    <coverage>
+      <ac id="AC-4.2.1" status="implemented" evidence="Type checkboxes at renderer.js:923-929, handler at 1128-1141, filter logic at 812-815" />
+      <ac id="AC-4.2.2" status="implemented" evidence="Confidence slider at renderer.js:932-944, handler at 1143-1150, filter logic at 817-820" />
+      <ac id="AC-4.2.3" status="implemented" evidence="Flagged toggle at renderer.js:947-952, handler at 1152-1159, filter logic at 822-825" />
+      <ac id="AC-4.2.4" status="implemented" evidence="State persists in entityReviewState.filters object, reset in initializeEntityReview()" />
+      <ac id="AC-4.2.5" status="implemented" evidence="renderEntityReviewPanel() called after each filter change, uses getFilteredEntities() for rendering" />
+    </coverage>
+  </implementation-status>
+</story-context>

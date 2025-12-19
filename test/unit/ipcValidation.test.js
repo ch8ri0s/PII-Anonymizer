@@ -111,7 +111,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
         '',
         12345,
         {},
-        []
+        [],
       ];
 
       // Expected: All should be rejected upfront
@@ -124,7 +124,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
         '/tmp/malicious.sh',
         '/tmp/evil.exe',
         '/tmp/data.txt',
-        '/etc/passwd'
+        '/etc/passwd',
       ];
 
       invalidFiles.forEach(file => {
@@ -139,7 +139,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
       const traversalAttempts = [
         '../../../etc/passwd',
         '..\\..\\..\\windows\\system32\\config\\sam',
-        '/tmp/../../../etc/passwd'
+        '/tmp/../../../etc/passwd',
       ];
 
       // Expected: Handler should normalize paths and reject traversal
@@ -162,7 +162,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
         'javascript:alert("XSS")',
         'file:///etc/passwd',
         'data:text/html,<script>alert(1)</script>',
-        'vbscript:msgbox("XSS")'
+        'vbscript:msgbox("XSS")',
       ];
 
       dangerousUrls.forEach(url => {
@@ -178,7 +178,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
       // REQUIREMENT: Normalize paths BEFORE resolving
       const traversalAttempts = [
         '../../../etc/passwd',
-        'C:\\..\\..\\windows\\system32'
+        'C:\\..\\..\\windows\\system32',
       ];
 
       // CURRENT: Checks after resolve (too late!)
@@ -200,7 +200,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
       // REQUIREMENT: All handlers should return consistent error format
       const expectedErrorFormat = {
         success: false,
-        error: 'Human-readable error message'
+        error: 'Human-readable error message',
       };
 
       expect(expectedErrorFormat.success).to.be.false;
@@ -243,7 +243,7 @@ describe('IPC Input Validation Requirements (CRITICAL)', () => {
     it('should document requirement: sanitize error messages', function() {
       // REQUIREMENT: Don't leak file system paths in errors sent to renderer
       const systemPath = '/Users/olivier/secret/file.txt';
-      const sanitized = systemPath.replace(/\/[\w\/.-]+/g, '[REDACTED_PATH]');
+      const sanitized = systemPath.replace(/\/[\w/.-]+/g, '[REDACTED_PATH]');
 
       expect(sanitized).to.equal('[REDACTED_PATH]');
 

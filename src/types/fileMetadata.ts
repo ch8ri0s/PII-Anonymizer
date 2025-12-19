@@ -70,7 +70,7 @@ export type FileErrorCode =
  * Type guard to check if result is an error
  */
 export function isFileMetadataError(
-  result: FileMetadata | FileMetadataError
+  result: FileMetadata | FileMetadataError,
 ): result is FileMetadataError {
   return 'error' in result;
 }

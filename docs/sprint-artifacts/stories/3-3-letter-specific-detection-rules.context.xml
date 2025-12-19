@@ -1,0 +1,188 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.3</storyId>
+    <title>Letter-Specific Detection Rules</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/3-3-letter-specific-detection-rules.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user processing formal letters</asA>
+    <iWant>letter-optimized PII detection</iWant>
+    <soThat>sender, recipient, and correspondent details are accurately identified</soThat>
+    <tasks>
+      <task id="1" status="pending">Review existing LetterRules implementation (AC: all)</task>
+      <task id="2" status="pending">Verify SALUTATION_NAME detection (AC: 3.3.4)</task>
+      <task id="3" status="pending">Verify SIGNATURE detection (AC: 3.3.5)</task>
+      <task id="4" status="pending">Verify LETTER_DATE detection (AC: 3.3.6)</task>
+      <task id="5" status="pending">Verify RECIPIENT block detection (AC: 3.3.3)</task>
+      <task id="6" status="pending">Verify REFERENCE_LINE detection (AC: 3.3.7)</task>
+      <task id="7" status="pending">Verify position-based confidence boosting (AC: 3.3.2, 3.3.8)</task>
+      <task id="8" status="pending">Integration with RuleEngine (AC: 3.3.1)</task>
+      <task id="9" status="pending">Update tests to validate all ACs (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-3.3.1">Given document classified as LETTER, letter-specific patterns are active</criterion>
+    <criterion id="AC-3.3.2">SENDER: Header/letterhead area (first 20%) detected with position boost</criterion>
+    <criterion id="AC-3.3.3">RECIPIENT: Address block detected (after "To:", "À:", "An:")</criterion>
+    <criterion id="AC-3.3.4">SALUTATION_NAME: Names in "Dear", "Sehr geehrte/r", "Madame, Monsieur" patterns</criterion>
+    <criterion id="AC-3.3.5">SIGNATURE: Name after closing phrases (Sincerely, Mit freundlichen Grüßen, Cordialement)</criterion>
+    <criterion id="AC-3.3.6">LETTER_DATE: Date detected (typically near top) with header confidence boost</criterion>
+    <criterion id="AC-3.3.7">REFERENCE_LINE: Re:/Betreff:/Objet: lines detected</criterion>
+    <criterion id="AC-3.3.8">Position-based confidence boosting applied (header +0.15, footer +0.15)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>A5-PII-Anonymizer Epic Breakdown</title>
+        <section>Story 3.3: Letter-Specific Detection Rules</section>
+        <snippet>Letter-optimized PII detection for sender, recipient, salutation, signature. Handle multilingual salutations and closings. Integrate with letter layout detection.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 3: Document-Type Detection</section>
+        <snippet>DocumentClassifier.ts, rules/ directory including LetterRules.ts. RuleEngine coordinates document-type-specific rule application.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>PII Detection Accuracy</section>
+        <snippet>Target 98%+ detection accuracy, less than 2% false positive rate. Multi-language support for EN, FR, DE.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/pii/rules/LetterRules.ts</path>
+        <kind>rule-engine</kind>
+        <symbol>LetterRules class</symbol>
+        <lines>1-567</lines>
+        <reason>Primary implementation - ALREADY EXISTS. Letter entity detection for salutations, signatures, dates, recipients, references with position-based confidence boosting.</reason>
+      </file>
+      <file>
+        <path>src/pii/RuleEngine.ts</path>
+        <kind>orchestrator</kind>
+        <symbol>RuleEngine class</symbol>
+        <lines>247-252</lines>
+        <reason>Calls LetterRules.applyRules() for LETTER document type. Integration point for letter detection.</reason>
+      </file>
+      <file>
+        <path>src/pii/DocumentClassifier.ts</path>
+        <kind>classifier</kind>
+        <symbol>DocumentClassifier class</symbol>
+        <lines>all</lines>
+        <reason>Classifies documents as LETTER based on keywords and structure (prerequisite from Story 3.1).</reason>
+      </file>
+      <file>
+        <path>src/pii/passes/DocumentTypePass.ts</path>
+        <kind>pipeline-pass</kind>
+        <symbol>DocumentTypePass</symbol>
+        <lines>all</lines>
+        <reason>Orchestrates document classification and rule application in multi-pass pipeline.</reason>
+      </file>
+      <file>
+        <path>test/unit/pii/DocumentTypeDetection.test.js</path>
+        <kind>test</kind>
+        <symbol>Story 3.3: Letter-Specific Detection Rules</symbol>
+        <lines>461-564</lines>
+        <reason>Test suite for all Story 3.3 acceptance criteria - salutations, signatures, dates, references. ALREADY EXISTS.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>@xenova/transformers</package>
+        <version>2.17.2</version>
+        <purpose>ML-based NER detection (base entities)</purpose>
+      </node>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <purpose>Desktop application framework</purpose>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>5.9.3</version>
+        <purpose>Type-safe development for converters and PII detection</purpose>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>11.7.5</version>
+        <purpose>Test framework</purpose>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>6.2.0</version>
+        <purpose>Assertion library</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">TypeScript strict mode enabled - all new code must be type-safe</constraint>
+    <constraint source="architecture">IPC isolation required - use contextBridge for renderer communication</constraint>
+    <constraint source="architecture">Never log PII content - only metadata (type, position, confidence)</constraint>
+    <constraint source="prd">100% local processing - no network calls for detection</constraint>
+    <constraint source="prd">Target 98%+ detection accuracy, less than 2% false positive rate</constraint>
+    <constraint source="story">Must integrate with existing RuleEngine.applyRules() flow</constraint>
+    <constraint source="story">CRITICAL: Implementation already exists - story is VERIFICATION task</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>LetterRules.applyRules()</name>
+      <kind>class-method</kind>
+      <signature>applyRules(text: string, existingEntities: Entity[], language: 'en' | 'fr' | 'de' | 'it'): Entity[]</signature>
+      <path>src/pii/rules/LetterRules.ts</path>
+    </interface>
+    <interface>
+      <name>RuleEngine.applyRules()</name>
+      <kind>class-method</kind>
+      <signature>applyRules(text: string, classification: DocumentClassification, existingEntities: Entity[]): Entity[]</signature>
+      <path>src/pii/RuleEngine.ts</path>
+    </interface>
+    <interface>
+      <name>createLetterRules</name>
+      <kind>factory-function</kind>
+      <signature>createLetterRules(config?: Partial&lt;LetterRulesConfig&gt;): LetterRules</signature>
+      <path>src/pii/rules/LetterRules.ts</path>
+    </interface>
+    <interface>
+      <name>LetterRulesConfig</name>
+      <kind>interface</kind>
+      <signature>{ senderHeaderRatio: number, detectRecipient: boolean, extractSalutationNames: boolean, detectSignature: boolean, positionBoost: number }</signature>
+      <path>src/pii/rules/LetterRules.ts</path>
+    </interface>
+    <interface>
+      <name>LetterEntityType</name>
+      <kind>type-alias</kind>
+      <signature>'SENDER' | 'RECIPIENT' | 'SALUTATION_NAME' | 'SIGNATURE' | 'LETTER_DATE' | 'REFERENCE_LINE'</signature>
+      <path>src/pii/rules/LetterRules.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Mocha + Chai test framework with 10-second timeout. Tests follow TDD Red-Green-Refactor cycle. 80%+ code coverage target. All tests must pass before story completion. Story 3.3 tests already exist and pass.</standards>
+    <locations>
+      <location>test/unit/pii/DocumentTypeDetection.test.js (lines 461-564)</location>
+      <location>test/unit/pii/*.test.js</location>
+      <location>test/integration/*.test.js</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-3.3.1">Verify LetterRules is activated when document classified as LETTER - DONE in existing tests</idea>
+      <idea ac="AC-3.3.4">Test EN/DE/FR salutation patterns - DONE: Dear Mr. Smith, Sehr geehrter Herr Müller, Cher Monsieur Dupont</idea>
+      <idea ac="AC-3.3.5">Test signature extraction after closings - DONE: Sincerely John Doe, Mit freundlichen Grüßen Hans Schmidt</idea>
+      <idea ac="AC-3.3.6">Test letter date detection in header - DONE: January 15, 2024, 15. Januar 2024</idea>
+      <idea ac="AC-3.3.7">Test reference line detection - DONE: Re: Project Proposal, Betreff: Anfrage</idea>
+      <idea ac="AC-3.3.8">Test position-based confidence boost (+0.15) - Available via positionBoost config option</idea>
+    </ideas>
+  </tests>
+</story-context>

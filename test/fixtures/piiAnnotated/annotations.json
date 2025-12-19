@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "created": "2025-12-05",
+  "targetAccuracy": 0.98,
+  "entityTypes": [
+    "PERSON",
+    "ORGANIZATION",
+    "SWISS_AVS",
+    "IBAN",
+    "SWISS_ADDRESS",
+    "EU_ADDRESS",
+    "PHONE",
+    "EMAIL",
+    "DATE"
+  ],
+  "documents": []
+}

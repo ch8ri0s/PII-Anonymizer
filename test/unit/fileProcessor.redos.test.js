@@ -32,6 +32,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     // Clean output directory
     try {
       await fs.rm(outputDir, { recursive: true, force: true });
+    // eslint-disable-next-line no-unused-vars
     } catch (_err) {
       // Ignore if doesn't exist
     }

@@ -81,7 +81,7 @@ export class BatchQueueManager {
     }
 
     // Don't remove if currently processing
-    if (this.state.items[index].status === 'processing') {
+    if (this.state.items[index]?.status === 'processing') {
       return false;
     }
 
@@ -91,7 +91,7 @@ export class BatchQueueManager {
     // Update selected item if removed
     if (this.state.selectedItemId === id) {
       this.state.selectedItemId =
-        this.state.items.length > 0 ? this.state.items[0].id : null;
+        this.state.items.length > 0 ? (this.state.items[0]?.id || null) : null;
     }
 
     this.recalculateStats();
@@ -189,7 +189,7 @@ export class BatchQueueManager {
       fileSizeFormatted: string;
       lineCount: number;
       wordCount: number;
-    }
+    },
   ): void {
     const item = this.state.items.find((item) => item.id === id);
 
@@ -339,13 +339,13 @@ export class BatchQueueManager {
     processing: number;
     completed: number;
     failed: number;
-  } {
+    } {
     return {
       total: this.state.totalFiles,
       pending: this.state.items.filter((item) => item.status === 'pending')
         .length,
       processing: this.state.items.filter(
-        (item) => item.status === 'processing'
+        (item) => item.status === 'processing',
       ).length,
       completed: this.state.completedFiles,
       failed: this.state.failedFiles,
@@ -364,11 +364,11 @@ export class BatchQueueManager {
    */
   private recalculateStats(): void {
     this.state.completedFiles = this.state.items.filter(
-      (item) => item.status === 'completed'
+      (item) => item.status === 'completed',
     ).length;
 
     this.state.failedFiles = this.state.items.filter(
-      (item) => item.status === 'failed'
+      (item) => item.status === 'failed',
     ).length;
   }
 

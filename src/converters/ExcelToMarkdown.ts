@@ -6,10 +6,13 @@
 import ExcelJS from 'exceljs';
 import path from 'path';
 import { MarkdownConverter, MarkdownConverterOptions } from './MarkdownConverter.js';
+import { createLogger } from '../utils/LoggerFactory.js';
 
 export interface ExcelConverterOptions extends MarkdownConverterOptions {
   maxRowsPerSheet?: number;
 }
+
+const log = createLogger('converter:excel');
 
 export class ExcelToMarkdown extends MarkdownConverter {
   private maxRowsPerSheet: number;
@@ -19,7 +22,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
     this.maxRowsPerSheet = options.maxRowsPerSheet || 1000;
   }
 
-  async convert(filePath: string): Promise<string> {
+  override async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
     const workbook = new ExcelJS.Workbook();
 
@@ -31,7 +34,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
         filename: this.sanitizeFilename(filename),
         format: 'xlsx',
         timestamp: new Date().toISOString(),
-        sheetCount: workbook.worksheets.length
+        sheetCount: workbook.worksheets.length,
       });
 
       const title = filename.replace(/\.xlsx?$/i, '');
@@ -45,7 +48,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
       return frontmatter + markdown;
 
     } catch (error) {
-      console.error(`Error converting Excel ${filename}:`, error);
+      log.error('Error converting Excel', { filename, error: (error as Error).message });
       throw new Error(`Failed to convert Excel: ${(error as Error).message}`);
     }
   }
@@ -68,7 +71,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
 
     if (truncated) {
       markdown += this.createBlockquote(
-        `Note: Showing first ${displayRows} of ${rowCount - 1} data rows`
+        `Note: Showing first ${displayRows} of ${rowCount - 1} data rows`,
       );
     }
 
@@ -111,6 +114,7 @@ export class ExcelToMarkdown extends MarkdownConverter {
 
     // Handle formulas - show result
     if (cell.type === ExcelJS.ValueType.Formula) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return String((cell.value as any).result || '');
     }
 
@@ -121,7 +125,9 @@ export class ExcelToMarkdown extends MarkdownConverter {
 
     // Handle dates
     if (cell.type === ExcelJS.ValueType.Date) {
-      return (cell.value as Date).toISOString().split('T')[0];
+      const dateValue = cell.value as Date | undefined;
+      const safeDate = dateValue || new Date();
+      return safeDate.toISOString().split('T')[0] || '';
     }
 
     // Handle hyperlinks

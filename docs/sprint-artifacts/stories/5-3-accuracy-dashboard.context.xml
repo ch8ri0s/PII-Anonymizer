@@ -1,0 +1,220 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>3</storyId>
+    <title>Accuracy Dashboard</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-3-accuracy-dashboard.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>power user monitoring detection quality</asA>
+    <iWant>to see accuracy statistics over time</iWant>
+    <soThat>I can assess whether the system is improving</soThat>
+    <tasks>
+      <task id="1" ac="5.3.1">Create AccuracyDashboard UI component
+        <subtask>Add "Accuracy" tab/section to Settings panel in index.html</subtask>
+        <subtask>Create dashboard layout with card-based statistics display</subtask>
+        <subtask>Add i18n strings for dashboard labels (en.json, fr.json, de.json)</subtask>
+      </task>
+      <task id="2" ac="5.3.1,5.3.2,5.3.3,5.3.4,5.3.6">Implement statistics aggregation service
+        <subtask>Create src/services/accuracyStats.ts for stats calculation</subtask>
+        <subtask>Implement loadAllCorrectionLogs() to read all corrections-YYYY-MM.json files</subtask>
+        <subtask>Implement calculateStatistics() returning DocumentStats, FalsePositiveRate, FalseNegativeEstimate, PerTypeBreakdown</subtask>
+        <subtask>Add IPC handler accuracy:get-stats in main process</subtask>
+      </task>
+      <task id="3" ac="5.3.6">Add IPC handlers for dashboard data
+        <subtask>Create src/services/accuracyHandlers.ts with IPC handlers</subtask>
+        <subtask>Add accuracy:get-stats handler to return aggregated statistics</subtask>
+        <subtask>Add accuracy:get-trends handler to return time-series data</subtask>
+        <subtask>Expose via preload.cjs contextBridge</subtask>
+      </task>
+      <task id="4" ac="5.3.4">Implement per-type breakdown display
+        <subtask>Create entity type breakdown table in dashboard</subtask>
+        <subtask>Show for each type: total detections, dismissals, manual additions, accuracy %</subtask>
+        <subtask>Sort by entity type with highlighting for low-accuracy types</subtask>
+      </task>
+      <task id="5" ac="5.3.5">Implement trend chart
+        <subtask>Add simple chart library (consider vanilla JS canvas or Chart.js)</subtask>
+        <subtask>Create weekly/monthly aggregation from correction timestamps</subtask>
+        <subtask>Display line chart showing false positive rate trend over time</subtask>
+        <subtask>Add toggle between weekly and monthly view</subtask>
+      </task>
+      <task id="6" ac="5.3.7">Implement CSV export
+        <subtask>Add "Export Report" button to dashboard</subtask>
+        <subtask>Generate CSV with columns: Date, TotalDetections, Dismissals, Additions, FPRate, FNEstimate</subtask>
+        <subtask>Include per-type breakdown in CSV</subtask>
+        <subtask>Use Electron dialog.showSaveDialog for file location</subtask>
+      </task>
+      <task id="7" ac="all">Add unit tests
+        <subtask>Test statistics calculation with mock correction logs</subtask>
+        <subtask>Test trend aggregation (weekly/monthly grouping)</subtask>
+        <subtask>Test CSV export format</subtask>
+        <subtask>Test IPC handler input validation</subtask>
+      </task>
+      <task id="8" ac="all">Run test suite and verify no regression
+        <subtask>Run full test suite (expect 679+ tests passing)</subtask>
+        <subtask>Run lint check (0 warnings)</subtask>
+        <subtask>Verify TypeScript compilation</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-5.3.1">Given accumulated correction logs, when user opens accuracy dashboard (Settings > Accuracy), then dashboard shows total documents processed</criterion>
+    <criterion id="AC-5.3.2">Dashboard displays false positive rate (dismissals / total detections)</criterion>
+    <criterion id="AC-5.3.3">Dashboard displays false negative estimate (manual additions / total detections)</criterion>
+    <criterion id="AC-5.3.4">Dashboard includes per-type accuracy breakdown showing dismissals and additions per entity type</criterion>
+    <criterion id="AC-5.3.5">Dashboard shows trend chart (weekly/monthly) visualizing correction rates over time</criterion>
+    <criterion id="AC-5.3.6">Dashboard data is derived from local logs only (corrections-YYYY-MM.json files)</criterion>
+    <criterion id="AC-5.3.7">"Export Report" button generates CSV summary of all statistics</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 5.3: Accuracy Dashboard</section>
+        <snippet>Defines the accuracy dashboard story: showing total documents processed, false positive/negative rates, per-type breakdown, trend charts, and CSV export capability.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 5: Confidence and Feedback</section>
+        <snippet>Documents the feedbackLogger.ts service for logging corrections, AccuracyDashboard.ts planned location, and data flow from corrections-YYYY-MM.json files in app userData directory.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/5-2-user-correction-logging.md</path>
+        <title>Story 5.2 - User Correction Logging</title>
+        <section>Dev Agent Record</section>
+        <snippet>Completed story providing correction logs infrastructure. FeedbackLogger writes to corrections-YYYY-MM.json with CorrectionEntry structure (id, timestamp, action, entityType, context, documentHash).</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/services/feedbackLogger.ts</path>
+        <kind>service</kind>
+        <symbol>FeedbackLogger</symbol>
+        <lines>1-348</lines>
+        <reason>Core dependency - provides getLogFilePath(), loadLogFile(), getEntries(), and log file format. AccuracyStats must read these same files.</reason>
+      </file>
+      <file>
+        <path>src/services/feedbackHandlers.ts</path>
+        <kind>handler</kind>
+        <symbol>registerFeedbackHandlers</symbol>
+        <lines>1-134</lines>
+        <reason>Pattern reference - shows IPC handler registration pattern to follow for accuracyHandlers.ts.</reason>
+      </file>
+      <file>
+        <path>src/types/feedback.ts</path>
+        <kind>types</kind>
+        <symbol>CorrectionEntry, CorrectionLogFile</symbol>
+        <lines>1-135</lines>
+        <reason>Defines data structures for correction entries that AccuracyStats must parse (action: DISMISS|ADD, entityType, timestamp, documentHash).</reason>
+      </file>
+      <file>
+        <path>preload.cjs</path>
+        <kind>bridge</kind>
+        <symbol>contextBridge.exposeInMainWorld</symbol>
+        <lines>1-100</lines>
+        <reason>Pattern reference - shows how to expose new API (accuracyAPI) to renderer via contextBridge.</reason>
+      </file>
+      <file>
+        <path>src/main.ts</path>
+        <kind>main</kind>
+        <symbol>registerFeedbackHandlers</symbol>
+        <lines>1-420</lines>
+        <reason>Entry point where registerAccuracyHandlers() must be imported and called.</reason>
+      </file>
+      <file>
+        <path>index.html</path>
+        <kind>ui</kind>
+        <symbol>Entity Review Panel</symbol>
+        <reason>UI structure reference - add Accuracy tab to Settings panel following existing panel patterns.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>renderer</kind>
+        <symbol>Entity sidebar rendering</symbol>
+        <reason>UI logic reference - add dashboard rendering functions following existing UI patterns.</reason>
+      </file>
+      <file>
+        <path>test/unit/feedbackLogger.test.js</path>
+        <kind>test</kind>
+        <symbol>describe('Epic 5: Feedback Logging')</symbol>
+        <lines>1-100</lines>
+        <reason>Test pattern reference - shows how to test file-based services with temp directories and mocks.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="electron" version="^39.1.1">Desktop framework - provides app.getPath(), dialog.showSaveDialog()</package>
+        <package name="electron-log" version="^5.4.3">Logging via createLogger()</package>
+        <package name="mocha" version="^11.7.5">Test framework</package>
+        <package name="chai" version="^6.2.0">Assertion library</package>
+        <package name="tailwindcss" version="^3.4.1">UI styling</package>
+      </node>
+      <note>No charting library currently installed - Task 5 should evaluate vanilla canvas vs adding Chart.js</note>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Follow existing service pattern: TypeScript class with singleton export (see feedbackLogger.ts)</constraint>
+    <constraint type="ipc">Use contextBridge for renderer API exposure - no nodeIntegration (security)</constraint>
+    <constraint type="storage">Read correction logs from app.getPath('userData') directory only - local storage, no network</constraint>
+    <constraint type="privacy">Log files already anonymized by FeedbackLogger - AccuracyStats only reads anonymized data</constraint>
+    <constraint type="testing">Use Mocha + Chai, mock file system with temp directories (see feedbackLogger.test.js)</constraint>
+    <constraint type="i18n">Add strings to all 3 locale files: en.json, fr.json, de.json</constraint>
+    <constraint type="naming">IPC channels: kebab-case (accuracy:get-stats), files: PascalCase.ts for services</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>CorrectionEntry</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface CorrectionEntry { id: string; timestamp: string; action: 'DISMISS' | 'ADD'; entityType: string; context: string; documentHash: string; originalSource?: EntitySource; confidence?: number; position?: { start: number; end: number }; }</signature>
+      <path>src/types/feedback.ts</path>
+    </interface>
+    <interface>
+      <name>CorrectionLogFile</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface CorrectionLogFile { version: string; month: string; createdAt: string; updatedAt: string; entries: CorrectionEntry[]; }</signature>
+      <path>src/types/feedback.ts</path>
+    </interface>
+    <interface>
+      <name>FeedbackLogger.getLogFilePath()</name>
+      <kind>method</kind>
+      <signature>getLogFilePath(): string - Returns path like app.getPath('userData')/corrections-YYYY-MM.json</signature>
+      <path>src/services/feedbackLogger.ts:131-135</path>
+    </interface>
+    <interface>
+      <name>Electron dialog.showSaveDialog</name>
+      <kind>Electron API</kind>
+      <signature>dialog.showSaveDialog(browserWindow, options): Promise&lt;{ filePath?: string; canceled: boolean }&gt;</signature>
+      <path>Electron main process API</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Use Mocha + Chai for all tests. Place tests in test/unit/accuracyStats.test.js. Use fs.mkdtempSync for temporary test directories and clean up in afterEach. Set this.timeout(10000) for file operations. Follow existing patterns from test/unit/feedbackLogger.test.js.</standards>
+    <locations>
+      <location>test/unit/accuracyStats.test.js</location>
+      <location>test/unit/</location>
+    </locations>
+    <ideas>
+      <idea ac="5.3.1,5.3.6">Test loadAllCorrectionLogs() reads multiple corrections-YYYY-MM.json files from directory</idea>
+      <idea ac="5.3.2">Test false positive rate calculation: dismissals / total = expected rate</idea>
+      <idea ac="5.3.3">Test false negative estimate calculation: additions / total = expected rate</idea>
+      <idea ac="5.3.4">Test per-entity-type breakdown aggregation from entries</idea>
+      <idea ac="5.3.5">Test weekly/monthly trend aggregation groups entries by date correctly</idea>
+      <idea ac="5.3.6">Test empty logs directory returns zero statistics</idea>
+      <idea ac="5.3.7">Test CSV export generates correct format with headers and data</idea>
+      <idea ac="all">Test IPC handler validates input and returns proper error responses</idea>
+    </ideas>
+  </tests>
+</story-context>

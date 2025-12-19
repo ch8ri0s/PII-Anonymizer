@@ -9,8 +9,8 @@ import {
   formatTime,
   formatFileSize,
   formatNumber,
-  formatDateTime
-} from '../../../src/i18n/localeFormatter.js';
+  formatDateTime,
+} from '../../../dist/i18n/localeFormatter.js';
 
 describe('Locale Formatter', () => {
   describe('formatDate()', () => {
@@ -209,7 +209,7 @@ describe('Locale Formatter', () => {
     it('should handle custom options', () => {
       const result = formatNumber(1234.5, 'en', {
         minimumFractionDigits: 3,
-        maximumFractionDigits: 3
+        maximumFractionDigits: 3,
       });
       expect(result).to.match(/1,234\.500/);
     });

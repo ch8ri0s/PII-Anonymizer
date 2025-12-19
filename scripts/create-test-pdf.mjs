@@ -25,46 +25,46 @@ function createPdfFile() {
 
     // Title
     doc.fontSize(24)
-       .text('Sample PDF Document', { align: 'center' });
+      .text('Sample PDF Document', { align: 'center' });
 
     doc.moveDown();
 
     // Introduction
     doc.fontSize(12)
-       .text('This is a test PDF file for the PDF converter.', { align: 'left' });
+      .text('This is a test PDF file for the PDF converter.', { align: 'left' });
 
     doc.moveDown();
 
     // Contact Information Section
     doc.fontSize(18)
-       .text('Contact Information', { underline: true });
+      .text('Contact Information', { underline: true });
 
     doc.moveDown(0.5);
 
     doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .text('John Doe');
+      .font('Helvetica-Bold')
+      .text('John Doe');
 
     doc.font('Helvetica')
-       .text('Email: ')
-       .font('Helvetica-Oblique')
-       .text('john.doe@example.com', { continued: false });
+      .text('Email: ')
+      .font('Helvetica-Oblique')
+      .text('john.doe@example.com', { continued: false });
 
     doc.font('Helvetica')
-       .text('Phone: +41 79 123 45 67');
+      .text('Phone: +41 79 123 45 67');
 
     doc.moveDown();
 
     // Personal Information Section
     doc.fontSize(18)
-       .font('Helvetica-Bold')
-       .text('Personal Information', { underline: true });
+      .font('Helvetica-Bold')
+      .text('Personal Information', { underline: true });
 
     doc.moveDown(0.5);
 
     doc.fontSize(12)
-       .font('Helvetica')
-       .text('This document contains PII for testing purposes. ');
+      .font('Helvetica')
+      .text('This document contains PII for testing purposes. ');
 
     doc.text('The user\'s Swiss social security number is 756.1234.5678.90.');
 
@@ -76,8 +76,8 @@ function createPdfFile() {
 
     // Additional Info
     doc.fontSize(10)
-       .text('This PDF was generated programmatically for testing the PII Anonymizer.',
-             { align: 'center', color: 'gray' });
+      .text('This PDF was generated programmatically for testing the PII Anonymizer.',
+        { align: 'center', color: 'gray' });
 
     doc.end();
 

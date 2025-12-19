@@ -2,7 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline, env } from '@xenova/transformers';
 import { fileURLToPath } from 'url';
-import { createLogger } from './src/config/logging.js';
+import { createLogger } from './dist/config/logging.js';
+
+// Import safe regex utilities (Story 6.2: ReDoS protection)
+import { safeReplace, analyzePatternComplexity } from './dist/utils/safeRegex.js';
+
+// Import centralized constants (Story 6.8)
+import { PROCESSING } from './dist/config/constants.js';
 
 // Initialize loggers
 const log = createLogger('fileProcessor');
@@ -19,13 +25,49 @@ import { PdfToMarkdown } from './dist/converters/PdfToMarkdown.js';
 // Import Swiss/EU PII detector (from dist/ - TypeScript compiled output)
 import { SwissEuDetector } from './dist/pii/SwissEuDetector.js';
 
+// Import new multi-pass detection pipeline (Epic 1)
+import { createPipeline } from './dist/pii/DetectionPipeline.js';
+import { createHighRecallPass } from './dist/pii/passes/HighRecallPass.js';
+import { createFormatValidationPass } from './dist/pii/passes/FormatValidationPass.js';
+import { createContextScoringPass } from './dist/pii/passes/ContextScoringPass.js';
+
+// Import Address Relationship Pass (Epic 2)
+import { createAddressRelationshipPass } from './dist/pii/passes/AddressRelationshipPass.js';
+
+// Import Document Type Pass (Epic 3)
+import { createDocumentTypePass } from './dist/pii/passes/DocumentTypePass.js';
+
 // ES module paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Transformers.js environment
-env.localModelPath = path.join(__dirname, 'models');
-env.allowRemoteModels = false;  // Model is cached locally, no remote downloads needed
+// Determine if we're in Electron context (for model path)
+const isElectronContext = typeof process !== 'undefined' &&
+  process.versions &&
+  process.versions.electron;
+
+// Get model path - use modelManager in Electron, fallback for tests
+let modelPath;
+if (isElectronContext) {
+  // Dynamic import to avoid top-level electron import in non-Electron contexts
+  try {
+    const { getModelBasePath } = await import('./dist/services/modelManager.js');
+    modelPath = getModelBasePath();
+  } catch {
+    // Fallback if import fails
+    modelPath = path.join(__dirname, 'models');
+  }
+} else {
+  // Non-Electron context (tests, CLI tools): use local models directory
+  modelPath = path.join(__dirname, 'models');
+}
+
+// Transformers.js environment - use userData directory for lazy-loaded model
+// Model is downloaded on first launch via modelManager, stored in userData/models/
+mlLog.info('Using model path', { modelPath });
+env.localModelPath = modelPath;
+env.cacheDir = modelPath;
+env.allowRemoteModels = true;  // Allow remote model downloads (handled by modelManager)
 env.quantized = false;
 
 // Model configuration
@@ -37,8 +79,49 @@ const MODEL_NAME = 'Xenova/distilbert-base-multilingual-cased-ner-hrl';
 // Pipeline reference (shared across sessions for performance)
 let nerPipeline = null;
 
-// Swiss/EU detector instance (shared, stateless)
-const swissEuDetector = new SwissEuDetector();
+// Swiss/EU detector instance (shared, stateless) - kept for backward compatibility
+const _swissEuDetector = new SwissEuDetector();
+
+// Multi-pass detection pipeline instance (shared)
+let detectionPipeline = null;
+
+/**
+ * Initialize the multi-pass detection pipeline
+ * Called once when model is loaded
+ */
+function initializeDetectionPipeline() {
+  if (detectionPipeline) return detectionPipeline;
+
+  mlLog.info('Initializing multi-pass detection pipeline');
+
+  detectionPipeline = createPipeline({
+    mlConfidenceThreshold: 0.3,
+    contextWindowSize: 50,
+    autoAnonymizeThreshold: 0.6,
+    debug: false,
+  });
+
+  // Register passes in order
+  // Pass 1: Document Type Detection (order=5) - classifies document and applies type-specific rules
+  detectionPipeline.registerPass(createDocumentTypePass());
+
+  // Pass 2: High Recall (order=10) - broad entity detection with ML model
+  const highRecallPass = createHighRecallPass(0.3);
+  detectionPipeline.registerPass(highRecallPass);
+
+  // Pass 3: Format Validation (order=20) - validates entity formats
+  detectionPipeline.registerPass(createFormatValidationPass());
+
+  // Pass 4: Context Scoring (order=30) - scores based on surrounding context
+  detectionPipeline.registerPass(createContextScoringPass());
+
+  // Pass 5: Address Relationship (order=40) - links address components
+  detectionPipeline.registerPass(createAddressRelationshipPass());
+
+  mlLog.info('Detection pipeline initialized with 5 passes (including Document Type Detection)');
+
+  return { pipeline: detectionPipeline, highRecallPass };
+}
 
 // Initialize converters with model name (shared, stateless)
 const converters = {
@@ -59,12 +142,20 @@ const converters = {
  * Each session has its own:
  * - Pseudonym counters (PER_1, PER_2, etc.)
  * - Pseudonym mappings (entity text -> pseudonym)
+ * - Structured address mappings (Story 2.4)
  */
 class FileProcessingSession {
   constructor() {
     // Per-session pseudonym state (isolated)
     this.pseudonymCounters = {};
     this.pseudonymMapping = {};
+
+    // Structured address mappings (Story 2.4: Address Anonymization Strategy)
+    // Stores full address data including components, confidence, and scoring factors
+    this.addressMappings = [];
+
+    // Track ranges that have been anonymized (to prevent fragmentation)
+    this.anonymizedRanges = [];
   }
 
   /**
@@ -104,14 +195,108 @@ class FileProcessingSession {
    * @returns {number} Number of entities anonymized in this session
    */
   getEntityCount() {
-    return Object.keys(this.pseudonymMapping).length;
+    return Object.keys(this.pseudonymMapping).length + this.addressMappings.length;
+  }
+
+  /**
+   * Register a grouped address with structured data (Story 2.4)
+   *
+   * @param {Object} addressEntity - Entity with grouped address data
+   * @returns {string} The placeholder (e.g., "[ADDRESS_1]")
+   */
+  registerGroupedAddress(addressEntity) {
+    // Determine address type for placeholder
+    const addressType = addressEntity.type || 'ADDRESS';
+
+    // Initialize counter for this address type if needed
+    if (!this.pseudonymCounters[addressType]) {
+      this.pseudonymCounters[addressType] = 1;
+    }
+
+    // Generate placeholder: [ADDRESS_1], [SWISS_ADDRESS_1], etc.
+    const counter = this.pseudonymCounters[addressType]++;
+    const placeholder = `[${addressType}_${counter}]`;
+
+    // Extract structured data from entity metadata
+    const metadata = addressEntity.metadata || {};
+    const breakdown = metadata.breakdown || {};
+
+    // Build structured address entry for mapping file
+    const addressEntry = {
+      placeholder,
+      type: addressType,
+      originalText: addressEntity.text,
+      start: addressEntity.start,
+      end: addressEntity.end,
+      components: {
+        street: breakdown.street || null,
+        number: breakdown.number || null,
+        postal: breakdown.postal || null,
+        city: breakdown.city || null,
+        country: breakdown.country || null,
+      },
+      confidence: addressEntity.confidence || metadata.finalConfidence || 0,
+      patternMatched: metadata.patternMatched || null,
+      scoringFactors: metadata.scoringFactors || [],
+      flaggedForReview: addressEntity.flaggedForReview || false,
+      autoAnonymize: metadata.autoAnonymize !== false,
+    };
+
+    // Store structured mapping
+    this.addressMappings.push(addressEntry);
+
+    // Track this range as anonymized (to prevent fragmented anonymization)
+    this.anonymizedRanges.push({
+      start: addressEntity.start,
+      end: addressEntity.end,
+      placeholder,
+    });
+
+    // Also add to simple mapping for backward compatibility
+    this.pseudonymMapping[addressEntity.text] = placeholder;
+
+    return placeholder;
+  }
+
+  /**
+   * Check if a position range is already covered by an anonymized address
+   *
+   * @param {number} start - Start position
+   * @param {number} end - End position
+   * @returns {boolean} True if range overlaps with anonymized address
+   */
+  isRangeAnonymized(start, end) {
+    return this.anonymizedRanges.some(range =>
+      start < range.end && end > range.start,
+    );
+  }
+
+  /**
+   * Get structured address mappings (Story 2.4)
+   *
+   * @returns {Array} Array of structured address entries
+   */
+  getAddressMappings() {
+    return [...this.addressMappings];
+  }
+
+  /**
+   * Get the extended mapping for export (includes structured addresses)
+   *
+   * @returns {Object} Combined mapping with addresses array
+   */
+  getExtendedMapping() {
+    return {
+      entities: { ...this.pseudonymMapping },
+      addresses: [...this.addressMappings],
+    };
   }
 }
 
 /**
  * Aggressively merges consecutive tokens of the same entity type.
  */
-function aggressiveMergeTokens(predictions) {
+function _aggressiveMergeTokens(predictions) {
   if (!predictions || predictions.length === 0) return [];
 
   const merged = [];
@@ -161,9 +346,9 @@ function escapeRegexChars(str) {
  */
 function buildFuzzyRegex(mergedString) {
   // Protection Layer 1: Length limit to prevent exponential complexity
-  const MAX_ENTITY_LENGTH = 50;
-  if (mergedString.length > MAX_ENTITY_LENGTH) {
-    securityLog.debug('Skipping long entity (ReDoS protection)', { maxLength: MAX_ENTITY_LENGTH });
+  // Story 6.8: Use centralized PROCESSING constants
+  if (mergedString.length > PROCESSING.MAX_ENTITY_LENGTH) {
+    securityLog.debug('Skipping long entity (ReDoS protection)', { maxLength: PROCESSING.MAX_ENTITY_LENGTH });
     return null;
   }
 
@@ -172,14 +357,13 @@ function buildFuzzyRegex(mergedString) {
 
   // Protection Layer 2: Minimum length to prevent single-character false positives
   // This prevents cases like "C" being detected as PII and replacing all "c" letters
-  const MIN_ENTITY_LENGTH = 3;
-  if (noPunc.length < MIN_ENTITY_LENGTH) {
-    securityLog.debug('Skipping short entity (false positive protection)', { minLength: MIN_ENTITY_LENGTH });
+  if (noPunc.length < PROCESSING.MIN_ENTITY_LENGTH) {
+    securityLog.debug('Skipping short entity (false positive protection)', { minLength: PROCESSING.MIN_ENTITY_LENGTH });
     return null;
   }
 
-  // Protection Layer 3: Character count limit
-  if (noPunc.length > 30) {
+  // Protection Layer 3: Character count limit after cleanup
+  if (noPunc.length > PROCESSING.MAX_ENTITY_CHARS_CLEANED) {
     securityLog.debug('Skipping entity after cleanup (ReDoS protection)', { charCount: noPunc.length });
     return null;
   }
@@ -204,8 +388,9 @@ function buildFuzzyRegex(mergedString) {
     // Add optional separator (but not after last char)
     if (i < chars.length - 1) {
       // Use possessive quantifier alternative: limit backtracking
-      // Match 0-2 non-alphanumeric chars (reduced from 0-3 for safety)
-      pattern += '[^a-zA-Z0-9]{0,2}?'; // Non-greedy to reduce backtracking
+      // Match 0-N non-alphanumeric chars (N = FUZZY_MATCH_GAP_TOLERANCE)
+      // Story 6.8 AC4: Document regex quantifier reasoning
+      pattern += `[^a-zA-Z0-9]{0,${PROCESSING.FUZZY_MATCH_GAP_TOLERANCE}}?`; // Non-greedy to reduce backtracking
     }
   }
 
@@ -227,7 +412,7 @@ function buildFuzzyRegex(mergedString) {
  * @param {number} timeoutMs - Timeout in milliseconds (default: 100ms)
  * @returns {boolean} Whether regex matched (false on timeout)
  */
-function testRegexWithTimeout(regex, text, timeoutMs = 100) {
+function _testRegexWithTimeout(regex, text, timeoutMs = 100) {
   const startTime = Date.now();
 
   try {
@@ -260,6 +445,23 @@ async function loadNERModel() {
     mlLog.info('Loading PII detection model', { model: MODEL_NAME });
     nerPipeline = await pipeline('token-classification', MODEL_NAME);
     mlLog.info('Model loaded successfully');
+
+    // Initialize multi-pass pipeline and connect ML model
+    const { highRecallPass } = initializeDetectionPipeline();
+
+    // Set up NER pipeline adapter for high recall pass
+    highRecallPass.setNerPipeline(async (text) => {
+      const predictions = await nerPipeline(text);
+      return predictions.map(p => ({
+        entity_group: p.entity.replace(/^(B-|I-)/, ''),
+        score: p.score,
+        word: p.word,
+        start: p.start,
+        end: p.end,
+      }));
+    });
+
+    mlLog.info('ML model connected to detection pipeline');
   }
   return nerPipeline;
 }
@@ -273,7 +475,6 @@ function extractCodeBlocks(markdown) {
 
   // Match fenced code blocks (```...```)
   const regex = /```[\s\S]*?```/g;
-  let match;
   let index = 0;
 
   const textWithoutCode = markdown.replace(regex, (matched) => {
@@ -329,38 +530,109 @@ function restoreInlineCode(text, inlineCode) {
 }
 
 /**
- * Main anonymization function using both ML model and Swiss/EU rules.
+ * Check if an entity is a grouped address (Story 2.4)
+ *
+ * @param {Object} entity - Entity to check
+ * @returns {boolean} True if entity is a grouped address
+ */
+function isGroupedAddress(entity) {
+  return entity.metadata?.isGroupedAddress === true ||
+    ['ADDRESS', 'SWISS_ADDRESS', 'EU_ADDRESS'].includes(entity.type);
+}
+
+/**
+ * Main anonymization function using multi-pass detection pipeline.
+ *
+ * Pipeline passes:
+ * 1. High-Recall Pass - ML model + rule-based detection with low threshold
+ * 2. Format Validation Pass - Validates entities against format rules
+ * 3. Context Scoring Pass - Scores entities based on surrounding context
+ * 4. Address Relationship Pass - Links address components into grouped addresses
+ *
+ * Story 2.4: Address Anonymization Strategy
+ * - Grouped addresses are processed FIRST using position-based replacement
+ * - This ensures "Rue de Lausanne 12, 1000 Lausanne" becomes "[ADDRESS_1]"
+ *   instead of fragmented "[STREET] 12, [POSTAL_CODE] [CITY]"
+ * - Entities overlapping with grouped addresses are skipped
+ *
  * @param {string} text - Text to anonymize
  * @param {FileProcessingSession} session - Session for isolated state
  */
 async function anonymizeText(text, session) {
   let processedText = String(text);
 
-  // Step 1: ML-based detection
-  const ner = await loadNERModel();
-  mlLog.debug('Running ML-based PII detection');
-  const predictions = await ner(processedText);
+  // Ensure ML model and pipeline are initialized
+  await loadNERModel();
 
-  const mlEntities = aggressiveMergeTokens(predictions);
-  mlLog.info('ML detection completed', { entityCount: mlEntities.length });
+  // Run multi-pass detection pipeline
+  mlLog.debug('Running multi-pass detection pipeline');
+  const result = await detectionPipeline.process(processedText);
 
-  // Step 2: Rule-based Swiss/EU detection
-  mlLog.debug('Running Swiss/EU rule-based PII detection');
-  const swissEuEntities = swissEuDetector.detect(processedText);
-  mlLog.info('Swiss/EU detection completed', { entityCount: swissEuEntities.length });
+  mlLog.info('Pipeline detection completed', {
+    entityCount: result.entities.length,
+    passesExecuted: result.passes?.length || 3,
+  });
 
-  // Step 3: Merge all entities
-  const allEntities = [...mlEntities, ...swissEuEntities];
+  // ========== STORY 2.4: ADDRESS ANONYMIZATION STRATEGY ==========
+  // Step 1: Separate grouped addresses from other entities
+  const groupedAddresses = result.entities.filter(isGroupedAddress);
+  const otherEntities = result.entities.filter(e => !isGroupedAddress(e));
 
-  // Step 4: Build replacement map and patterns (single-pass optimization)
+  mlLog.debug('Entity classification', {
+    groupedAddresses: groupedAddresses.length,
+    otherEntities: otherEntities.length,
+  });
+
+  // Step 2: Sort grouped addresses by position (descending) for safe replacement
+  // We replace from end to start to preserve positions
+  const sortedAddresses = [...groupedAddresses].sort((a, b) => b.start - a.start);
+
+  // Step 3: Replace grouped addresses using position-based replacement
+  for (const addressEntity of sortedAddresses) {
+    // Validate entity has required position data
+    if (typeof addressEntity.start !== 'number' || typeof addressEntity.end !== 'number') {
+      mlLog.warn('Address entity missing position data', { type: addressEntity.type });
+      continue;
+    }
+
+    // Register address and get placeholder
+    const placeholder = session.registerGroupedAddress(addressEntity);
+
+    // ✅ SECURITY: Don't log actual address - only log type and placeholder
+    mlLog.debug('Address replaced', {
+      type: addressEntity.type,
+      placeholder,
+      confidence: addressEntity.confidence?.toFixed(2),
+      start: addressEntity.start,
+      end: addressEntity.end,
+    });
+
+    // Position-based replacement (exact span)
+    processedText =
+      processedText.slice(0, addressEntity.start) +
+      placeholder +
+      processedText.slice(addressEntity.end);
+  }
+
+  // ========== REMAINING ENTITY PROCESSING ==========
+  // Step 4: Build replacement map for non-address entities
+  // Skip entities that overlap with already-anonymized address ranges
   const replacements = new Map();
   const patterns = [];
 
-  for (const entity of allEntities) {
+  for (const entity of otherEntities) {
     const entityType = entity.type;
     const entityText = entity.text;
 
     if (!entityText) continue;
+
+    // Skip if this entity's range overlaps with a grouped address (Story 2.4: AC-2.4.4)
+    if (typeof entity.start === 'number' && typeof entity.end === 'number') {
+      if (session.isRangeAnonymized(entity.start, entity.end)) {
+        mlLog.debug('Skipping entity (overlaps with grouped address)', { entityType });
+        continue;
+      }
+    }
 
     // ✅ CRITICAL FIX: Filter entity BEFORE adding to session mapping
     // This prevents short entities (like "C") from appearing in mapping file
@@ -376,27 +648,59 @@ async function anonymizeText(text, session) {
     const pseudonym = session.getOrCreatePseudonym(entityText, entityType);
 
     // ✅ SECURITY: Don't log actual PII values - only log entity types and pseudonyms
-    mlLog.debug('Entity mapped', { entityType, pseudonym });
+    mlLog.debug('Entity mapped', { entityType, pseudonym, confidence: entity.confidence?.toFixed(2) });
     patterns.push(fuzzyRegex.source);
     replacements.set(fuzzyRegex.source, pseudonym);
   }
 
-  // Step 5: Single-pass replacement using combined regex
+  // Step 5: Single-pass replacement for remaining entities using combined regex
+  // Story 6.2: Use safeReplace with timeout protection
   if (patterns.length > 0) {
     const combinedPattern = new RegExp(patterns.join('|'), 'ig');
-    processedText = processedText.replace(combinedPattern, (match) => {
-      // Find which pattern matched
+
+    // Check pattern complexity before execution
+    const complexity = analyzePatternComplexity(combinedPattern.source);
+    if (complexity > 100) {
+      securityLog.warn('High complexity pattern detected', { complexity, patternCount: patterns.length });
+    }
+
+    // Apply replacement with ReDoS protection
+    const replaceResult = safeReplace(
+      combinedPattern,
+      processedText,
+      (match) => {
+        // Find which pattern matched
+        for (const [pattern, pseudonym] of replacements) {
+          const regex = new RegExp(pattern, 'ig');
+          if (regex.test(match)) {
+            return pseudonym;
+          }
+        }
+        return match;
+      },
+      { timeoutMs: 500 }, // Allow 500ms for combined pattern
+    );
+
+    if (replaceResult.success) {
+      processedText = replaceResult.value;
+    } else if (replaceResult.timedOut) {
+      securityLog.warn('Regex replacement timed out, using fallback', {
+        durationMs: replaceResult.durationMs,
+        patternCount: patterns.length,
+      });
+      // Fallback: process patterns individually with lower timeout
       for (const [pattern, pseudonym] of replacements) {
         const regex = new RegExp(pattern, 'ig');
-        if (regex.test(match)) {
-          return pseudonym;
+        const individualResult = safeReplace(regex, processedText, pseudonym, { timeoutMs: 100 });
+        if (individualResult.success) {
+          processedText = individualResult.value;
         }
       }
-      return match;
-    });
+    }
   }
 
-  return processedText;
+  // Story 3.1: Return document type from detection result for mapping file
+  return { text: processedText, documentType: result.documentType };
 }
 
 /**
@@ -414,21 +718,49 @@ async function anonymizeMarkdown(markdown, session) {
   const { textWithoutInline, inlineCode } = extractInlineCode(textWithoutCode);
 
   // Step 3: Anonymize the remaining text with session
-  const anonymizedText = await anonymizeText(textWithoutInline, session);
+  // Story 3.1: anonymizeText now returns { text, documentType }
+  const anonymizeResult = await anonymizeText(textWithoutInline, session);
 
   // Step 4: Restore inline code
-  let result = restoreInlineCode(anonymizedText, inlineCode);
+  let result = restoreInlineCode(anonymizeResult.text, inlineCode);
 
   // Step 5: Restore code blocks
   result = restoreCodeBlocks(result, codeBlocks);
 
-  // Step 6: Create mapping export from session
+  // Step 6: Create mapping export from session (Story 2.4: Extended format)
+  const addressMappings = session.getAddressMappings();
+  const entityMapping = session.getMapping();
+
+  // Build extended mapping with structured address data
+  // Story 3.1: Added documentType and updated to v3.2
   const mapping = {
-    version: '2.0',
+    version: '3.2', // Updated for Story 3.1 document type detection
     timestamp: new Date().toISOString(),
     model: MODEL_NAME,
-    detectionMethods: ['ML (transformers)', 'Rule-based (Swiss/EU)'],
-    entities: session.getMapping(),
+    // Story 3.1: Document type classification result
+    documentType: anonymizeResult.documentType || 'UNKNOWN',
+    detectionMethods: [
+      'Multi-Pass Pipeline v1.0',
+      'Pass 0: Document Type Detection (Epic 3)',
+      'Pass 1: High-Recall (ML + Rules)',
+      'Pass 2: Format Validation',
+      'Pass 3: Context Scoring',
+      'Pass 4: Address Relationship (Epic 2)',
+    ],
+    // Standard entity mappings (backward compatible)
+    entities: entityMapping,
+    // Story 2.4: Structured address data with components
+    addresses: addressMappings.map(addr => ({
+      placeholder: addr.placeholder,
+      type: addr.type,
+      originalText: addr.originalText,
+      components: addr.components,
+      confidence: addr.confidence,
+      patternMatched: addr.patternMatched,
+      scoringFactors: addr.scoringFactors,
+      flaggedForReview: addr.flaggedForReview,
+      autoAnonymize: addr.autoAnonymize,
+    })),
   };
 
   log.info('Anonymization complete', { entityCount: session.getEntityCount() });
@@ -517,6 +849,7 @@ export class FileProcessor {
         success: true,
         outputPath: mdOutputPath,
         mappingPath,
+        originalMarkdown: markdown, // Story 4.3: Return original for selective anonymization
       };
 
     } catch (error) {

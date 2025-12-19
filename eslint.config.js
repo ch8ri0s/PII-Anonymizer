@@ -56,6 +56,9 @@ export default [
         alert: 'readonly',
         fetch: 'readonly',
         crypto: 'readonly',
+        DOMException: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
         // Test globals (Mocha + Chai)
         describe: 'readonly',
         it: 'readonly',
@@ -399,6 +402,7 @@ export default [
       '**/*.d.ts',
       'docs/**',
       'locales/**',
+      'browser-app/**',
     ],
   },
 ];

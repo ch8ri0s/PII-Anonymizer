@@ -1,0 +1,120 @@
+<story-context id="bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Address Component Classifier</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/2-1-address-component-classifier.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>PII detection system</asA>
+    <iWant>to classify text segments as address components (STREET_NAME, STREET_NUMBER, POSTAL_CODE, CITY, COUNTRY)</iWant>
+    <soThat>related components can be linked together into unified ADDRESS entities in subsequent stories</soThat>
+    <tasks>
+      <task id="1" ac="2.1.1-2.1.6">Create TypeScript types for address components</task>
+      <task id="2" ac="2.1.7">Implement Swiss postal code database</task>
+      <task id="3" ac="2.1.1">Implement street name detection</task>
+      <task id="4" ac="2.1.2">Implement street number detection</task>
+      <task id="5" ac="2.1.3">Implement postal code detection</task>
+      <task id="6" ac="2.1.4">Implement city name detection</task>
+      <task id="7" ac="2.1.5">Implement country detection</task>
+      <task id="8" ac="2.1.6">Position tagging</task>
+      <task id="9" ac="all">Integration with SwissEuDetector</task>
+      <task id="10" ac="all">Test suite</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-2.1.1">Given detected entities and text, when address classification runs, then STREET_NAME components are identified (e.g., "Rue de Lausanne", "Bahnhofstrasse")</criterion>
+    <criterion id="AC-2.1.2">Given text with addresses, when classification runs, then STREET_NUMBER components are identified (e.g., "12", "12a", "12-14")</criterion>
+    <criterion id="AC-2.1.3">Given text with addresses, when classification runs, then POSTAL_CODE components are identified (e.g., "1000", "8001", "CH-1000")</criterion>
+    <criterion id="AC-2.1.4">Given text with addresses, when classification runs, then CITY components are identified (e.g., "Lausanne", "Zurich", "Zürich")</criterion>
+    <criterion id="AC-2.1.5">Given text with addresses, when classification runs, then COUNTRY components are identified (e.g., "Switzerland", "Suisse", "CH")</criterion>
+    <criterion id="AC-2.1.6">Components are tagged with position (start, end indices)</criterion>
+    <criterion id="AC-2.1.7">Swiss postal codes (1000-9999) are validated against known ranges</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.1: Address Component Classifier">
+        Defines AddressComponentType enum, AddressComponent interface, component detection patterns, and acceptance criteria
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Address Component Linking (Epic 2)">
+        ADR-005 decision on proximity-based component linking, data flow for address classification
+      </doc>
+      <doc path="docs/epics.md" title="Epic Breakdown" section="Story 2.1: Address Component Classifier">
+        User story definition, acceptance criteria, technical notes for component classification
+      </doc>
+    </docs>
+
+    <code>
+      <file path="src/types/detection.ts" kind="types" symbol="AddressComponentType, AddressComponent" lines="54-70" reason="EXISTING - Types already defined for address components. REUSE these types, do not recreate."/>
+      <file path="src/pii/AddressClassifier.ts" kind="service" symbol="AddressClassifier" lines="1-50" reason="PARTIALLY IMPLEMENTED - Contains postal code ranges and initial structure. Extend this file."/>
+      <file path="src/pii/SwissEuDetector.js" kind="service" symbol="SWISS_ADDRESS pattern" lines="167-175" reason="Existing ADDRESS pattern - will need component tagging added"/>
+      <file path="src/pii/DetectionPipeline.ts" kind="service" symbol="generateEntityId" reason="Import entity ID generator for new components"/>
+      <file path="src/pii/passes/AddressRelationshipPass.ts" kind="pass" reason="Future integration point - Pass 2.5 in pipeline"/>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="typescript" version="^5.9.3" purpose="Type-safe implementation"/>
+        <package name="mocha" version="^11.7.5" purpose="Test framework"/>
+        <package name="chai" version="^6.2.0" purpose="Test assertions"/>
+      </node>
+      <note>No new npm dependencies required - use native regex patterns and embedded JSON data</note>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface name="AddressComponentType" kind="type" path="src/types/detection.ts">
+      type AddressComponentType = 'STREET_NAME' | 'STREET_NUMBER' | 'POSTAL_CODE' | 'CITY' | 'COUNTRY' | 'REGION'
+    </interface>
+    <interface name="AddressComponent" kind="interface" path="src/types/detection.ts">
+      interface AddressComponent { type: AddressComponentType; text: string; start: number; end: number; }
+    </interface>
+    <interface name="detectAddressComponents" kind="function" path="src/pii/AddressComponentDetector.ts">
+      detectAddressComponents(text: string): AddressComponent[] - Main API for component detection
+    </interface>
+    <interface name="SwissPostalDatabase" kind="class" path="src/pii/SwissPostalDatabase.ts">
+      validate(code: string): boolean, lookup(code: string): { city: string; canton: string; } | null
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint source="Architecture ADR-002">New code must be TypeScript with strict mode enabled</constraint>
+    <constraint source="Architecture NFR-S1">No external API calls - postal code database must be embedded locally (~150KB JSON)</constraint>
+    <constraint source="Architecture NFR-P3">Component detection must complete in less than 100ms per document</constraint>
+    <constraint source="Architecture">No PII in logs - only log entity types and positions, never actual text content</constraint>
+    <constraint source="CLAUDE.md">Tests are mandatory - do not compromise on test quality</constraint>
+    <constraint source="Tech Spec">Minimum 90% code coverage for AddressComponentDetector</constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      Use Mocha + Chai for all tests. Test files in test/unit/pii/address/ directory.
+      Follow existing patterns in test/unit/ - use describe/it blocks, expect assertions.
+      10-second timeout for async operations. Mock file system and external dependencies.
+      Never log actual PII content in tests - use synthetic test data.
+    </standards>
+    <locations>
+      <location>test/unit/pii/address/AddressComponentDetector.test.js</location>
+      <location>test/unit/pii/address/SwissPostalDatabase.test.js</location>
+      <location>test/integration/address/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-2.1.1">Test French street patterns: "Rue de Lausanne", "Avenue de la Gare", "Chemin des Alpes"</idea>
+      <idea ac="AC-2.1.1">Test German street patterns: "Bahnhofstrasse", "Hauptweg", "Marktplatz"</idea>
+      <idea ac="AC-2.1.1">Test Italian street patterns: "Via Roma", "Piazza San Marco"</idea>
+      <idea ac="AC-2.1.2">Test number formats: "12", "12a", "12A", "12-14", "12 bis"</idea>
+      <idea ac="AC-2.1.3">Test postal codes: "1000", "8001", "CH-1000", reject "12345", "999"</idea>
+      <idea ac="AC-2.1.4">Test multilingual cities: "Zürich"/"Zurich", "Genève"/"Geneva"/"Genf"</idea>
+      <idea ac="AC-2.1.5">Test countries: "Switzerland", "Schweiz", "Suisse", "Svizzera", "CH"</idea>
+      <idea ac="AC-2.1.6">Test position accuracy: verify start/end match actual text positions</idea>
+      <idea ac="AC-2.1.7">Test postal validation: 1000 (valid), 9999 (valid), 10000 (invalid), "abc" (invalid)</idea>
+      <idea ac="all">Test empty text, no addresses, partial addresses, overlapping patterns</idea>
+    </ideas>
+  </tests>
+</story-context>

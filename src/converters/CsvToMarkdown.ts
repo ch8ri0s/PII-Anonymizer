@@ -19,7 +19,7 @@ export class CsvToMarkdown extends MarkdownConverter {
     this.maxRows = options.maxRows || 1000;
   }
 
-  async convert(filePath: string): Promise<string> {
+  override async convert(filePath: string): Promise<string> {
     const content = await fs.readFile(filePath, 'utf8');
     const filename = path.basename(filePath);
 
@@ -30,7 +30,7 @@ export class CsvToMarkdown extends MarkdownConverter {
     }
 
     // First line is header
-    const headers = this.parseCsvLine(lines[0]);
+    const headers = this.parseCsvLine(lines[0] || '');
 
     // Remaining lines are data
     const dataLines = lines.slice(1);
@@ -46,7 +46,7 @@ export class CsvToMarkdown extends MarkdownConverter {
       format: 'csv',
       timestamp: new Date().toISOString(),
       rowCount: totalRows,
-      truncated
+      truncated,
     });
 
     // Create title
@@ -55,7 +55,7 @@ export class CsvToMarkdown extends MarkdownConverter {
 
     if (truncated) {
       markdown += this.createBlockquote(
-        `Note: Showing first ${this.maxRows} of ${totalRows} rows`
+        `Note: Showing first ${this.maxRows} of ${totalRows} rows`,
       );
     }
 

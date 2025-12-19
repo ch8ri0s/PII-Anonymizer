@@ -1,0 +1,260 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>7</storyId>
+    <title>Error Handling Standardization</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-7-error-handling-standardization.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer debugging issues</asA>
+    <iWant>consistent error handling across the codebase</iWant>
+    <soThat>errors are properly sanitized, logged, and reported</soThat>
+    <tasks>
+      <task id="1" ac="1,2">Create Error Handler Utility
+        <subtask id="1.1">Create src/utils/errorHandler.ts with sanitizeError function</subtask>
+        <subtask id="1.2">Implement path redaction regex (match existing pattern from main.js:137)</subtask>
+        <subtask id="1.3">Add logError function using LoggerFactory</subtask>
+        <subtask id="1.4">Create unit tests for error sanitization</subtask>
+      </task>
+      <task id="2" ac="5">Define Error Code Taxonomy
+        <subtask id="2.1">Extend src/types/errors.ts with ErrorCode enum</subtask>
+        <subtask id="2.2">Add error code categories: FILE, CONVERSION, PII, IPC, SYSTEM</subtask>
+        <subtask id="2.3">Document each error code with JSDoc comments</subtask>
+        <subtask id="2.4">Create type guards for error code checking</subtask>
+      </task>
+      <task id="3" ac="3">Add Localized Error Messages
+        <subtask id="3.1">Add error message keys to locales/en.json</subtask>
+        <subtask id="3.2">Add translations to locales/fr.json and locales/de.json</subtask>
+        <subtask id="3.3">Create toUserMessage function in errorHandler.ts</subtask>
+        <subtask id="3.4">Map error codes to i18n keys</subtask>
+      </task>
+      <task id="4" ac="4">Implement Environment-Aware Logging
+        <subtask id="4.1">Add isDevelopment check in errorHandler.ts</subtask>
+        <subtask id="4.2">Create formatErrorForDisplay function (dev vs prod)</subtask>
+        <subtask id="4.3">Integrate with LoggerFactory configuration</subtask>
+        <subtask id="4.4">Add tests for dev/prod error formatting</subtask>
+      </task>
+      <task id="5" ac="1,2,3">Standardize Error Handling Across Codebase
+        <subtask id="5.1">Update main.js to use errorHandler.sanitizeError</subtask>
+        <subtask id="5.2">Update fileProcessor.js error handling (line ~396)</subtask>
+        <subtask id="5.3">Update renderer.js error display to use toUserMessage</subtask>
+        <subtask id="5.4">Update IPC handlers in src/services/ to use standardized errors</subtask>
+      </task>
+      <task id="6" ac="6">Verification
+        <subtask id="6.1">Run npm run typecheck - zero errors</subtask>
+        <subtask id="6.2">Run npm test - all tests pass</subtask>
+        <subtask id="6.3">Run npm run lint:check - no new warnings</subtask>
+        <subtask id="6.4">Manual test: trigger various errors, verify sanitization</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" name="Path Sanitization">
+      Sensitive filesystem paths are redacted from all error messages using [REDACTED_PATH] pattern consistently. User home directories never exposed in error messages.
+    </criterion>
+    <criterion id="AC2" name="Consistent Logging Format">
+      All errors logged with context (operation, file type, timestamp) using LoggerFactory from Story 6.1. Structured log entries with error code, message, and context.
+    </criterion>
+    <criterion id="AC3" name="Localized User Messages">
+      User-facing error messages use i18n keys. Technical details hidden from end users. Helpful, actionable error messages displayed.
+    </criterion>
+    <criterion id="AC4" name="Environment-Aware Stack Traces">
+      Stack traces available in development (NODE_ENV=development). Stack traces hidden in production builds. Development mode shows full error details in DevTools.
+    </criterion>
+    <criterion id="AC5" name="Error Code Taxonomy">
+      Error codes defined in src/types/errors.ts. Categories: FILE_ERROR, CONVERSION_ERROR, PII_ERROR, IPC_ERROR. Each error code documented with cause and resolution.
+    </criterion>
+    <criterion id="AC6" name="Tests Pass">
+      All existing tests continue to pass. New tests cover error sanitization and logging scenarios. TypeScript compilation succeeds with zero errors.
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/CODE_REVIEW.md</path>
+        <title>Comprehensive Code Review</title>
+        <section>Issue 17: Inconsistent Error Handling</section>
+        <snippet>main.js:137 sanitizes errors, fileProcessor.js:396 logs full error and throws original, renderer.js:371 just uses error.message. No consistent error handling strategy.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Error Handling Pattern</section>
+        <snippet>Pattern: Wrap async operations with try-catch, use custom ProcessingError class with code property. logger.error('File processing failed', { filePath, error }).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Logging Strategy</section>
+        <snippet>Structured logging with levels: error, warn, info, debug. Never log PII content - only metadata. Use logger from config/logging.</snippet>
+      </doc>
+      <doc>
+        <path>CLAUDE.md</path>
+        <title>Project Guidelines</title>
+        <section>TypeScript Guidelines</section>
+        <snippet>Strict mode enabled. Explicit types required. Error handling - Always use try-catch for async operations. IPC validation - Validate all IPC inputs (security requirement).</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>src/types/errors.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>ProcessingError, isError, getErrorMessage, getErrorCode, getErrorStack</symbol>
+        <lines>1-113</lines>
+        <reason>Existing error infrastructure to extend with ErrorCode enum and additional type guards</reason>
+      </file>
+      <file>
+        <path>src/utils/LoggerFactory.ts</path>
+        <kind>utility</kind>
+        <symbol>LoggerFactory, Logger, redactSensitiveData</symbol>
+        <lines>1-443</lines>
+        <reason>Central logging factory with PII redaction already implemented. ErrorHandler should integrate with this.</reason>
+      </file>
+      <file>
+        <path>src/utils/pathValidator.ts</path>
+        <kind>utility</kind>
+        <symbol>PathValidationError</symbol>
+        <lines>39-158</lines>
+        <reason>Example of custom error class with error codes. Pattern to follow for ErrorCode implementation.</reason>
+      </file>
+      <file>
+        <path>src/utils/asyncTimeout.ts</path>
+        <kind>utility</kind>
+        <symbol>TimeoutError, AbortError, isTimeoutError, isAbortError</symbol>
+        <lines>86-115</lines>
+        <reason>Recent error class implementations from Story 6.5. Pattern to follow for new error types.</reason>
+      </file>
+      <file>
+        <path>dist/main.js</path>
+        <kind>entry-point</kind>
+        <symbol>sanitizedError regex</symbol>
+        <lines>183-184, 211-212</lines>
+        <reason>Existing path sanitization pattern: err.message.replace(/\/[\w/.-]+/g, '[REDACTED_PATH]')</reason>
+      </file>
+      <file>
+        <path>fileProcessor.js</path>
+        <kind>processor</kind>
+        <symbol>processFile error handling</symbol>
+        <lines>396</lines>
+        <reason>Location that needs error sanitization - currently logs and throws raw error</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>ui</kind>
+        <symbol>showError</symbol>
+        <lines>371</lines>
+        <reason>Location that needs localized error messages - currently shows raw error.message</reason>
+      </file>
+      <file>
+        <path>src/services/filePreviewHandlers.ts</path>
+        <kind>ipc-handler</kind>
+        <symbol>catch blocks</symbol>
+        <lines>64, 86, 120, 157</lines>
+        <reason>IPC handlers with error handling that should use standardized approach</reason>
+      </file>
+      <file>
+        <path>src/services/i18nHandlers.ts</path>
+        <kind>ipc-handler</kind>
+        <symbol>catch blocks</symbol>
+        <lines>89, 116</lines>
+        <reason>i18n handlers with error handling to standardize</reason>
+      </file>
+      <file>
+        <path>src/config/logging.js</path>
+        <kind>config</kind>
+        <symbol>redactSensitiveData</symbol>
+        <lines>146</lines>
+        <reason>Legacy redaction function - LoggerFactory.ts has updated version</reason>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="electron" version="^39.1.1">Desktop framework with IPC error handling</package>
+        <package name="electron-log" version="^5.4.3">Logging library used by LoggerFactory</package>
+        <package name="typescript" version="^5.9.3">Type definitions for error classes</package>
+        <package name="mocha" version="^11.7.5">Test framework for error tests</package>
+        <package name="chai" version="^6.2.0">Assertion library for tests</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Use TypeScript strict mode with explicit error types</constraint>
+    <constraint type="pattern">Follow existing ProcessingError class pattern from src/types/errors.ts</constraint>
+    <constraint type="pattern">Use LoggerFactory.create('scope') for all logging</constraint>
+    <constraint type="pattern">Never log PII content - only metadata</constraint>
+    <constraint type="security">Redact all file paths from error messages shown to users</constraint>
+    <constraint type="security">Hide stack traces in production builds</constraint>
+    <constraint type="i18n">All user-facing messages must use data-i18n attributes or i18n keys</constraint>
+    <constraint type="testing">Maintain 10-second timeout for async test operations</constraint>
+    <constraint type="testing">Place tests in test/unit/ mirroring src/ structure</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Logger</name>
+      <kind>interface</kind>
+      <signature>
+interface Logger {
+  debug(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  info(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  warn(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  error(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+}
+      </signature>
+      <path>src/utils/LoggerFactory.ts:24-29</path>
+    </interface>
+    <interface>
+      <name>ProcessingError</name>
+      <kind>class</kind>
+      <signature>
+class ProcessingError extends Error {
+  public readonly code: string;
+  public readonly context?: Record&lt;string, unknown&gt;;
+  constructor(message: string, code?: string, context?: Record&lt;string, unknown&gt;);
+}
+      </signature>
+      <path>src/types/errors.ts:34-53</path>
+    </interface>
+    <interface>
+      <name>getErrorMessage</name>
+      <kind>function</kind>
+      <signature>function getErrorMessage(error: unknown): string</signature>
+      <path>src/types/errors.ts:69-83</path>
+    </interface>
+    <interface>
+      <name>isError</name>
+      <kind>type-guard</kind>
+      <signature>function isError(error: unknown): error is Error</signature>
+      <path>src/types/errors.ts:11-13</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use Mocha + Chai for all tests with 10-second timeout for async operations. Tests should be placed in test/unit/ mirroring src/ structure. Mock external dependencies like file system and Electron modules. Test both success and error paths. For error handling tests, verify: 1) path redaction works correctly, 2) error codes are set properly, 3) i18n keys resolve to messages, 4) dev/prod formatting differs appropriately.
+    </standards>
+    <locations>
+      <location>test/unit/errorHandler.test.js</location>
+      <location>test/unit/errors.test.js (if extending existing)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test sanitizeError redacts Unix paths (/Users/...), Windows paths (C:\Users\...), and nested paths in error messages</idea>
+      <idea ac="AC1">Test sanitizeError preserves non-path error content</idea>
+      <idea ac="AC2">Test logError writes to LoggerFactory with correct structure (code, message, context)</idea>
+      <idea ac="AC3">Test toUserMessage returns i18n key for known error codes</idea>
+      <idea ac="AC3">Test toUserMessage returns generic message for unknown errors</idea>
+      <idea ac="AC4">Test formatErrorForDisplay includes stack trace when NODE_ENV=development</idea>
+      <idea ac="AC4">Test formatErrorForDisplay excludes stack trace when NODE_ENV=production</idea>
+      <idea ac="AC5">Test all ErrorCode enum values have corresponding i18n keys</idea>
+      <idea ac="AC5">Test isErrorCode type guard correctly identifies valid codes</idea>
+      <idea ac="AC6">Run full test suite after implementation to ensure no regressions</idea>
+    </ideas>
+  </tests>
+</story-context>

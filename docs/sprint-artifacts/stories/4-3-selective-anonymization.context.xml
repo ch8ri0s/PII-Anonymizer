@@ -1,0 +1,251 @@
+<story-context id="bmm/story-context" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.3</storyId>
+    <title>Selective Anonymization</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-3-selective-anonymization.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user processing documents</asA>
+    <iWant>to choose which entities to anonymize</iWant>
+    <soThat>I can preserve non-sensitive entities while protecting PII</soThat>
+    <tasks>
+      <task id="1" status="pending">Review existing entity action implementation (AC: all)</task>
+      <task id="2" status="pending">Implement selection state for entities (AC: 4.3.1)</task>
+      <task id="3" status="pending">Implement Select All / Deselect All per type (AC: 4.3.2)</task>
+      <task id="4" status="pending">Modify anonymization logic for selective output (AC: 4.3.3, 4.3.4)</task>
+      <task id="5" status="pending">Implement Shift+Click bulk selection (AC: 4.3.5)</task>
+      <task id="6" status="pending">Add unit tests for selective anonymization (AC: all)</task>
+      <task id="7" status="pending">Run test suite and verify no regression (AC: all)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-4.3.1">Given detected entities in sidebar, when user toggles entity checkbox, then entity is marked for inclusion/exclusion from anonymization</criterion>
+    <criterion id="AC-4.3.2">"Select All" / "Deselect All" per type is available</criterion>
+    <criterion id="AC-4.3.3">Excluded entities appear in output without anonymization</criterion>
+    <criterion id="AC-4.3.4">Mapping file only contains selected (anonymized) entities</criterion>
+    <criterion id="AC-4.3.5">Bulk selection via Shift+Click is supported</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>A5-PII-Anonymizer Epic Breakdown</title>
+        <section>Epic 4: User Review Workflow - Story 4.3</section>
+        <snippet>Selective anonymization: user toggles entity checkbox to include/exclude from anonymization, Select All/Deselect All per type, excluded entities appear in output without anonymization, mapping file only contains selected entities, bulk selection via Shift+Click.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 4: User Review</section>
+        <snippet>Entity review workflow managed via entityReviewState in renderer.js. ReviewResult interface defines entitiesToAnonymize and rejectedEntities arrays for selective processing. IPC bridge passes review result to fileProcessor.js.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-5.7: Entity sidebar with type filters</section>
+        <snippet>Entity sidebar panel with filtering and selection capabilities for user review workflow. Users can selectively approve/reject entities for anonymization.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>entityReviewState</symbol>
+        <lines>24-35</lines>
+        <reason>PRIMARY STATE - Entity review state including entities array, filters, and groupExpanded. Story 4.3 will add selection tracking here.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>renderEntityItem()</symbol>
+        <lines>986-1044</lines>
+        <reason>ENTITY UI RENDERING - Renders entity item with approve/reject/edit/scroll-to buttons. Story 4.3 will add selection checkbox here.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>handleEntityApprove(), handleEntityReject()</symbol>
+        <lines>1165-1182</lines>
+        <reason>EXISTING ACTION HANDLERS - Toggle entity status between pending/approved/rejected. Story 4.3 selection handlers follow same pattern.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>handleBulkApprove()</symbol>
+        <lines>1258+</lines>
+        <reason>BULK ACTION PATTERN - Existing bulk approve all implementation. Story 4.3 selectAll/deselectAll follow same pattern.</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>implementation</kind>
+        <symbol>renderEntityGroup()</symbol>
+        <lines>960-981</lines>
+        <reason>GROUP HEADER - Renders entity type group with count badge. Story 4.3 will add Select All/Deselect All buttons to group header.</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>ReviewableEntity</symbol>
+        <lines>20-56</lines>
+        <reason>ENTITY TYPE - Interface for entity with id, originalText, replacement, type, confidence, status, position. Story 4.3 will add 'selected: boolean' property.</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>ReviewResult</symbol>
+        <lines>221-252</lines>
+        <reason>REVIEW OUTPUT - Interface with entitiesToAnonymize and rejectedEntities arrays. Story 4.3 uses this to pass selection state to fileProcessor.</reason>
+      </file>
+      <file>
+        <path>fileProcessor.js</path>
+        <kind>implementation</kind>
+        <symbol>anonymizeText(), anonymizeMarkdown()</symbol>
+        <lines>555-691</lines>
+        <reason>ANONYMIZATION LOGIC - Core functions that replace entities with placeholders. Story 4.3 will modify to respect selection state from ReviewResult.</reason>
+      </file>
+      <file>
+        <path>test/unit/entityReview.test.js</path>
+        <kind>test</kind>
+        <symbol>Story 4.3: Selective Anonymization</symbol>
+        <lines>356-500</lines>
+        <reason>EXISTING TEST STRUCTURE - Pre-existing test suite for entity actions and bulk actions. Story 4.3 tests extend this with selection tests.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+        <purpose>Desktop application framework - renderer process hosts entity review UI</purpose>
+      </node>
+      <node>
+        <package>tailwindcss</package>
+        <version>3.4.1</version>
+        <purpose>Utility-first CSS for selection checkboxes and button styling</purpose>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>11.7.5</version>
+        <purpose>Test framework for Story 4.3 selection tests</purpose>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>6.2.0</version>
+        <purpose>Assertion library for selection logic testing</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">IPC isolation required - selection state lives in renderer process, passed to main via ReviewResult</constraint>
+    <constraint source="architecture">Never log PII content - only selection metadata (counts, entity IDs)</constraint>
+    <constraint source="prd">100% local processing - no network calls for selection operations</constraint>
+    <constraint source="story">Must integrate with existing entityReviewState.entities (renderer.js lines 24-35)</constraint>
+    <constraint source="story">Selection defaults to true (all entities selected for anonymization by default)</constraint>
+    <constraint source="security">XSS prevention - use escapeHtml() for any user-facing text</constraint>
+    <constraint source="ux">Real-time UI updates - selection changes immediately reflected in sidebar</constraint>
+    <constraint source="ux">Shift+Click must calculate range from lastSelectedIndex</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>entityReviewState.entities[]</name>
+      <kind>state-array</kind>
+      <signature>ReviewableEntity[] with selected: boolean property</signature>
+      <path>renderer.js:25</path>
+    </interface>
+    <interface>
+      <name>handleEntitySelect(entityId)</name>
+      <kind>function</kind>
+      <signature>(entityId: string) => void</signature>
+      <path>renderer.js (to be added)</path>
+    </interface>
+    <interface>
+      <name>handleSelectAllType(type)</name>
+      <kind>function</kind>
+      <signature>(type: EntityType) => void</signature>
+      <path>renderer.js (to be added)</path>
+    </interface>
+    <interface>
+      <name>handleDeselectAllType(type)</name>
+      <kind>function</kind>
+      <signature>(type: EntityType) => void</signature>
+      <path>renderer.js (to be added)</path>
+    </interface>
+    <interface>
+      <name>handleShiftClickSelect(entityId, event)</name>
+      <kind>function</kind>
+      <signature>(entityId: string, event: MouseEvent) => void</signature>
+      <path>renderer.js (to be added)</path>
+    </interface>
+    <interface>
+      <name>getSelectedEntities()</name>
+      <kind>function</kind>
+      <signature>() => ReviewableEntity[]</signature>
+      <path>renderer.js (to be added)</path>
+    </interface>
+    <interface>
+      <name>ReviewResult</name>
+      <kind>interface</kind>
+      <signature>{ entitiesToAnonymize: Array, rejectedEntities: Array, ... }</signature>
+      <path>src/types/entityReview.ts:221-252</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Mocha + Chai test framework with 10-second timeout. Tests follow TDD Red-Green-Refactor cycle. 80%+ code coverage target. All tests must pass before story completion. Story 4.3 tests extend existing entityReview.test.js (lines 356+).</standards>
+    <locations>
+      <location>test/unit/entityReview.test.js (Story 4.3: Selective Anonymization, lines 356+)</location>
+      <location>test/unit/entityReview.test.js (Full Epic 4 coverage)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-4.3.1">Test entity selection toggle: entity.selected = !entity.selected</idea>
+      <idea ac="AC-4.3.1">Test default selection state: all entities selected by default</idea>
+      <idea ac="AC-4.3.2">Test selectAllType: all entities of type get selected=true</idea>
+      <idea ac="AC-4.3.2">Test deselectAllType: all entities of type get selected=false</idea>
+      <idea ac="AC-4.3.3">Test getSelectedEntities returns only entities with selected=true</idea>
+      <idea ac="AC-4.3.3">Test output contains unselected entities without replacement</idea>
+      <idea ac="AC-4.3.4">Test mapping file only includes selected entities</idea>
+      <idea ac="AC-4.3.5">Test Shift+Click selects range between lastSelectedIndex and current</idea>
+      <idea ac="AC-4.3.5">Test Shift+Click with no prior selection selects just current entity</idea>
+    </ideas>
+  </tests>
+
+  <key-methods>
+    <method name="renderEntityItem" location="renderer.js:986-1044" purpose="Render entity with selection checkbox" />
+    <method name="handleEntityApprove" location="renderer.js:1165-1171" purpose="Pattern for toggle handlers" />
+    <method name="handleEntityReject" location="renderer.js:1176-1182" purpose="Pattern for toggle handlers" />
+    <method name="handleBulkApprove" location="renderer.js:1258+" purpose="Pattern for bulk operations" />
+    <method name="renderEntityGroup" location="renderer.js:960-981" purpose="Add Select All/Deselect All buttons" />
+    <method name="anonymizeText" location="fileProcessor.js:555" purpose="Modify to respect selection state" />
+    <method name="anonymizeMarkdown" location="fileProcessor.js:674" purpose="Entry point for selective anonymization" />
+  </key-methods>
+
+  <implementation-status>
+    <summary>NEW IMPLEMENTATION REQUIRED - Story 4.3 builds on Stories 4.1 and 4.2</summary>
+    <coverage>
+      <ac id="AC-4.3.1" status="not-implemented" evidence="Selection checkbox not present in renderEntityItem(), no selected property on ReviewableEntity" />
+      <ac id="AC-4.3.2" status="not-implemented" evidence="No Select All/Deselect All buttons in renderEntityGroup()" />
+      <ac id="AC-4.3.3" status="not-implemented" evidence="anonymizeMarkdown() does not receive selection state" />
+      <ac id="AC-4.3.4" status="not-implemented" evidence="Mapping file generation not filtered by selection" />
+      <ac id="AC-4.3.5" status="not-implemented" evidence="No Shift+Click handler or lastSelectedIndex tracking" />
+    </coverage>
+  </implementation-status>
+
+  <learnings-from-previous>
+    <learning source="Story 4-2">Entity state pattern: entityReviewState.filters established at renderer.js:24-35</learning>
+    <learning source="Story 4-2">Handler pattern: Action handlers use data-* attributes, re-render via renderEntityReviewPanel()</learning>
+    <learning source="Story 4-2">Test pattern: Story tests at entityReview.test.js follow describe/it structure with createMockState()</learning>
+    <learning source="Story 4-2">Dual implementation: TypeScript EntityReviewUI.ts exists but renderer.js is active implementation</learning>
+    <learning source="Story 4-2">CRITICAL: Check if implementation already exists before coding - Epic 4 pattern</learning>
+    <learning source="Story 4-2">Test results baseline: 584 passing, 3 pending, 0 failures</learning>
+  </learnings-from-previous>
+</story-context>

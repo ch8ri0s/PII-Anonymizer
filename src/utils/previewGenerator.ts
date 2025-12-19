@@ -4,8 +4,8 @@
  * Generates truncated content previews for files to display before processing.
  * Uses streaming approach to efficiently handle large files.
  *
- * Preview limits:
- * - First 20 lines OR 1000 characters (whichever comes first)
+ * Preview limits (Story 6.8: configured via PREVIEW constants):
+ * - First PREVIEW.LINE_LIMIT lines OR PREVIEW.CHAR_LIMIT characters
  * - Memory efficient (doesn't load entire file)
  */
 
@@ -13,16 +13,18 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import * as path from 'path';
 import type { FilePreview, PreviewOptions } from '../types/filePreview.js';
+import { getErrorMessage } from '../types/errors.js';
+import { PREVIEW } from '../config/constants.js';
 
 // Import converter bridge module
 import * as converterBridge from '../services/converterBridge.js';
 
 /**
- * Default preview limits
+ * Default preview limits (Story 6.8: use centralized PREVIEW constants)
  */
 const DEFAULT_PREVIEW_OPTIONS: PreviewOptions = {
-  lines: 20,
-  chars: 1000,
+  lines: PREVIEW.LINE_LIMIT,
+  chars: PREVIEW.CHAR_LIMIT,
 };
 
 /**
@@ -35,7 +37,7 @@ const DEFAULT_PREVIEW_OPTIONS: PreviewOptions = {
  */
 export async function getFilePreview(
   filePath: string,
-  options: Partial<PreviewOptions> = {}
+  options: Partial<PreviewOptions> = {},
 ): Promise<FilePreview> {
   const { lines: maxLines, chars: maxChars } = {
     ...DEFAULT_PREVIEW_OPTIONS,
@@ -58,14 +60,14 @@ export async function getFilePreview(
       previewCharCount: preview.charCount,
       formatType: 'text',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       content: '',
       isTruncated: false,
       previewLineCount: 0,
       previewCharCount: 0,
       formatType: 'error',
-      error: error.message || 'Cannot generate preview',
+      error: getErrorMessage(error),
     };
   }
 }
@@ -75,7 +77,7 @@ export async function getFilePreview(
  */
 async function extractTextForPreview(
   filePath: string,
-  extension: string
+  extension: string,
 ): Promise<string> {
   // For plain text files, use streaming for better performance
   if (extension === '.txt') {
@@ -131,7 +133,7 @@ async function streamTextPreview(filePath: string): Promise<string> {
 function truncateContent(
   text: string,
   maxLines: number,
-  maxChars: number
+  maxChars: number,
 ): {
   content: string;
   isTruncated: boolean;
@@ -194,7 +196,7 @@ function truncateContent(
  */
 export async function streamFilePreview(
   filePath: string,
-  options: Partial<PreviewOptions> = {}
+  options: Partial<PreviewOptions> = {},
 ): Promise<FilePreview> {
   const { lines: maxLines, chars: maxChars } = {
     ...DEFAULT_PREVIEW_OPTIONS,

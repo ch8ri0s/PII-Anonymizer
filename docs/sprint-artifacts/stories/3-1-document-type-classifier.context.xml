@@ -1,0 +1,242 @@
+<story-context id="3-1-document-type-classifier" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>1</storyId>
+    <title>Document Type Classifier</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-08</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/3-1-document-type-classifier.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>PII detection system</asA>
+    <iWant>to classify document types based on structure and content</iWant>
+    <soThat>type-specific detection rules can be applied to improve accuracy</soThat>
+    <tasks>
+      <task id="1" status="pending">Analyze existing document processing flow</task>
+      <task id="2" status="pending">Create DocumentClassifier TypeScript module</task>
+      <task id="3" status="pending">Implement INVOICE classification</task>
+      <task id="4" status="pending">Implement LETTER classification</task>
+      <task id="5" status="pending">Implement FORM classification</task>
+      <task id="6" status="pending">Implement CONTRACT classification</task>
+      <task id="7" status="pending">Implement REPORT classification</task>
+      <task id="8" status="pending">Implement confidence scoring</task>
+      <task id="9" status="pending">Integrate with DetectionPipeline</task>
+      <task id="10" status="pending">Add document type to mapping file</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-3.1.1">Given document text and structure, classifier identifies document type: INVOICE, LETTER, FORM, CONTRACT, REPORT, or UNKNOWN</criterion>
+    <criterion id="AC-3.1.2">INVOICE classification triggers on: amount patterns, keywords "Invoice"/"Rechnung"/"Facture", structured tables</criterion>
+    <criterion id="AC-3.1.3">LETTER classification triggers on: salutation, formal structure, signature block</criterion>
+    <criterion id="AC-3.1.4">FORM classification triggers on: labeled fields, checkboxes, structured layout</criterion>
+    <criterion id="AC-3.1.5">CONTRACT classification triggers on: parties sections, clauses, signatures, dates</criterion>
+    <criterion id="AC-3.1.6">REPORT classification triggers on: sections, headings, narrative text</criterion>
+    <criterion id="AC-3.1.7">Classification confidence score (0-1) is assigned based on keyword density and structural matches</criterion>
+    <criterion id="AC-3.1.8">Document type is stored in detection pipeline metadata for downstream passes</criterion>
+  </acceptanceCriteria>
+
+  <critical-discovery>
+    <note type="ALREADY_IMPLEMENTED">
+      The DocumentClassifier and DocumentTypePass have been ALREADY FULLY IMPLEMENTED in this codebase!
+
+      Existing files:
+      - src/pii/DocumentClassifier.ts (421 lines) - Full classifier implementation
+      - src/pii/passes/DocumentTypePass.ts (285 lines) - Pipeline pass integration
+      - src/pii/RuleEngine.ts - Rule engine for type-specific rules
+      - src/pii/rules/InvoiceRules.ts - Invoice-specific detection rules
+      - src/pii/rules/LetterRules.ts - Letter-specific detection rules
+      - test/unit/pii/DocumentTypeDetection.test.js (766 lines) - Comprehensive test suite
+
+      The story tasks should focus on:
+      1. VERIFICATION - Ensure all ACs are met by existing implementation
+      2. GAPS - Identify any missing functionality
+      3. INTEGRATION - Verify pipeline integration is complete
+      4. MAPPING - Confirm document type flows to mapping file
+    </note>
+  </critical-discovery>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Multi-Pass Detection Architecture</section>
+        <snippet>Pass 4: Document-Type Adjustment (format-specific rules). Document-type-aware processing enables invoice, letter, form detection.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Epic 3 Components</section>
+        <snippet>DocumentClassifier.ts handles document type detection. RuleEngine applies type-specific rules based on classification.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Epic 3: Document-Type Detection</section>
+        <snippet>Story 3.1 creates DocumentClassifier with taxonomy: INVOICE, LETTER, FORM, CONTRACT, REPORT, UNKNOWN.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/pii/DocumentClassifier.ts</path>
+        <kind>classifier</kind>
+        <symbol>DocumentClassifier, classify(), DocumentType, DocumentClassification</symbol>
+        <lines>1-421</lines>
+        <reason>ALREADY IMPLEMENTED - Full document type classification with multilingual keyword matching, structural patterns, position-based scoring</reason>
+      </file>
+      <file>
+        <path>src/pii/passes/DocumentTypePass.ts</path>
+        <kind>pass</kind>
+        <symbol>DocumentTypePass, execute(), classifyOnly()</symbol>
+        <lines>1-285</lines>
+        <reason>ALREADY IMPLEMENTED - Pipeline integration pass that classifies documents and applies type-specific rules</reason>
+      </file>
+      <file>
+        <path>src/pii/DetectionPipeline.ts</path>
+        <kind>orchestrator</kind>
+        <symbol>DetectionPipeline, process(), registerPass()</symbol>
+        <lines>1-313</lines>
+        <reason>Core pipeline orchestrator - DocumentTypePass integrates here at order=5</reason>
+      </file>
+      <file>
+        <path>src/pii/RuleEngine.ts</path>
+        <kind>engine</kind>
+        <symbol>RuleEngine, applyRules(), getTypeConfig()</symbol>
+        <reason>ALREADY IMPLEMENTED - Rule engine for type-specific entity detection rules</reason>
+      </file>
+      <file>
+        <path>src/pii/rules/InvoiceRules.ts</path>
+        <kind>rules</kind>
+        <symbol>InvoiceRules, applyRules()</symbol>
+        <reason>ALREADY IMPLEMENTED - Invoice-specific rules for invoice number, amount, VAT, IBAN detection</reason>
+      </file>
+      <file>
+        <path>src/pii/rules/LetterRules.ts</path>
+        <kind>rules</kind>
+        <symbol>LetterRules, applyRules()</symbol>
+        <reason>ALREADY IMPLEMENTED - Letter-specific rules for salutation, signature, date detection</reason>
+      </file>
+      <file>
+        <path>src/types/detection.ts</path>
+        <kind>types</kind>
+        <symbol>DocumentType, DetectionPass, PipelineContext, Entity</symbol>
+        <lines>1-396</lines>
+        <reason>Type definitions including DocumentType enum at line 260</reason>
+      </file>
+      <file>
+        <path>fileProcessor.js</path>
+        <kind>processor</kind>
+        <symbol>FileProcessingSession, anonymizeText(), anonymizeMarkdown()</symbol>
+        <reason>Main processing file where mapping file is generated - needs document type integration</reason>
+      </file>
+      <file>
+        <path>test/unit/pii/DocumentTypeDetection.test.js</path>
+        <kind>test</kind>
+        <symbol>describe('Epic 3: Document-Type Detection')</symbol>
+        <lines>1-766</lines>
+        <reason>ALREADY IMPLEMENTED - 100+ tests covering all Stories 3.1-3.4</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="@xenova/transformers" version="2.17.2">ML model for entity detection</package>
+        <package name="uuid" version="*">Entity ID generation</package>
+        <package name="mocha" version="^11.7.5">Test framework</package>
+        <package name="chai" version="^6.2.0">Test assertions</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Follow DetectionPass interface for pipeline integration</constraint>
+    <constraint type="architecture">Use order property for pass sequencing (DocumentTypePass uses order=5)</constraint>
+    <constraint type="architecture">Store classification in PipelineContext.metadata for downstream passes</constraint>
+    <constraint type="pattern">Use multilingual keyword dictionaries (EN, FR, DE, IT)</constraint>
+    <constraint type="pattern">Use structural patterns (regex) for document feature detection</constraint>
+    <constraint type="pattern">Calculate confidence from keyword_score * 0.4 + structure_score * 0.6</constraint>
+    <constraint type="testing">Ensure all 295+ existing tests continue to pass</constraint>
+    <constraint type="testing">Tests must work in non-Electron (Node.js) environment</constraint>
+    <constraint type="mapping">Mapping file schema currently v3.1 - extend to v3.2 for documentType</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>DocumentClassifier.classify()</name>
+      <kind>method</kind>
+      <signature>classify(text: string): DocumentClassification</signature>
+      <path>src/pii/DocumentClassifier.ts:176</path>
+    </interface>
+    <interface>
+      <name>DocumentTypePass.execute()</name>
+      <kind>method</kind>
+      <signature>execute(text: string, entities: Entity[], context: PipelineContext): Promise&lt;Entity[]&gt;</signature>
+      <path>src/pii/passes/DocumentTypePass.ts:79</path>
+    </interface>
+    <interface>
+      <name>DetectionPipeline.registerPass()</name>
+      <kind>method</kind>
+      <signature>registerPass(pass: DetectionPass): void</signature>
+      <path>src/pii/DetectionPipeline.ts:55</path>
+    </interface>
+    <interface>
+      <name>DocumentClassification</name>
+      <kind>interface</kind>
+      <signature>{ type: DocumentType, confidence: number, secondaryType?: DocumentType, features: ClassificationFeature[], language?: string }</signature>
+      <path>src/pii/DocumentClassifier.ts:24</path>
+    </interface>
+    <interface>
+      <name>DocumentType</name>
+      <kind>type</kind>
+      <signature>'INVOICE' | 'LETTER' | 'FORM' | 'CONTRACT' | 'REPORT' | 'UNKNOWN'</signature>
+      <path>src/types/detection.ts:260 and src/pii/DocumentClassifier.ts:13</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Mocha + Chai testing framework. Tests in test/unit/ mirror src/ structure.
+      10-second timeout for async operations. Mock external dependencies.
+      Import from dist/ (compiled TypeScript). Use console logger fallback for non-Electron.
+    </standards>
+    <locations>
+      <location>test/unit/pii/DocumentTypeDetection.test.js</location>
+      <location>test/unit/pii/DetectionPipeline.test.js</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-3.1.1">EXISTING: Tests for all 6 document types classification</idea>
+      <idea ac="AC-3.1.2">EXISTING: Invoice detection tests for EN/DE/FR keywords</idea>
+      <idea ac="AC-3.1.3">EXISTING: Letter detection tests with salutation/signature</idea>
+      <idea ac="AC-3.1.4">EXISTING: Form detection tests with checkboxes/fields</idea>
+      <idea ac="AC-3.1.5">EXISTING: Contract detection tests with parties/clauses</idea>
+      <idea ac="AC-3.1.6">EXISTING: Report detection tests with TOC/sections</idea>
+      <idea ac="AC-3.1.7">EXISTING: Confidence scoring validation tests</idea>
+      <idea ac="AC-3.1.8">VERIFY: Pipeline metadata storage, mapping file output</idea>
+    </ideas>
+  </tests>
+
+  <implementation-notes>
+    <note priority="critical">
+      STORY IS LARGELY COMPLETE - The existing implementation covers Tasks 2-9.
+
+      Remaining work:
+      1. Task 1: Review implementation, verify it meets all ACs
+      2. Task 10: Verify mapping file includes documentType (may need fileProcessor.js update)
+      3. Ensure documentType=false in PipelineConfig.enabledPasses is changed to true for production
+      4. Run existing tests: npm test -- --grep "Epic 3"
+    </note>
+    <note priority="high">
+      DocumentTypePass has order=5 (not order=-10 as story suggested).
+      This runs AFTER HighRecall (order=10), FormatValidation (order=20), ContextScoring (order=30).
+      This is intentional - classification happens early but rules apply mid-pipeline.
+    </note>
+    <note priority="medium">
+      PipelineConfig.enabledPasses.documentType defaults to false in DetectionPipeline.ts:33.
+      This needs to be enabled for production use.
+    </note>
+  </implementation-notes>
+</story-context>

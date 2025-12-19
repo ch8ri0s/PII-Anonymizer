@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { FileMetadata } from '../types/fileMetadata.js';
+import { getErrorMessage } from '../types/errors.js';
 
 // Import converter bridge module
 import * as converterBridge from '../services/converterBridge.js';
@@ -32,8 +33,8 @@ export async function getFileMetadata(filePath: string): Promise<FileMetadata> {
   let textContent: string;
   try {
     textContent = await extractTextContent(filePath, extension);
-  } catch (error: any) {
-    throw new Error(`Cannot extract text from file: ${error.message}`);
+  } catch (error: unknown) {
+    throw new Error(`Cannot extract text from file: ${getErrorMessage(error)}`);
   }
 
   // 3. Calculate text statistics
@@ -71,17 +72,18 @@ export async function getFileMetadata(filePath: string): Promise<FileMetadata> {
  */
 async function extractTextContent(
   filePath: string,
-  extension: string
+  extension: string,
 ): Promise<string> {
   try {
     // Use converter bridge for all file types
     return await converterBridge.convertToText(filePath, extension);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check if file might be corrupted
+    const errorMessage = getErrorMessage(error);
     if (
-      error.message?.includes('corrupt') ||
-      error.message?.includes('invalid') ||
-      error.message?.includes('password')
+      errorMessage.includes('corrupt') ||
+      errorMessage.includes('invalid') ||
+      errorMessage.includes('password')
     ) {
       throw new Error('File may be corrupted or password-protected');
     }

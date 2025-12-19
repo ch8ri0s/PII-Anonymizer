@@ -1,0 +1,205 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4</storyId>
+    <title>Manual PII Marking</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-09</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-4-manual-pii-marking.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user who found missed PII</asA>
+    <iWant>to manually mark text as PII</iWant>
+    <soThat>the system learns and the text is anonymized</soThat>
+    <tasks>
+      <task id="1" ac="all">Analyze existing text selection and entity creation patterns</task>
+      <task id="2" ac="4.4.1">Implement text selection handler</task>
+      <task id="3" ac="4.4.1">Create context menu UI component</task>
+      <task id="4" ac="4.4.2,4.4.3,4.4.4">Implement manual entity creation</task>
+      <task id="5" ac="4.4.3">Add visual distinction for manual entities</task>
+      <task id="6" ac="4.4.4,4.4.5">Integrate with selective anonymization</task>
+      <task id="7" ac="all">Add unit tests for manual PII marking</task>
+      <task id="8" ac="all">Run test suite and verify no regression</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-4.4.1">Given document preview, when user selects text and right-clicks, then context menu shows "Mark as PII" with type submenu</criterion>
+    <criterion id="AC-4.4.2">Selecting a type creates new entity with source: 'MANUAL', confidence: 1.0, and user-specified type</criterion>
+    <criterion id="AC-4.4.3">Manually marked entity appears in entity sidebar with "Manual" badge</criterion>
+    <criterion id="AC-4.4.4">Entity is included in anonymization (default approved status)</criterion>
+    <criterion id="AC-4.4.5">Manual entity can be removed/rejected like any other entity</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 4.4: Manual PII Marking</section>
+        <snippet>User selects text and right-clicks to show "Mark as PII" context menu with type submenu. Creates entity with source: 'MANUAL', confidence: 1.0.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Epic 4: User Review</section>
+        <snippet>Entity sidebar (EntitySidebar.ts), renderer.js for UI components. Entity data structure includes source: 'ML' | 'RULE' | 'BOTH' | 'MANUAL'.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/4-3-selective-anonymization.md</path>
+        <title>Previous Story - Selective Anonymization</title>
+        <section>Dev Agent Record</section>
+        <snippet>Established entity state pattern with status-based approach. applySelectiveAnonymization() function handles entity replacements. originalMarkdown passed through IPC.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>renderer.js</path>
+        <kind>UI logic</kind>
+        <symbol>entityReviewState</symbol>
+        <lines>25-35</lines>
+        <reason>Entity state management - stores all entities including manual ones</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>handler</kind>
+        <symbol>handleManualPiiMark</symbol>
+        <lines>1559-1592</lines>
+        <reason>ALREADY IMPLEMENTED - Creates manual entity and adds to state</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>handler</kind>
+        <symbol>showPiiContextMenu</symbol>
+        <lines>1451-1534</lines>
+        <reason>ALREADY IMPLEMENTED - Shows context menu with entity type options</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>handler</kind>
+        <symbol>setupManualPiiMarkingListeners</symbol>
+        <lines>1631-1655</lines>
+        <reason>ALREADY IMPLEMENTED - Sets up context menu event listeners</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>helper</kind>
+        <symbol>getReplacementPrefix</symbol>
+        <lines>1597-1626</lines>
+        <reason>ALREADY IMPLEMENTED - Maps entity type to replacement prefix</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>UI component</kind>
+        <symbol>renderEntityItem</symbol>
+        <lines>995-1053</lines>
+        <reason>Entity display - shows source badge, needs MANUAL badge check</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>handler</kind>
+        <symbol>applySelectiveAnonymization</symbol>
+        <lines>1386-1417</lines>
+        <reason>From Story 4.3 - applies replacements to originalMarkdown</reason>
+      </file>
+      <file>
+        <path>renderer.js</path>
+        <kind>handler</kind>
+        <symbol>getReviewResult</symbol>
+        <lines>1360-1377</lines>
+        <reason>Filters entities for anonymization - includes all non-rejected</reason>
+      </file>
+      <file>
+        <path>src/types/entityReview.ts</path>
+        <kind>type definition</kind>
+        <symbol>ReviewableEntity</symbol>
+        <lines>19-56</lines>
+        <reason>Entity interface - source: 'ML' | 'RULE' | 'BOTH' | 'MANUAL' already defined</reason>
+      </file>
+      <file>
+        <path>src/input.css</path>
+        <kind>styles</kind>
+        <symbol>pii-context-menu</symbol>
+        <lines>544-560</lines>
+        <reason>ALREADY IMPLEMENTED - Context menu styling</reason>
+      </file>
+      <file>
+        <path>test/unit/entityReview.test.js</path>
+        <kind>test</kind>
+        <symbol>Story 4.4: Manual PII Marking</symbol>
+        <lines>630-725</lines>
+        <reason>ALREADY IMPLEMENTED - Tests for manual entity creation</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+      </node>
+      <node>
+        <package>mocha</package>
+        <version>10.x</version>
+      </node>
+      <node>
+        <package>chai</package>
+        <version>^5.1.2</version>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Entity state uses status-based approach: pending | approved | rejected | edited</constraint>
+    <constraint>Manual entities default to status: 'approved' (will be anonymized)</constraint>
+    <constraint>User input (selected text) must be escaped before display using escapeHtml()</constraint>
+    <constraint>Context menu only appears on valid non-empty text selections</constraint>
+    <constraint>Follow existing handler pattern: modify state, call renderEntityReviewPanel()</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>handleManualPiiMark</name>
+      <kind>function</kind>
+      <signature>handleManualPiiMark(text: string, type: string): void</signature>
+      <path>renderer.js:1559</path>
+    </interface>
+    <interface>
+      <name>showPiiContextMenu</name>
+      <kind>function</kind>
+      <signature>showPiiContextMenu(x: number, y: number, selectedText: string): void</signature>
+      <path>renderer.js:1451</path>
+    </interface>
+    <interface>
+      <name>ReviewableEntity</name>
+      <kind>interface</kind>
+      <signature>{ id, originalText, replacement, type, confidence, source, status, flaggedForReview, position, context, editedReplacement }</signature>
+      <path>src/types/entityReview.ts:19</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Tests use Mocha + Chai with describe/it pattern. 10-second timeout for async. Tests in test/unit/ mirror src/ structure. Currently 593 passing tests.</standards>
+    <locations>
+      <location>test/unit/entityReview.test.js</location>
+      <location>test/unit/</location>
+    </locations>
+    <ideas>
+      <idea ac="4.4.1">Test context menu appears on right-click with selection</idea>
+      <idea ac="4.4.2">Test manual entity has source: 'MANUAL', confidence: 1.0</idea>
+      <idea ac="4.4.3">Test manual entity appears in sidebar</idea>
+      <idea ac="4.4.4">Test manual entity included in getReviewResult()</idea>
+      <idea ac="4.4.5">Test reject action on manual entity</idea>
+    </ideas>
+  </tests>
+
+  <implementationNotes>
+    <note priority="high">MOST OF STORY 4.4 IS ALREADY IMPLEMENTED in renderer.js lines 1451-1655</note>
+    <note priority="high">Tests already exist in entityReview.test.js lines 630-725</note>
+    <note priority="medium">Need to verify: Manual badge display in renderEntityItem() - check if source === 'MANUAL' badge exists</note>
+    <note priority="medium">Need to verify: setupManualPiiMarkingListeners() is called on app initialization</note>
+    <note priority="low">Consider adding visual feedback when manual entity is created (highlight in preview)</note>
+  </implementationNotes>
+</story-context>

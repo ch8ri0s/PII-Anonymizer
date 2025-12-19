@@ -39,7 +39,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
       const regex = new RegExp(vulnerablePattern, 'ig');
 
       // THIS WILL HANG/TIMEOUT with vulnerable pattern
-      const result = regex.test(attackString);
+      const _result = regex.test(attackString);
 
       const duration = Date.now() - startTime;
       console.log(`Regex test completed in ${duration}ms`);
@@ -77,7 +77,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
       console.log('Testing regex with 15-char pattern...');
 
       // THIS WILL DEFINITELY TIMEOUT with vulnerable pattern
-      const result = regex.test(attackString);
+      const _result = regex.test(attackString);
 
       const duration = Date.now() - startTime;
       console.log(`Regex completed in ${duration}ms`);
@@ -131,7 +131,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
       // Calculate growth rate - should be linear or sublinear now
       const maxGrowth = Math.max(
         times[1] / (times[0] || 1),
-        times[2] / (times[1] || 1)
+        times[2] / (times[1] || 1),
       );
 
       console.log(`Max growth factor: ${maxGrowth.toFixed(2)}x`);
@@ -164,7 +164,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
     const startTime = Date.now();
 
     const regex = new RegExp(pattern, 'ig');
-    const result = regex.test(testText);
+    const _result = regex.test(testText);
 
     const duration = Date.now() - startTime;
     console.log(`Complex pattern matching: ${duration}ms`);

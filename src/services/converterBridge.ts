@@ -11,7 +11,7 @@ import { PdfToMarkdown } from '../converters/PdfToMarkdown.js';
 import { ExcelToMarkdown } from '../converters/ExcelToMarkdown.js';
 import { CsvToMarkdown } from '../converters/CsvToMarkdown.js';
 import { TextToMarkdown } from '../converters/TextToMarkdown.js';
-import { MarkdownConverter } from '../converters/MarkdownConverter.js';
+// import { MarkdownConverter } from '../converters/MarkdownConverter.js';
 
 // Initialize converter instances
 const converters: {
@@ -104,10 +104,10 @@ function stripMarkdownFormatting(markdown: string): string {
   text = text.replace(/```[\s\S]*?```/g, '');
 
   // Remove links but keep text [text](url) -> text
-  text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
   // Remove images ![alt](url)
-  text = text.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '');
+  text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, '');
 
   // Remove horizontal rules
   text = text.replace(/^[-*_]{3,}$/gm, '');

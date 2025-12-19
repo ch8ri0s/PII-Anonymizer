@@ -8,6 +8,7 @@
 import type { FileMetadata } from '../types/fileMetadata.js';
 import type { FilePreview } from '../types/filePreview.js';
 import type { BatchQueueItem } from '../types/batchQueue.js';
+import { getErrorMessage } from '../types/errors.js';
 
 /**
  * File Preview UI Manager
@@ -337,9 +338,8 @@ export class FilePreviewUI {
       }
 
       this.displayPreview(preview);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      this.displayError(error.message || 'Failed to load file information');
+    } catch (error: unknown) {
+      this.displayError(getErrorMessage(error));
     }
   }
 

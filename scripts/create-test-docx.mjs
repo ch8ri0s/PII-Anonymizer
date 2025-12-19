@@ -17,27 +17,27 @@ async function createDocxFile() {
       properties: {},
       children: [
         new Paragraph({
-          text: "Sample Document",
+          text: 'Sample Document',
           heading: HeadingLevel.HEADING_1,
         }),
         new Paragraph({
           children: [
             new TextRun({
-              text: "This is a test document for the DOCX converter.",
+              text: 'This is a test document for the DOCX converter.',
             }),
           ],
         }),
         new Paragraph({
-          text: "",
+          text: '',
         }),
         new Paragraph({
-          text: "Contact Information:",
+          text: 'Contact Information:',
           heading: HeadingLevel.HEADING_2,
         }),
         new Paragraph({
           children: [
             new TextRun({
-              text: "John Doe",
+              text: 'John Doe',
               bold: true,
             }),
           ],
@@ -45,10 +45,10 @@ async function createDocxFile() {
         new Paragraph({
           children: [
             new TextRun({
-              text: "Email: ",
+              text: 'Email: ',
             }),
             new TextRun({
-              text: "john.doe@example.com",
+              text: 'john.doe@example.com',
               italics: true,
             }),
           ],
@@ -56,21 +56,21 @@ async function createDocxFile() {
         new Paragraph({
           children: [
             new TextRun({
-              text: "Phone: +41 79 123 45 67",
+              text: 'Phone: +41 79 123 45 67',
             }),
           ],
         }),
         new Paragraph({
-          text: "",
+          text: '',
         }),
         new Paragraph({
-          text: "Personal Information:",
+          text: 'Personal Information:',
           heading: HeadingLevel.HEADING_2,
         }),
         new Paragraph({
           children: [
             new TextRun({
-              text: "This document contains PII for testing purposes. ",
+              text: 'This document contains PII for testing purposes. ',
             }),
             new TextRun({
               text: "The user's Swiss social security number is 756.1234.5678.90.",
@@ -78,12 +78,12 @@ async function createDocxFile() {
           ],
         }),
         new Paragraph({
-          text: "",
+          text: '',
         }),
         new Paragraph({
           children: [
             new TextRun({
-              text: "Address: Bahnhofstrasse 1, 8001 Zürich, Switzerland",
+              text: 'Address: Bahnhofstrasse 1, 8001 Zürich, Switzerland',
             }),
           ],
         }),

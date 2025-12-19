@@ -3,11 +3,11 @@
  * Tests all supported file formats: PDF, DOCX, Excel, CSV, TXT
  */
 
-import { describe, it, before } from 'mocha';
+import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFile, access } from 'fs/promises';
+import { access } from 'fs/promises';
 import { constants } from 'fs';
 
 // Import converters (from dist/ - TypeScript compiled output)
@@ -402,7 +402,7 @@ describe('File Format Converters', () => {
       const headers = ['Name', 'Age', 'City'];
       const rows = [
         ['Alice', '30', 'Zurich'],
-        ['Bob', '25', 'Geneva']
+        ['Bob', '25', 'Geneva'],
       ];
 
       const table = converter.createTable(headers, rows);

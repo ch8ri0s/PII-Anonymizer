@@ -1,0 +1,251 @@
+<story-context id="6-8-constants-magic-numbers" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>8</storyId>
+    <title>Constants and Magic Numbers</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-8-constants-magic-numbers.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer maintaining the codebase</asA>
+    <iWant>all magic numbers replaced with named constants</iWant>
+    <soThat>values are documented and easy to change</soThat>
+    <tasks>
+      <task id="1" ac="2">Create Constants Configuration File
+        <subtask id="1.1">Create `src/config/constants.ts` with category structure</subtask>
+        <subtask id="1.2">Define PREVIEW constants (line limits, char limits)</subtask>
+        <subtask id="1.3">Define PROCESSING constants (timeout, chunk size)</subtask>
+        <subtask id="1.4">Define SECURITY constants (max file size, path limits)</subtask>
+        <subtask id="1.5">Define UI constants (panel sizes, animation durations)</subtask>
+        <subtask id="1.6">Add JSDoc comments for all constants</subtask>
+      </task>
+      <task id="2" ac="1,3">Replace Magic Numbers in renderer.js
+        <subtask id="2.1">Replace `lines: 20, chars: 1000` at renderer.js:504-505 with constants</subtask>
+        <subtask id="2.2">Replace other preview-related magic numbers</subtask>
+        <subtask id="2.3">Replace timeout values with named constants</subtask>
+        <subtask id="2.4">Import constants via preload bridge or config</subtask>
+      </task>
+      <task id="3" ac="1,4">Replace Magic Numbers in fileProcessor.js
+        <subtask id="3.1">Replace `{0,2}?` at fileProcessor.js:390 with FUZZY_MATCH_GAP_TOLERANCE</subtask>
+        <subtask id="3.2">Document regex quantifier reasoning</subtask>
+        <subtask id="3.3">Replace other processing-related magic numbers</subtask>
+        <subtask id="3.4">Import constants module</subtask>
+      </task>
+      <task id="4" ac="1,3">Replace Magic Numbers in TypeScript Files
+        <subtask id="4.1">Audit src/services/*.ts for magic numbers</subtask>
+        <subtask id="4.2">Audit src/utils/*.ts for magic numbers</subtask>
+        <subtask id="4.3">Replace with constants and import from config</subtask>
+        <subtask id="4.4">Update src/types/index.ts to export constants</subtask>
+      </task>
+      <task id="5" ac="2">Update Existing Constants
+        <subtask id="5.1">Review src/utils/asyncTimeout.ts for existing constants</subtask>
+        <subtask id="5.2">Review src/utils/ipcValidator.ts for existing constants</subtask>
+        <subtask id="5.3">Consolidate duplicate constants into central file</subtask>
+        <subtask id="5.4">Update imports across affected files</subtask>
+      </task>
+      <task id="6" ac="5">Verification
+        <subtask id="6.1">Run `npm run typecheck` - zero errors</subtask>
+        <subtask id="6.2">Run `npm test` - all tests pass</subtask>
+        <subtask id="6.3">Run `npm run lint:check` - no new lint errors</subtask>
+        <subtask id="6.4">Verify constants are used correctly in runtime</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Named Constants for Numeric Literals">
+      All non-trivial numeric literals are replaced with named constants.
+      Constants have JSDoc comments explaining their purpose.
+      Trivially obvious values (0, 1, empty string) are allowed inline.
+    </criterion>
+    <criterion id="AC2" title="Constants Configuration File">
+      Constants are grouped in `src/config/constants.ts`.
+      Constants are organized by category: PREVIEW, PROCESSING, SECURITY, UI.
+      All constants are exported with TypeScript types.
+    </criterion>
+    <criterion id="AC3" title="UI-Related Constants">
+      Preview limits (lines, chars) are configurable constants.
+      File size limits are defined as constants.
+      Timeout values are defined as constants.
+    </criterion>
+    <criterion id="AC4" title="Regex Quantifier Documentation">
+      Regex quantifiers have documented reasoning.
+      Fuzzy match gap tolerance is a named constant.
+      Pattern-specific limits are explained.
+    </criterion>
+    <criterion id="AC5" title="Tests Pass">
+      All existing tests continue to pass.
+      New tests verify constants are correctly used.
+      TypeScript compilation succeeds with zero errors.
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/CODE_REVIEW.md</path>
+        <title>Comprehensive Code Review</title>
+        <section>Issue #19 - Magic Numbers</section>
+        <snippet>renderer.js:227 uses `lines: 20, chars: 1000` as magic numbers. fileProcessor.js:123 uses `{0,3}` for fuzzy match gap tolerance. These should be named constants with documentation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 6.8: Constants and Magic Numbers</section>
+        <snippet>As a developer maintaining the codebase, I want all magic numbers replaced with named constants, so that values are documented and easy to change. References CODE_REVIEW.md Medium Priority Issue #19.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Project Structure</section>
+        <snippet>src/config/ directory contains configuration files. TypeScript strict mode enabled. ESM modules for main process, CJS for preload.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>renderer.js</path>
+        <kind>renderer</kind>
+        <symbol>TIMEOUT_CONFIG, processFile preview limits</symbol>
+        <lines>42-45, 504-507</lines>
+        <reason>Contains magic numbers for preview limits (lines: 20, chars: 1000) and timeout configuration that should be centralized</reason>
+      </file>
+      <file>
+        <path>fileProcessor.js</path>
+        <kind>processor</kind>
+        <symbol>buildFuzzyRegex, MAX_ENTITY_LENGTH, MIN_ENTITY_LENGTH</symbol>
+        <lines>346-359, 390</lines>
+        <reason>Contains magic numbers for entity length limits and regex quantifiers (0,2 gap tolerance)</reason>
+      </file>
+      <file>
+        <path>src/utils/asyncTimeout.ts</path>
+        <kind>utility</kind>
+        <symbol>DEFAULT_TIMEOUT_CONFIG, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS</symbol>
+        <lines>44-55</lines>
+        <reason>Already has well-documented constants pattern - use as reference. Consider consolidating into central constants file.</reason>
+      </file>
+      <file>
+        <path>src/utils/ipcValidator.ts</path>
+        <kind>utility</kind>
+        <symbol>DEFAULT_SIZE_LIMITS, SUPPORTED_DOCUMENT_EXTENSIONS</symbol>
+        <lines>89-100</lines>
+        <reason>Already has constants for size limits. Consider consolidating into central constants file or re-exporting.</reason>
+      </file>
+      <file>
+        <path>src/services/filePreviewHandlers.ts</path>
+        <kind>service</kind>
+        <symbol>validLimit default values</symbol>
+        <lines>143</lines>
+        <reason>Contains inline default values (lines: 100, chars: 10000) that should reference central constants</reason>
+      </file>
+      <file>
+        <path>src/services/accuracyStats.ts</path>
+        <kind>service</kind>
+        <symbol>MAX_LOG_FILES, MAX_ENTRIES_PER_FILE, MAX_TOTAL_ENTRIES</symbol>
+        <lines>26-28</lines>
+        <reason>Has local constants with good JSDoc pattern. Consider if these should be in central config.</reason>
+      </file>
+      <file>
+        <path>src/utils/errorHandler.ts</path>
+        <kind>utility</kind>
+        <symbol>REDACTED_PATH</symbol>
+        <lines>41</lines>
+        <reason>Good example of exported constant with JSDoc. Pattern to follow.</reason>
+      </file>
+      <file>
+        <path>src/config/logging.js</path>
+        <kind>config</kind>
+        <symbol>logging configuration</symbol>
+        <lines>1-50</lines>
+        <reason>Existing config file in src/config/ - follow same directory pattern for constants</reason>
+      </file>
+      <file>
+        <path>preload.cjs</path>
+        <kind>bridge</kind>
+        <symbol>contextBridge API</symbol>
+        <lines>full file</lines>
+        <reason>May need updates to expose constants to renderer process</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>electron</package>
+        <version>39.1.1</version>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>5.x</version>
+      </node>
+      <node>
+        <package>zod</package>
+        <version>^3.25.76</version>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Use `as const` assertion for constant objects to get literal types</constraint>
+    <constraint type="pattern">Add JSDoc comments with @description for all constants</constraint>
+    <constraint type="pattern">Export constants from src/types/index.ts for easy access</constraint>
+    <constraint type="architecture">renderer.js cannot directly import TypeScript - use preload bridge or compiled dist/</constraint>
+    <constraint type="architecture">fileProcessor.js is JavaScript - import from dist/config/constants.js</constraint>
+    <constraint type="testing">Existing tests must continue passing without modification</constraint>
+    <constraint type="naming">Use SCREAMING_SNAKE_CASE for constants</constraint>
+    <constraint type="naming">Group related constants in namespaced objects (PREVIEW, PROCESSING, SECURITY)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Constants Module Export Pattern</name>
+      <kind>TypeScript module</kind>
+      <signature>
+        export const PREVIEW = { LINE_LIMIT: number, CHAR_LIMIT: number, ... } as const;
+        export const PROCESSING = { FUZZY_MATCH_GAP_TOLERANCE: number, ... } as const;
+        export const SECURITY = { MAX_FILE_SIZE_BYTES: number, ... } as const;
+      </signature>
+      <path>src/config/constants.ts (to create)</path>
+    </interface>
+    <interface>
+      <name>Existing asyncTimeout Constants</name>
+      <kind>TypeScript exports</kind>
+      <signature>
+        export const DEFAULT_TIMEOUT_CONFIG: TimeoutConfig;
+        export const MIN_TIMEOUT_MS: number;
+        export const MAX_TIMEOUT_MS: number;
+      </signature>
+      <path>src/utils/asyncTimeout.ts</path>
+    </interface>
+    <interface>
+      <name>Existing ipcValidator Constants</name>
+      <kind>TypeScript exports</kind>
+      <signature>
+        export const DEFAULT_SIZE_LIMITS: SizeLimitsConfig;
+        export const SUPPORTED_DOCUMENT_EXTENSIONS: string[];
+      </signature>
+      <path>src/utils/ipcValidator.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Mocha + Chai testing framework. Tests in test/ directory with same structure as src/.
+      Tests should verify constants are correctly typed and have expected values.
+      Integration tests should verify constants are correctly used at runtime.
+    </standards>
+    <locations>
+      <location>test/unit/constants.test.js (to create)</location>
+      <location>test/unit/asyncTimeout.test.js (existing, verify compatibility)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test that all exported constants are defined and have expected types</idea>
+      <idea ac="AC2">Test that constants file exports all expected categories</idea>
+      <idea ac="AC3">Test that preview limits match documented values (lines: 20, chars: 1000)</idea>
+      <idea ac="AC4">Test that FUZZY_MATCH_GAP_TOLERANCE matches documented value</idea>
+      <idea ac="AC5">Existing test suite passes with no modifications</idea>
+    </ideas>
+  </tests>
+</story-context>

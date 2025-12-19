@@ -27,6 +27,14 @@ coverage/
 
 # Production build output
 build/
+dist/
+
+# Browser app build artifacts
+browser-app/node_modules/
+browser-app/dist/
+
+# ML models (large binary files)
+models/
 
 # TypeScript build artifacts
 *.tsbuildinfo
@@ -75,3 +83,4 @@ oldExampleStyles.css
 # Tailwind CSS compiled output
 output.css
 output.css.map
+dist/mac-arm64/Softcom PII Anonymiser.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources/af.lproj/

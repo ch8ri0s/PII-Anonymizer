@@ -1,0 +1,117 @@
+<story-context id="6-4-typescript-strict-mode" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>4</storyId>
+    <title>TypeScript Strict Mode Migration</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-4-typescript-strict-mode.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer maintaining the codebase</asA>
+    <iWant>all TypeScript files to use strict type checking without `any`</iWant>
+    <soThat>type errors are caught at compile time instead of runtime</soThat>
+    <tasks>
+      <task id="1" status="pending">Update tsconfig.json (AC: 4, 5) - Enable noImplicitAny, strictNullChecks</task>
+      <task id="2" status="pending">Create Type Infrastructure (AC: 2, 3) - Error types, type guards</task>
+      <task id="3" status="pending">Fix Error Handling (AC: 2) - Replace catch (error: any) with unknown</task>
+      <task id="4" status="pending">Replace `any` Types (AC: 1) - Audit and fix all any usages</task>
+      <task id="5" status="pending">Fix Null Check Issues (AC: 4) - Add guards and optional chaining</task>
+      <task id="6" status="pending">Replace Type Assertions (AC: 3) - Use type guards instead of as casts</task>
+      <task id="7" status="pending">Verification (AC: 6) - Run typecheck, tests, lint</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" description="No `any` Types - Replace all any with proper types, document unavoidable ones"/>
+    <criterion id="AC2" description="Safe Error Handling - catch (error: unknown), type guards, isError() helper"/>
+    <criterion id="AC3" description="Type Guards Over Assertions - Replace `as` casts with type guards"/>
+    <criterion id="AC4" description="Strict Null Checks - strictNullChecks: true, proper guards, optional chaining"/>
+    <criterion id="AC5" description="No Implicit Any - noImplicitAny: true, explicit types everywhere"/>
+    <criterion id="AC6" description="Tests Pass - All tests pass, zero TypeScript errors, ESLint passes"/>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Technology Stack" snippet="TypeScript 5.x for converters, JavaScript ES2022 for main. Gradual migration, type safety for new code."/>
+      <doc path="docs/CODE_REVIEW.md" title="Code Review" section="Critical Issue #4" snippet="TypeScript Type Safety - catch (error: any) usage, implicit any in parameters, type assertions without validation."/>
+      <doc path="CLAUDE.md" title="Project Guidelines" section="TypeScript Guidelines" snippet="Strict mode enabled, explicit types, async/await preferred, IPC validation required."/>
+    </docs>
+    <code>
+      <file path="tsconfig.json" kind="config" reason="ALREADY HAS strict mode enabled - verify actual compilation works">
+        <note>strict: true, noImplicitAny: true, strictNullChecks: true are already enabled</note>
+      </file>
+      <file path="src/utils/metadataExtractor.ts" kind="utility" lines="36,81" reason="Has catch (error: any) - needs fix"/>
+      <file path="src/utils/previewGenerator.ts" kind="utility" lines="62" reason="Has catch (error: any) - needs fix"/>
+      <file path="src/utils/LoggerFactory.ts" kind="utility" lines="62,64" reason="Uses any for dynamic Electron imports - may need documentation"/>
+      <file path="src/utils/logger.ts" kind="utility" lines="28" reason="Uses any for electron-log - may need documentation"/>
+      <file path="src/converters/MarkdownConverter.ts" kind="converter" lines="15,27,144" reason="Uses any in interfaces and escapeTableCell - needs proper types"/>
+      <file path="src/converters/DocxToMarkdown.ts" kind="converter" lines="39,69" reason="Uses any for mammoth callbacks - needs proper types"/>
+      <file path="src/converters/PdfToMarkdown.ts" kind="converter" lines="51,56" reason="Uses any for pageData - needs proper types"/>
+      <file path="src/services/i18nHandlers.ts" kind="service" lines="50" reason="Uses any in interface - needs proper types"/>
+      <file path="src/main.ts" kind="main" lines="53,55" reason="Uses any in ReadJsonResult - needs proper types"/>
+      <file path="src/ui/filePreviewUI.ts" kind="ui" lines="341" reason="Has catch (error: any) - needs fix"/>
+      <file path="src/types/errors.ts" kind="types" reason="NEEDS TO BE CREATED - error types and type guards"/>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="typescript" version="5.x" relevance="Core - TypeScript compiler"/>
+        <package name="@types/node" relevance="Node.js type definitions"/>
+        <package name="@types/mocha" relevance="Test framework types"/>
+        <package name="@types/chai" relevance="Assertion library types"/>
+        <package name="zod" version="^3.25.76" relevance="Runtime type validation (already used in ipcValidator.ts)"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Error handling must use catch (error: unknown) with type guards</constraint>
+    <constraint type="pattern">Use isError() type guard for Error type narrowing</constraint>
+    <constraint type="pattern">Use LoggerFactory.create('module-name') for scoped logging</constraint>
+    <constraint type="pattern">Type guards should be co-located with types in src/types/</constraint>
+    <constraint type="compatibility">tsconfig.json already has strict mode - focus on fixing violations, not config</constraint>
+    <constraint type="backward">All existing tests (835+) must continue to pass</constraint>
+    <constraint type="testing">TypeScript compilation must succeed with zero errors</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="isError" kind="type-guard" path="src/types/errors.ts (TO CREATE)">
+      <signature>function isError(error: unknown): error is Error</signature>
+    </interface>
+    <interface name="getErrorMessage" kind="utility" path="src/types/errors.ts (TO CREATE)">
+      <signature>function getErrorMessage(error: unknown): string</signature>
+    </interface>
+    <interface name="ProcessingError" kind="class" path="src/types/errors.ts (TO CREATE)">
+      <signature>class ProcessingError extends Error { code: string; context?: Record&lt;string, unknown&gt; }</signature>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Mocha + Chai test framework. Tests in test/ directory mirroring src/ structure.
+      10-second timeout for async operations. Mock external dependencies.
+      All acceptance criteria must have test coverage.
+    </standards>
+    <locations>
+      <location>test/unit/</location>
+      <location>test/integration/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test that npm run typecheck succeeds with no errors</idea>
+      <idea ac="AC2">Test isError() type guard with Error, string, undefined, objects</idea>
+      <idea ac="AC2">Test getErrorMessage() extracts message from various error types</idea>
+      <idea ac="AC3">Test that type guards properly narrow types in catch blocks</idea>
+      <idea ac="AC6">Verify all 835+ existing tests still pass after changes</idea>
+    </ideas>
+  </tests>
+
+  <implementation-notes>
+    <note priority="high">tsconfig.json ALREADY has strict mode enabled - the code compiles successfully. Focus on removing remaining `any` types and `catch (error: any)` patterns.</note>
+    <note priority="high">Found 16 files with `: any` patterns to address</note>
+    <note priority="high">Found 4 files with `catch (error: any)` - others already use `error: unknown` or untyped</note>
+    <note priority="medium">Some `any` uses are unavoidable (Electron dynamic imports, third-party library types) - document with comments</note>
+    <note priority="medium">Pattern from Story 6.3: ipcValidator.ts demonstrates proper error handling with unknown type</note>
+  </implementation-notes>
+</story-context>

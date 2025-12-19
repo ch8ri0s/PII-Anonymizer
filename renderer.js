@@ -38,44 +38,87 @@ let entityReviewState = {
 };
 
 // ✅ SECURITY: Timeout configuration for async operations
+// Story 6.5 AC5: Default 60s, Min 10s, Max 600s (10 min)
+// Story 6.8: Use centralized constants from preload bridge
+const { TIMEOUT, PREVIEW } = window.constants;
 const TIMEOUT_CONFIG = {
-  fileProcessing: 5 * 60 * 1000,  // 5 minutes default
-  filePreview: 30 * 1000,          // 30 seconds
-  metadata: 10 * 1000,             // 10 seconds
-  jsonRead: 5 * 1000,               // 5 seconds
+  fileProcessing: TIMEOUT.FILE_PROCESSING_MS,
+  filePreview: TIMEOUT.FILE_PREVIEW_MS,
+  metadata: TIMEOUT.METADATA_MS,
+  jsonRead: TIMEOUT.JSON_READ_MS,
+  min: TIMEOUT.MIN_MS,
+  max: TIMEOUT.MAX_MS,
 };
+
+// Story 6.5 AC2: AbortController for cancellation support
+let processingAbortController = null;
+let timeoutDialogResolve = null;
+let processingStartTime = null;
+let elapsedTimeInterval = null;
 
 /**
  * ✅ SECURITY: Wraps a promise with timeout protection
- * Prevents indefinite hangs from async operations
+ * Story 6.5 AC1, AC2: Timeout detection and cancellation support
  *
  * @param {Promise} promise - The promise to wrap
  * @param {number} timeoutMs - Timeout in milliseconds
  * @param {string} operation - Human-readable operation name for error messages
+ * @param {Object} options - Additional options
+ * @param {AbortSignal} options.signal - AbortSignal for cancellation
+ * @param {Function} options.onTimeout - Callback when timeout occurs (before rejection)
  * @returns {Promise} - Resolves/rejects with the original promise or timeout error
  */
-async function withTimeout(promise, timeoutMs, operation = 'Operation') {
+async function withTimeout(promise, timeoutMs, operation = 'Operation', options = {}) {
+  const { signal, onTimeout } = options;
   let timeoutHandle;
+  let abortHandler;
+
+  // Check if already aborted
+  if (signal?.aborted) {
+    throw new DOMException(`${operation} was cancelled`, 'AbortError');
+  }
 
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => {
+      if (onTimeout) {
+        onTimeout();
+      }
       reject(new Error(`${operation} timed out after ${timeoutMs}ms. The file may be too large or corrupted.`));
     }, timeoutMs);
   });
 
+  // Set up abort signal handler
+  const abortPromise = signal
+    ? new Promise((_, reject) => {
+      abortHandler = () => {
+        reject(new DOMException(`${operation} was cancelled`, 'AbortError'));
+      };
+      signal.addEventListener('abort', abortHandler);
+    })
+    : null;
+
   try {
-    const result = await Promise.race([promise, timeoutPromise]);
-    clearTimeout(timeoutHandle); // ✅ CRITICAL: Prevent memory leak
+    const racers = [promise, timeoutPromise];
+    if (abortPromise) {
+      racers.push(abortPromise);
+    }
+
+    const result = await Promise.race(racers);
     return result;
-  } catch (error) {
-    clearTimeout(timeoutHandle); // ✅ CRITICAL: Prevent memory leak even on error
-    throw error;
+  } finally {
+    // ✅ CRITICAL: Prevent memory leaks
+    if (timeoutHandle !== undefined) {
+      clearTimeout(timeoutHandle);
+    }
+    if (abortHandler && signal) {
+      signal.removeEventListener('abort', abortHandler);
+    }
   }
 }
 
 /**
  * Calculate timeout based on file size
- * Larger files get proportionally longer timeouts, up to a maximum
+ * Story 6.5 AC5: Larger files get proportionally longer timeouts, clamped to min/max
  *
  * @param {number} fileSizeBytes - File size in bytes
  * @returns {number} - Timeout in milliseconds
@@ -83,12 +126,12 @@ async function withTimeout(promise, timeoutMs, operation = 'Operation') {
 function calculateFileTimeout(fileSizeBytes) {
   const BASE_TIMEOUT = 30000; // 30 seconds
   const PER_MB_TIMEOUT = 10000; // 10 seconds per MB
-  const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes max
 
   const fileSizeMB = fileSizeBytes / (1024 * 1024);
   const calculatedTimeout = BASE_TIMEOUT + (fileSizeMB * PER_MB_TIMEOUT);
 
-  return Math.min(calculatedTimeout, MAX_TIMEOUT);
+  // Story 6.5 AC5: Clamp to configurable min/max bounds
+  return Math.max(TIMEOUT_CONFIG.min, Math.min(TIMEOUT_CONFIG.max, calculatedTimeout));
 }
 
 // DOM Elements
@@ -129,6 +172,17 @@ const entityReviewCount = document.getElementById('entity-review-count');
 const entityReviewEmpty = document.getElementById('entity-review-empty');
 const entityReviewPanel = document.getElementById('entity-review-panel');
 const feedbackToggle = document.getElementById('feedback-toggle');
+
+// Story 6.5: Timeout dialog and progress elements
+const timeoutDialog = document.getElementById('timeout-dialog');
+const timeoutCancelBtn = document.getElementById('timeout-cancel-btn');
+const timeoutContinueBtn = document.getElementById('timeout-continue-btn');
+const timeoutElapsedTime = document.getElementById('timeout-elapsed-time');
+const cancelProcessingBtn = document.getElementById('cancel-processing-btn');
+const processingMessage = document.getElementById('processing-message');
+const processingProgressContainer = document.getElementById('processing-progress-container');
+const processingProgressBar = document.getElementById('processing-progress-bar');
+const processingProgressText = document.getElementById('processing-progress-text');
 
 // Entity type labels and colors
 const ENTITY_TYPE_LABELS = {
@@ -259,6 +313,32 @@ tabs.forEach(tab => {
 downloadMarkdownBtn.addEventListener('click', downloadMarkdown);
 if (downloadMappingBtn) {
   downloadMappingBtn.addEventListener('click', downloadMapping);
+}
+
+// Story 6.5: Timeout dialog button handlers
+if (timeoutCancelBtn) {
+  timeoutCancelBtn.addEventListener('click', () => {
+    if (timeoutDialogResolve) {
+      timeoutDialogResolve('cancel');
+    }
+    cancelProcessing();
+  });
+}
+
+if (timeoutContinueBtn) {
+  timeoutContinueBtn.addEventListener('click', () => {
+    if (timeoutDialogResolve) {
+      timeoutDialogResolve('continue');
+    }
+    hideTimeoutDialog();
+  });
+}
+
+// Story 6.5: Cancel processing button handler
+if (cancelProcessingBtn) {
+  cancelProcessingBtn.addEventListener('click', () => {
+    cancelProcessing();
+  });
 }
 
 // ====================
@@ -420,11 +500,12 @@ async function loadFileData(filePath) {
     }
 
     // ✅ SECURITY: Load preview with timeout protection
+    // Story 6.8: Use centralized constants for preview limits
     uiLog.debug('Loading file preview');
     const preview = await withTimeout(
       ipcRenderer.getFilePreview(filePath, {
-        lines: 20,
-        chars: 1000,
+        lines: PREVIEW.LINE_LIMIT,
+        chars: PREVIEW.CHAR_LIMIT,
       }),
       TIMEOUT_CONFIG.filePreview,
       'Loading file preview',
@@ -514,6 +595,128 @@ function getFileTypeInfo(extension) {
 }
 
 // ====================
+// Story 6.5: Timeout Dialog Functions
+// ====================
+
+/**
+ * Show the timeout dialog and wait for user response
+ * Story 6.5 AC1: User notification with Continue/Cancel options
+ *
+ * @returns {Promise<'continue' | 'cancel'>} User's choice
+ */
+function showTimeoutDialog() {
+  return new Promise((resolve) => {
+    timeoutDialogResolve = resolve;
+
+    // Update elapsed time display
+    const elapsedSeconds = Math.floor((Date.now() - processingStartTime) / 1000);
+    if (timeoutElapsedTime) {
+      timeoutElapsedTime.textContent = `Elapsed: ${elapsedSeconds}s`;
+    }
+
+    // Show the dialog
+    if (timeoutDialog) {
+      timeoutDialog.classList.remove('hidden');
+      timeoutDialog.classList.add('flex');
+    }
+  });
+}
+
+/**
+ * Hide the timeout dialog
+ */
+function hideTimeoutDialog() {
+  if (timeoutDialog) {
+    timeoutDialog.classList.add('hidden');
+    timeoutDialog.classList.remove('flex');
+  }
+  timeoutDialogResolve = null;
+}
+
+/**
+ * Cancel the current processing operation
+ * Story 6.5 AC2: Cancellation support
+ */
+function cancelProcessing() {
+  if (processingAbortController) {
+    rendererLog.info('User cancelled processing');
+    processingAbortController.abort();
+  }
+  hideTimeoutDialog();
+  clearElapsedTimeInterval();
+}
+
+/**
+ * Start elapsed time tracking
+ */
+function startElapsedTimeInterval() {
+  processingStartTime = Date.now();
+  elapsedTimeInterval = setInterval(() => {
+    if (processingStartTime && timeoutElapsedTime) {
+      const elapsedSeconds = Math.floor((Date.now() - processingStartTime) / 1000);
+      timeoutElapsedTime.textContent = `Elapsed: ${elapsedSeconds}s`;
+    }
+  }, 1000);
+}
+
+/**
+ * Clear elapsed time tracking
+ */
+function clearElapsedTimeInterval() {
+  if (elapsedTimeInterval) {
+    clearInterval(elapsedTimeInterval);
+    elapsedTimeInterval = null;
+  }
+  processingStartTime = null;
+}
+
+/**
+ * Update progress UI
+ * Story 6.5 AC4: Progress reporting
+ *
+ * @param {Object} progress - Progress information
+ * @param {string} progress.phase - Current phase
+ * @param {number} progress.progress - Percentage (0-100)
+ * @param {string} progress.message - Status message
+ */
+function updateProgress(progress) {
+  if (processingMessage) {
+    processingMessage.textContent = progress.message || 'Processing...';
+  }
+
+  if (progress.progress !== undefined && progress.progress >= 0) {
+    // Show progress bar
+    if (processingProgressContainer) {
+      processingProgressContainer.classList.remove('hidden');
+    }
+    if (processingProgressBar) {
+      processingProgressBar.style.width = `${progress.progress}%`;
+    }
+    if (processingProgressText) {
+      processingProgressText.textContent = `${Math.round(progress.progress)}%`;
+    }
+  }
+}
+
+/**
+ * Reset progress UI
+ */
+function resetProgress() {
+  if (processingMessage) {
+    processingMessage.textContent = 'Processing and sanitizing PII...';
+  }
+  if (processingProgressContainer) {
+    processingProgressContainer.classList.add('hidden');
+  }
+  if (processingProgressBar) {
+    processingProgressBar.style.width = '0%';
+  }
+  if (processingProgressText) {
+    processingProgressText.textContent = '0%';
+  }
+}
+
+// ====================
 // Processing
 // ====================
 
@@ -522,8 +725,13 @@ async function processFile() {
 
   uiLog.info('Processing file');
 
-  // Show spinner
+  // Show spinner and reset progress
   showProcessingState('loading');
+  resetProgress();
+
+  // Story 6.5 AC2: Create AbortController for cancellation
+  processingAbortController = new AbortController();
+  startElapsedTimeInterval();
 
   try {
     // ✅ SECURITY: Calculate timeout based on file size
@@ -531,7 +739,20 @@ async function processFile() {
     const timeout = calculateFileTimeout(fileSize);
     rendererLog.debug('File processing timeout calculated', { timeoutMs: timeout, timeoutSec: (timeout / 1000).toFixed(1) });
 
-    // ✅ SECURITY: Wrap processFile with timeout protection
+    // Story 6.5 AC1: Show timeout dialog when threshold is exceeded
+    let continueProcessing = true;
+    const onTimeout = async () => {
+      const choice = await showTimeoutDialog();
+      if (choice === 'cancel') {
+        continueProcessing = false;
+        cancelProcessing();
+      } else {
+        hideTimeoutDialog();
+        // Continue waiting - the promise will complete or timeout again
+      }
+    };
+
+    // ✅ SECURITY: Wrap processFile with timeout and cancellation support
     const result = await withTimeout(
       ipcRenderer.processFile({
         filePath: currentFilePath,
@@ -539,7 +760,15 @@ async function processFile() {
       }),
       timeout,
       'File processing',
+      {
+        signal: processingAbortController.signal,
+        onTimeout,
+      },
     );
+
+    // Clean up
+    clearElapsedTimeInterval();
+    hideTimeoutDialog();
 
     if (!result.success) {
       rendererLog.error('Processing error', { error: result.error });
@@ -589,10 +818,19 @@ async function processFile() {
     // Show results
     showResults(markdownContent, mapping);
   } catch (error) {
+    // Clean up on error
+    clearElapsedTimeInterval();
+    hideTimeoutDialog();
+
     rendererLog.error('Processing error', { error: error.message });
 
-    // ✅ SECURITY: Show user-friendly timeout message
-    if (error.message.includes('timed out')) {
+    // Story 6.5 AC2, AC3: Handle cancellation with partial result info
+    if (error.name === 'AbortError' || error.message.includes('cancelled')) {
+      // AC3: Inform user about cancellation - partial results not available in current implementation
+      // The TypeScript PartialResult infrastructure is in place for future main process enhancement
+      showError('Processing was cancelled. No partial results were saved because the file processing was interrupted before completion.');
+    } else if (error.message.includes('timed out')) {
+      // ✅ SECURITY: Show user-friendly timeout message
       showError('File processing is taking longer than expected. The file may be too large or corrupted. Please try a smaller file or contact support.');
     } else {
       showError('Processing failed: ' + error.message);

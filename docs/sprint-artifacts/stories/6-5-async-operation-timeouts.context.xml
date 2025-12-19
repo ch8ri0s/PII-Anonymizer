@@ -1,0 +1,229 @@
+<story-context id="6-5-async-operation-timeouts" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>5</storyId>
+    <title>Async Operation Timeouts</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/6-5-async-operation-timeouts.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user processing files</asA>
+    <iWant>long-running operations to have timeouts and cancellation</iWant>
+    <soThat>the app doesn't appear frozen during large file processing</soThat>
+    <tasks>
+      - Task 1: Create AbortController Infrastructure (AC: 2)
+        - 1.1: Create `src/utils/asyncTimeout.ts` with timeout wrapper utility
+        - 1.2: Implement AbortController pattern for file processing
+        - 1.3: Add cleanup handlers for aborted operations
+        - 1.4: Create tests for abort functionality
+      - Task 2: Add Timeout Detection to File Processing (AC: 1, 5)
+        - 2.1: Modify `renderer.js:319-374` processFile function with timeout wrapper
+        - 2.2: Add timeout configuration to settings (with defaults)
+        - 2.3: Implement timeout notification dialog
+        - 2.4: Add "Continue Waiting" and "Cancel" buttons to dialog
+      - Task 3: Implement Progress Reporting (AC: 4)
+        - 3.1: Define progress event structure for IPC
+        - 3.2: Add progress emission points in file processing pipeline
+        - 3.3: Register IPC handler for `processing:progress` events
+        - 3.4: Create progress UI component (progress bar or spinner with phase text)
+      - Task 4: Add Cancel Button to UI (AC: 2)
+        - 4.1: Add cancel button to processing state UI
+        - 4.2: Wire cancel button to AbortController.abort()
+        - 4.3: Update UI state machine for cancelled state
+        - 4.4: Show cancellation confirmation message
+      - Task 5: Handle Partial Results (AC: 3)
+        - 5.1: Identify cancellation-safe points in processing pipeline
+        - 5.2: Save partial entity list on cancellation
+        - 5.3: Generate partial mapping file if entities were processed
+        - 5.4: Display "Partial processing complete" message with summary
+      - Task 6: Verification (AC: 6)
+        - 6.1: Run `npm run typecheck` - zero errors
+        - 6.2: Run `npm test` - all tests pass
+        - 6.3: Run `npm run lint:check` - no new warnings
+        - 6.4: Manual test: process large file, trigger timeout, cancel
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Timeout Detection">
+      - File processing operations have configurable timeout threshold (default: 60 seconds)
+      - User is notified when operation exceeds timeout threshold
+      - User is given options: Continue Waiting / Cancel
+    </criterion>
+    <criterion id="AC2" title="Cancellation Support">
+      - Processing can be cancelled at any point during operation
+      - AbortController pattern is implemented for cancellation
+      - Cancelled operations clean up resources properly
+      - User receives confirmation when cancellation completes
+    </criterion>
+    <criterion id="AC3" title="Partial Result Preservation">
+      - Partial results are preserved when possible on timeout/cancel
+      - User is informed of what was processed vs. what remains
+      - Mapping file includes only successfully processed entities
+    </criterion>
+    <criterion id="AC4" title="Progress Reporting">
+      - Progress is reported to the UI during processing
+      - Progress events sent via IPC: `processing:progress`
+      - UI displays progress indicator (percentage or phase)
+      - Progress updates at reasonable intervals (not overwhelming IPC)
+    </criterion>
+    <criterion id="AC5" title="Configurable Timeouts">
+      - Timeout thresholds are configurable in settings
+      - Default timeout: 60 seconds
+      - Minimum timeout: 10 seconds
+      - Maximum timeout: 600 seconds (10 minutes)
+    </criterion>
+    <criterion id="AC6" title="Tests Pass">
+      - All existing tests continue to pass
+      - New tests cover timeout, cancellation, and progress scenarios
+      - TypeScript compilation succeeds with zero errors
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 6: Infrastructure &amp; Developer Experience</title>
+        <section>Story 6.5: Async Operation Timeouts</section>
+        <snippet>As a user processing files, I want long-running operations to have timeouts and cancellation, so that the app doesn't appear frozen during large file processing. Location: renderer.js:319-374 (processFile function)</snippet>
+      </doc>
+      <doc>
+        <path>docs/CODE_REVIEW.md</path>
+        <title>Code Review</title>
+        <section>Critical Issue #5</section>
+        <snippet>Async operations without timeout protection can cause UI freezes with large files.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>renderer.js</path>
+        <kind>renderer</kind>
+        <symbol>withTimeout, calculateFileTimeout, processFile, TIMEOUT_CONFIG</symbol>
+        <lines>41-92, 520-600</lines>
+        <reason>ALREADY IMPLEMENTED: withTimeout wrapper, calculateFileTimeout, TIMEOUT_CONFIG. Story needs to ADD: AbortController support, cancel button, progress reporting, timeout notification dialog with options.</reason>
+      </file>
+      <file>
+        <path>fileProcessor.js</path>
+        <kind>service</kind>
+        <symbol>FileProcessingSession, processFile</symbol>
+        <lines>140-288</lines>
+        <reason>Main file processing logic. Needs progress emission points and abort signal checking.</reason>
+      </file>
+      <file>
+        <path>src/main.ts</path>
+        <kind>main-process</kind>
+        <symbol>IPC handlers</symbol>
+        <lines>86-200</lines>
+        <reason>IPC handler registration. Needs new handler for `processing:progress` events and abort signal forwarding.</reason>
+      </file>
+      <file>
+        <path>src/types/errors.ts</path>
+        <kind>types</kind>
+        <symbol>isError, getErrorMessage, ProcessingError</symbol>
+        <lines>1-113</lines>
+        <reason>Error handling infrastructure from Story 6.4. Use for abort error handling.</reason>
+      </file>
+      <file>
+        <path>test/unit/asyncTimeout.test.js</path>
+        <kind>test</kind>
+        <symbol>Async Timeout Protection tests</symbol>
+        <lines>1-343</lines>
+        <reason>EXISTING TEST FILE documenting timeout requirements. Tests validate withTimeout, calculateFileTimeout, progress states, AbortController patterns.</reason>
+      </file>
+      <file>
+        <path>preload.cjs</path>
+        <kind>preload</kind>
+        <symbol>contextBridge API</symbol>
+        <reason>IPC bridge. May need new methods for cancel/progress.</reason>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="electron" version="^39.1.1">Desktop framework with IPC support</package>
+        <package name="electron-log" version="^5.4.3">Logging library</package>
+        <package name="mocha" version="^11.7.5">Test framework</package>
+        <package name="chai" version="^6.2.0">Assertion library</package>
+        <package name="zod" version="^3.25.76">Input validation (for progress event schema)</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">Use IPC for renderer-to-main communication. Do not use nodeIntegration.</constraint>
+    <constraint source="architecture">All new TypeScript code must pass strict type checking.</constraint>
+    <constraint source="story-6.4">Use `catch (error: unknown)` with `getErrorMessage()` from src/types/errors.ts for error handling.</constraint>
+    <constraint source="CLAUDE.md">Use ES modules with .js extensions in imports for compiled TypeScript.</constraint>
+    <constraint source="CLAUDE.md">Place new TypeScript utilities in src/utils/.</constraint>
+    <constraint source="CLAUDE.md">Place new tests in test/unit/ mirroring src/ structure.</constraint>
+    <constraint source="existing-code">CRITICAL: withTimeout() and TIMEOUT_CONFIG already exist in renderer.js:41-92. DO NOT recreate - extend with AbortController support.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>withTimeout</name>
+      <kind>function</kind>
+      <signature>async function withTimeout(promise: Promise&lt;T&gt;, timeoutMs: number, operation?: string): Promise&lt;T&gt;</signature>
+      <path>renderer.js:57-74</path>
+      <note>EXISTING - already handles timeout with clearTimeout for memory leak prevention</note>
+    </interface>
+    <interface>
+      <name>calculateFileTimeout</name>
+      <kind>function</kind>
+      <signature>function calculateFileTimeout(fileSizeBytes: number): number</signature>
+      <path>renderer.js:83-92</path>
+      <note>EXISTING - calculates timeout based on file size (30s base + 10s/MB, max 10 min)</note>
+    </interface>
+    <interface>
+      <name>TIMEOUT_CONFIG</name>
+      <kind>constant</kind>
+      <signature>{ fileProcessing: number, filePreview: number, metadata: number, jsonRead: number }</signature>
+      <path>renderer.js:41-46</path>
+      <note>EXISTING - default timeout values for various operations</note>
+    </interface>
+    <interface>
+      <name>ProcessingProgress (proposed)</name>
+      <kind>interface</kind>
+      <signature>interface ProcessingProgress { phase: 'converting' | 'detecting' | 'anonymizing' | 'saving'; progress: number; message: string; }</signature>
+      <path>src/types/index.ts (to be added)</path>
+      <note>NEW - define in types for IPC progress events</note>
+    </interface>
+    <interface>
+      <name>ipcRenderer.processFile</name>
+      <kind>IPC</kind>
+      <signature>processFile({ filePath: string, outputDir: string | null }): Promise&lt;ProcessFileResult&gt;</signature>
+      <path>preload.cjs, src/main.ts</path>
+      <note>EXISTING - needs AbortSignal parameter for cancellation</note>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use Mocha + Chai for all tests. Place tests in test/ mirroring src/ structure. 10-second timeout for async operations. Mock external dependencies. From Story 6.4: Create comprehensive test files with descriptive test names following "should document requirement:" pattern already established in asyncTimeout.test.js.
+    </standards>
+    <locations>
+      test/unit/asyncTimeout.test.js (EXISTING - extend with new tests)
+      test/unit/ (new test files)
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test timeout triggers notification after threshold exceeded</idea>
+      <idea ac="AC2">Test AbortController.abort() cancels processing</idea>
+      <idea ac="AC2">Test cleanup handlers are called on abort</idea>
+      <idea ac="AC3">Test partial results saved when abort occurs mid-processing</idea>
+      <idea ac="AC4">Test progress events emitted at each phase</idea>
+      <idea ac="AC4">Test progress updates don't overwhelm IPC (throttling)</idea>
+      <idea ac="AC5">Test timeout configuration validates min/max bounds</idea>
+      <idea ac="AC6">Run full test suite to verify no regressions</idea>
+    </ideas>
+  </tests>
+
+  <keyFindings>
+    <finding severity="info">withTimeout, calculateFileTimeout, and TIMEOUT_CONFIG are ALREADY IMPLEMENTED in renderer.js:41-92. The story should extend this with AbortController support rather than recreate timeout functionality.</finding>
+    <finding severity="info">test/unit/asyncTimeout.test.js already contains 343 lines of tests documenting timeout requirements and mock implementations. Extend these tests rather than creating new file.</finding>
+    <finding severity="info">processFile in renderer.js:520-600 already uses withTimeout. Missing: cancel button, progress reporting, timeout notification dialog with Continue/Cancel options.</finding>
+    <finding severity="info">Use error handling patterns from Story 6.4: catch (error: unknown) with getErrorMessage() from src/types/errors.ts.</finding>
+  </keyFindings>
+</story-context>
