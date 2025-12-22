@@ -29,6 +29,7 @@ interface PatternDefinition {
   name: string;
   pattern: RegExp;
   validate: (match: string, context?: string) => boolean;
+  extractGroup?: number; // If set, use this capturing group instead of full match
 }
 
 export class SwissEuDetector {
@@ -215,6 +216,14 @@ export class SwissEuDetector {
         validate: (match, context) => this.validateSwissAddress(match, context),
       },
 
+      // Street Address with Number (Swiss/EU format: "Street Name Number")
+      // Matches: Rue/Route/Chemin/Avenue/Rte/Ch./Av./Boulevard/Bd/Allée/Place/Platz/Strasse/Str. + name + number
+      STREET_ADDRESS: {
+        name: 'ADDRESS',
+        pattern: /\b(?:Rue|Route|Rte|Chemin|Ch\.|Avenue|Av\.|Boulevard|Bd|Allée|Place|Platz|Strasse|Str\.|Via|Viale|Corso|Piazza)(?:\s+(?:de\s+la|du|de|des|dell[ao']?|della|degli|dei))?\s+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ\s\-']{1,30}\s+\d{1,4}[A-Za-z]?\b/gi,
+        validate: (match) => this.validateStreetAddress(match),
+      },
+
       // Company Name Suffixes
       COMPANY_NAME: {
         name: 'ORG',
@@ -228,7 +237,63 @@ export class SwissEuDetector {
         pattern: /\b\d{2,3}'?\d{3}'?\d{3}\b/g,
         validate: () => true,
       },
+
+      // Person Names - Contextual patterns to minimize false positives
+      // IMPORTANT: Do NOT use the 'i' flag - it makes [a-z] match uppercase too!
+      // Name before telephone indicator (common in business letters)
+      // extractGroup: 1 tells the detector to use capturing group 1 instead of full match
+      PERSON_NAME_TEL: {
+        name: 'PERSON_NAME',
+        pattern: /([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+){1,3}),?\s*(?:[Tt][ée]l\.?|[Tt]éléphone)/g,
+        validate: (match) => this.validatePersonName(match),
+        extractGroup: 1,
+      },
+
+      // Name after "référence" or "reference" (common in business correspondence)
+      PERSON_NAME_REF: {
+        name: 'PERSON_NAME',
+        pattern: /(?:[Rr][ée]f[ée]rence|[Cc]ontact)\s+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+){1,3})/g,
+        validate: (match) => this.validatePersonName(match),
+        extractGroup: 1,
+      },
+
+      // Names in signature blocks (FirstName LastName pattern on its own line or after salutations)
+      // This uses a lookahead to ensure the pattern isn't followed by business terms
+      PERSON_NAME_SIG: {
+        name: 'PERSON_NAME',
+        pattern: /\b([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+)(?=\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+\s*$|\s*$)/gm,
+        validate: (match) => this.validatePersonName(match),
+        extractGroup: 1,
+      },
     };
+  }
+
+  /**
+   * Validate person name to reduce false positives
+   */
+  private validatePersonName(name: string): boolean {
+    if (!name || name.length < 3) return false;
+
+    // Split into parts
+    const parts = name.trim().split(/\s+/);
+    if (parts.length < 2) return false;
+
+    // Check each part is a valid name part (not all caps, not a common word)
+    const commonWords = new Set([
+      'fondation', 'collective', 'case', 'postale', 'notre', 'votre',
+      'zurich', 'suisse', 'switzerland', 'scanning', 'assurances',
+      'chemin', 'route', 'rue', 'avenue', 'visiteurs', 'direct',
+      'technologies', 'softcom', 'vita', 'mesdames', 'messieurs',
+    ]);
+
+    for (const part of parts) {
+      const lowerPart = part.toLowerCase();
+      if (commonWords.has(lowerPart)) return false;
+      // Reject if part is all uppercase (likely acronym)
+      if (part === part.toUpperCase() && part.length > 2) return false;
+    }
+
+    return true;
   }
 
   /**
@@ -243,7 +308,23 @@ export class SwissEuDetector {
 
       let match: RegExpExecArray | null;
       while ((match = regex.exec(text)) !== null) {
-        const matchedText = match[0];
+        // Use capturing group if specified, otherwise use full match
+        const extractGroup = (detector as { extractGroup?: number }).extractGroup;
+        const matchedText = extractGroup !== undefined && match[extractGroup]
+          ? match[extractGroup]
+          : match[0];
+
+        // Calculate correct start position for capturing groups
+        let matchStart = match.index;
+        if (extractGroup !== undefined && match[extractGroup]) {
+          // Find the actual position of the capturing group within the full match
+          const fullMatch = match[0];
+          const groupMatch = match[extractGroup];
+          const groupOffset = fullMatch.indexOf(groupMatch);
+          if (groupOffset >= 0) {
+            matchStart = match.index + groupOffset;
+          }
+        }
 
         // Context-aware false positive prevention for phone numbers
         if (detector.name === 'PHONE' && (key === 'PHONE_NUMBER' || key === 'PHONE_MASKED')) {
@@ -272,8 +353,8 @@ export class SwissEuDetector {
         matches.push({
           text: matchedText,
           type: detector.name,
-          start: match.index,
-          end: match.index + matchedText.length,
+          start: matchStart,
+          end: matchStart + matchedText.length,
           source: 'regex',
         });
       }
@@ -469,6 +550,31 @@ export class SwissEuDetector {
     const firstWord = city.split(/[\s\n]/)[0] || '';
     const commonNonCities = ['pour', 'and', 'oder', 'from', 'with', 'date', 'fondation', 'collective'];
     if (firstWord && commonNonCities.includes(firstWord.toLowerCase())) return false;
+
+    return true;
+  }
+
+  /**
+   * Validate street address (Street Name + Number)
+   */
+  private validateStreetAddress(address: string): boolean {
+    if (!address || address.length < 5) return false;
+
+    // Must contain a number (house number)
+    if (!/\d+[A-Za-z]?\s*$/.test(address)) return false;
+
+    // Extract the street name part (without the number)
+    const streetName = address.replace(/\s+\d+[A-Za-z]?\s*$/, '').trim();
+
+    // Street name should be at least 3 chars (e.g., "Rue X" after prefix)
+    if (streetName.length < 5) return false;
+
+    // Avoid matching things that look like addresses but aren't
+    const falsePositives = ['case postale', 'postfach', 'p.o. box', 'boîte postale'];
+    const lowerAddress = address.toLowerCase();
+    for (const fp of falsePositives) {
+      if (lowerAddress.includes(fp)) return false;
+    }
 
     return true;
   }
