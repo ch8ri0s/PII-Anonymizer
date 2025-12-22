@@ -410,7 +410,7 @@ interface Entity {
   "sourceFile": "document.pdf",
   "entities": {
     "PERSON_1": {
-      "original": "Bruno Figueiredo Carvalho",
+      "original": "Jean Pierre Müller",
       "type": "PERSON",
       "occurrences": 3
     },

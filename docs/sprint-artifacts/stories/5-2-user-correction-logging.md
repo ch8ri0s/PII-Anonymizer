@@ -136,7 +136,7 @@ const logDir = app.getPath('userData');
 
 ### Privacy Considerations
 
-1. **No actual PII stored**: Replace "Bruno Figueiredo" with `[PERSON]`
+1. **No actual PII stored**: Replace "Jean Pierre Müller" with `[PERSON]`
 2. **Document hash only**: SHA-256 hash of filename, not content
 3. **Local storage only**: Never transmitted, stays in app data
 4. **User control**: Opt-out toggle respects user preference

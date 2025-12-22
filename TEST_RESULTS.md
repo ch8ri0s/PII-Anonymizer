@@ -42,9 +42,9 @@
 
 ### ✅ PDF Text Normalization: 1/1 (100%)
 
-- Company name splitting: "SoftcomTechnologiesSA" → "Softcom Technologies SA" ✅
-- Phone number preservation: "+41216274137" ✅
-- Name preservation: "Bruno Figueiredo Carvalho" ✅
+- Company name splitting: "ExampleTechnologiesSA" → "Example Technologies SA" ✅
+- Phone number preservation: "+41211234567" ✅
+- Name preservation: "João Silva Ferreira" ✅
 
 ## Issues Found and Fixed ✅
 

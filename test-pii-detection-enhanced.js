@@ -257,7 +257,7 @@ const edgeCases = [
         expectedTypes: ['PHONE', 'EMAIL', 'ID_NUMBER'],
       },
       {
-        text: 'Adresse: Softcom Technologies SA, 1700 Fribourg, AVS: 756.1234.5678.97, Date: 07.06.2024',
+        text: 'Adresse: Example Technologies SA, 1200 Genève, AVS: 756.1234.5678.97, Date: 07.06.2024',
         desc: 'Multiple Swiss-specific PII',
         shouldDetect: true,
         expectedTypes: ['ORG', 'ADDRESS', 'SWISS_AVS', 'DATE'],
@@ -525,7 +525,7 @@ console.log('\n\n━━━━━━━━━━━━━━━━━━━━━
 console.log('TEST 4: PDF Text Normalization');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-const pdfPath = '/Users/olivier/Downloads/Softcom_Attestation_LPP.pdf';
+const pdfPath = './test/fixtures/sample-document.pdf';
 if (fs.existsSync(pdfPath)) {
   console.log('📋 Test: PDF Text Normalization');
   console.log(`   PDF: ${pdfPath.split('/').pop()}`);
@@ -534,9 +534,9 @@ if (fs.existsSync(pdfPath)) {
   const markdown = await converter.convert(pdfPath);
 
   const expectedTexts = [
-    'Softcom Technologies SA',
-    '+41216274137',
-    'Bruno Figueiredo Carvalho',
+    'Example Company SA',
+    '+41223334455',
+    'Jean Pierre Müller',
   ];
 
   console.log(`   Converted to ${markdown.length} chars of markdown`);

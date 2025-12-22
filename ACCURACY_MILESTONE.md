@@ -147,9 +147,9 @@ if (isProductCode || hasDashPattern) {
 
 ### Adversarial Test Categories (27 tests total)
 1. **Context-Dependent Phone Numbers** (4 tests) ✅
-   - Phone without format markers: `021 627 41 37`
-   - Phone with French context: `Appelez-moi au numéro 021 627 41 37`
-   - Phone with German context: `Rufen Sie mich unter 021 627 41 37 an`
+   - Phone without format markers: `021 234 56 78`
+   - Phone with French context: `Appelez-moi au numéro 021 234 56 78`
+   - Phone with German context: `Rufen Sie mich unter 021 234 56 78 an`
    - Multiple phones in sentence
 
 2. **Format Variants** (5 tests) ✅
@@ -165,7 +165,7 @@ if (isProductCode || hasDashPattern) {
 4. **Multi-Language Names** (4 tests) ✅
    - French names with accents: `François Müller-Lefèvre`
    - German names with umlauts: `Jürgen Günther von Schönberg`
-   - Portuguese names: `Bruno Figueiredo Carvalho`
+   - Portuguese names: `João Silva Ferreira`
    - Mixed case names: `jean-PIERRE DUBOIS`
 
 5. **Complex Multi-PII Scenarios** (2 tests) ✅

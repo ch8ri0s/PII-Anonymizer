@@ -30,23 +30,23 @@ const adversarialTests = [
     tests: [
       {
         name: 'Phone Without Strong Format Markers',
-        text: 'You can reach me at 021 627 41 37',
-        expected: { phones: ['021 627 41 37'] },
+        text: 'You can reach me at 021 234 56 78',
+        expected: { phones: ['021 234 56 78'] },
       },
       {
         name: 'Phone With Context Keyword (French)',
-        text: 'Appelez-moi au numéro 021 627 41 37',
-        expected: { phones: ['021 627 41 37'] },
+        text: 'Appelez-moi au numéro 021 234 56 78',
+        expected: { phones: ['021 234 56 78'] },
       },
       {
         name: 'Phone With Context Keyword (German)',
-        text: 'Rufen Sie mich unter 021 627 41 37 an',
-        expected: { phones: ['021 627 41 37'] },
+        text: 'Rufen Sie mich unter 021 234 56 78 an',
+        expected: { phones: ['021 234 56 78'] },
       },
       {
         name: 'Multiple Phones in Sentence',
-        text: 'Contact: 021 627 41 37 (office) or 079 123 45 67 (mobile)',
-        expected: { phones: ['021 627 41 37', '079 123 45 67'] },
+        text: 'Contact: 021 234 56 78 (office) or 079 123 45 67 (mobile)',
+        expected: { phones: ['021 234 56 78', '079 123 45 67'] },
       },
     ],
   },
@@ -121,8 +121,8 @@ const adversarialTests = [
       },
       {
         name: 'Portuguese Name',
-        text: 'Employee: Bruno Figueiredo Carvalho',
-        expected: { persons: ['Bruno Figueiredo Carvalho'] },
+        text: 'Employee: João Silva Ferreira',
+        expected: { persons: ['João Silva Ferreira'] },
       },
       {
         name: 'Mixed Case Name',
@@ -138,13 +138,13 @@ const adversarialTests = [
     tests: [
       {
         name: 'All PII Types in One Sentence',
-        text: 'Bruno (AVS: 756.1234.5678.97) at b.carvalho@zurich.ch, phone +41 21 627 41 37, lives at 1700 Fribourg',
+        text: 'Marco (AVS: 756.1234.5678.97) at m.rossi@example.ch, phone +41 22 333 44 55, lives at 1200 Genève',
         expected: {
-          persons: ['Bruno'],
+          persons: ['Marco'],
           avs: ['756.1234.5678.97'],
-          emails: ['b.carvalho@zurich.ch'],
-          phones: ['+41 21 627 41 37'],
-          addresses: ['1700 Fribourg'],
+          emails: ['m.rossi@example.ch'],
+          phones: ['+41 22 333 44 55'],
+          addresses: ['1200 Genève'],
         },
       },
       {

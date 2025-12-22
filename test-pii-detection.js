@@ -13,16 +13,16 @@ import fs from 'fs';
 const testCases = [
   {
     name: 'Swiss Phone Numbers',
-    text: 'Contact Bruno at tél.+41216274137 or +41 21 627 41 37',
+    text: 'Contact Marc at tél.+41223334455 or +41 22 333 44 55',
     expected: {
-      phones: ['+41216274137', '+41 21 627 41 37'],
+      phones: ['+41223334455', '+41 22 333 44 55'],
     },
   },
   {
     name: 'Email Addresses',
-    text: 'Send to b.figueiredocarvalho@zurich.ch or contact@example.com',
+    text: 'Send to m.mueller@example.ch or contact@example.com',
     expected: {
-      emails: ['b.figueiredocarvalho@zurich.ch', 'contact@example.com'],
+      emails: ['m.mueller@example.ch', 'contact@example.com'],
     },
   },
   {
@@ -34,9 +34,9 @@ const testCases = [
   },
   {
     name: 'Company Names',
-    text: 'Softcom Technologies SA and Zurich Assurances GmbH',
+    text: 'Example Technologies SA and Test Assurances GmbH',
     expected: {
-      companies: ['Softcom Technologies SA', 'Zurich Assurances GmbH'],
+      companies: ['Example Technologies SA', 'Test Assurances GmbH'],
     },
   },
   {
@@ -62,14 +62,14 @@ const testCases = [
   },
 ];
 
-// PDF test case
+// PDF test case - uses test fixture instead of real document
 const pdfTestCase = {
   name: 'PDF Text Normalization',
-  path: '/Users/olivier/Downloads/Softcom_Attestation_LPP.pdf',
+  path: './test/fixtures/sample-document.pdf',
   expectedInNormalized: [
-    'Softcom Technologies SA',  // Should be split from SoftcomTechnologiesSA
-    '+41 21 627 41 37',         // Phone should be properly spaced
-    'Bruno Figueiredo Carvalho', // Name should be readable
+    'Example Company SA',       // Company name
+    '+41 22 333 44 55',         // Phone should be properly spaced
+    'Jean Pierre Müller',       // Name should be readable
   ],
 };
 
@@ -156,7 +156,7 @@ console.log('✓ Model loaded\n');
 // Test with French names
 const frenchNameTest = {
   name: 'Names (French)',
-  text: 'Bruno Figueiredo Carvalho, Sandro Meyer et Oliver Gürtler',
+  text: 'Jean Pierre Müller, Marie Dubois et François Martin',
 };
 console.log(`📋 Test: ${frenchNameTest.name}`);
 console.log(`   Input: "${frenchNameTest.text}"`);
