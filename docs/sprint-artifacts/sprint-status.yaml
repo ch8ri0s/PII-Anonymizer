@@ -105,4 +105,5 @@ development_status:
   7-5-file-download-batch-processing: done  # Code review APPROVED 2025-12-23 - 120 tests
   7-6-pwa-deployment-readiness: ready-for-dev  # Context created 2025-12-23
   7-7-manual-pii-marking-ui: drafted  # Added 2025-12-23 via correct-course
+  7-8-user-correction-feedback-logging: drafted  # Added 2025-12-23 via correct-course
   epic-7-retrospective: optional
