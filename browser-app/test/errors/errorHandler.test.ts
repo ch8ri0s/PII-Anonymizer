@@ -324,7 +324,7 @@ describe('Error Logging', () => {
       });
 
       expect(consoleSpy).toHaveBeenCalled();
-      const logData = consoleSpy.mock.calls[0][1];
+      const logData = consoleSpy.mock.calls[0][1] as Record<string, unknown>;
       expect(logData.fileSize).toBe(1024);
     });
   });

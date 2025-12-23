@@ -18,14 +18,13 @@ import {
 } from '../../src/model/ModelManager';
 import { MODEL_NAME, DEFAULT_MODEL_CONFIG } from '../../src/model/types';
 
-// Mock @xenova/transformers
-vi.mock('@xenova/transformers', () => ({
+// Mock @huggingface/transformers (v3)
+vi.mock('@huggingface/transformers', () => ({
   pipeline: vi.fn(),
   env: {
     useBrowserCache: false,
     allowRemoteModels: true,
-    allowLocalModels: true,
-    cacheDir: '',
+    allowLocalModels: false,
   },
 }));
 
@@ -59,7 +58,7 @@ describe('ModelManager', () => {
 
   describe('loadModel()', () => {
     it('should call progress callback during loading', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       const mockPipeline = vi.fn().mockResolvedValue(() => []);
       (pipeline as ReturnType<typeof vi.fn>).mockImplementation(mockPipeline);
 
@@ -76,7 +75,7 @@ describe('ModelManager', () => {
     });
 
     it('should set model ready on success', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       const mockPipeline = vi.fn().mockResolvedValue(() => []);
       (pipeline as ReturnType<typeof vi.fn>).mockImplementation(mockPipeline);
 
@@ -88,7 +87,7 @@ describe('ModelManager', () => {
     });
 
     it('should enable fallback mode on error when allowed', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       (pipeline as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
 
       const result = await loadModel(undefined, { allowFallback: true });
@@ -100,7 +99,7 @@ describe('ModelManager', () => {
     });
 
     it('should not enable fallback mode when not allowed', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       (pipeline as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
 
       const result = await loadModel(undefined, { allowFallback: false });
@@ -111,7 +110,7 @@ describe('ModelManager', () => {
     });
 
     it('should deduplicate concurrent load requests', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       let callCount = 0;
       (pipeline as ReturnType<typeof vi.fn>).mockImplementation(() => {
         callCount++;
@@ -130,7 +129,7 @@ describe('ModelManager', () => {
     });
 
     it('should return success immediately if already loaded', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       const mockPipeline = vi.fn().mockResolvedValue(() => []);
       (pipeline as ReturnType<typeof vi.fn>).mockImplementation(mockPipeline);
 
@@ -149,8 +148,8 @@ describe('ModelManager', () => {
 
   describe('cancelLoading()', () => {
     it('should enable fallback mode when cancelled during loading', async () => {
-      const { pipeline } = await import('@xenova/transformers');
-      let resolveLoad: () => void;
+      const { pipeline } = await import('@huggingface/transformers');
+      let resolveLoad: (() => void) | undefined;
       const slowPromise = new Promise<() => []>((resolve) => {
         resolveLoad = () => resolve(() => []);
       });
@@ -166,7 +165,9 @@ describe('ModelManager', () => {
       expect(isFallbackMode()).toBe(true);
 
       // Clean up
-      resolveLoad!();
+      if (resolveLoad) {
+        resolveLoad();
+      }
       try {
         await loadPromise;
       } catch {
@@ -182,7 +183,7 @@ describe('ModelManager', () => {
     });
 
     it('should return empty array in fallback mode', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       (pipeline as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Failed'));
 
       // Enable fallback mode
@@ -195,7 +196,7 @@ describe('ModelManager', () => {
     });
 
     it('should return ML results when model is loaded', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       const mockResults = [
         { word: 'John', entity: 'B-PER', score: 0.95, start: 0, end: 4 },
         { word: 'Smith', entity: 'I-PER', score: 0.92, start: 5, end: 10 },
@@ -220,7 +221,7 @@ describe('ModelManager', () => {
 
   describe('reset()', () => {
     it('should reset all state to initial values', async () => {
-      const { pipeline } = await import('@xenova/transformers');
+      const { pipeline } = await import('@huggingface/transformers');
       const mockPipeline = vi.fn().mockResolvedValue(() => []);
       (pipeline as ReturnType<typeof vi.fn>).mockImplementation(mockPipeline);
 

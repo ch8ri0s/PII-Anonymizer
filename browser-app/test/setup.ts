@@ -49,7 +49,7 @@ globalThis.fetch = vi.fn(async (url: string) => {
 export async function createFileFromFixture(
   fixturePath: string,
   fileName: string,
-  mimeType: string
+  mimeType: string,
 ): Promise<File> {
   const fs = await import('fs');
   const path = await import('path');
