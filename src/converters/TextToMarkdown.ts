@@ -1,37 +1,45 @@
 /**
- * Text to Markdown Converter
- * Handles .txt files with minimal transformation
+ * Text to Markdown Converter (Electron/Node.js Version)
+ *
+ * File-path based wrapper around the shared TextConverter.
+ * Handles .txt and .md files with minimal transformation.
  */
 
 import fs from 'fs/promises';
 import path from 'path';
+import { TextConverter as SharedTextConverter } from '../../shared/dist/converters/index.js';
+import type { ConverterInput } from '../../shared/dist/converters/index.js';
 import { MarkdownConverter } from './MarkdownConverter.js';
 
+/**
+ * Electron-specific wrapper that accepts file paths
+ * Extends MarkdownConverter for backwards compatibility with existing code
+ */
 export class TextToMarkdown extends MarkdownConverter {
+  private sharedConverter: SharedTextConverter;
+
+  constructor(options = {}) {
+    super(options);
+    this.sharedConverter = new SharedTextConverter(options);
+  }
+
   override async convert(filePath: string): Promise<string> {
-    const content = await fs.readFile(filePath, 'utf8');
     const filename = path.basename(filePath);
 
-    // Generate frontmatter
-    const frontmatter = this.generateFrontmatter({
-      filename: this.sanitizeFilename(filename),
-      format: 'txt',
-      timestamp: new Date().toISOString(),
-    });
+    // Read file as ArrayBuffer
+    const buffer = await fs.readFile(filePath);
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    );
 
-    // Detect if content already has structure
-    const hasMarkdownHeadings = /^#{1,6}\s/.test(content);
-    const hasCodeBlocks = content.includes('```');
+    const input: ConverterInput = {
+      filename,
+      data: arrayBuffer,
+    };
 
-    let markdown = content;
-
-    // Add title if plain text without structure
-    if (!hasMarkdownHeadings && !hasCodeBlocks) {
-      const title = filename.replace(/\.txt$/i, '');
-      markdown = this.normalizeHeading(title, 1) + content;
-    }
-
-    return frontmatter + markdown;
+    const result = await this.sharedConverter.convert(input, this.options);
+    return result.markdown;
   }
 }
 

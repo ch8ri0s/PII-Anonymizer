@@ -283,6 +283,7 @@ export interface PipelineConfig {
     highRecall?: boolean;
     formatValidation?: boolean;
     contextScoring?: boolean;
+    addressRelationship?: boolean;
     documentType?: boolean;
   };
 

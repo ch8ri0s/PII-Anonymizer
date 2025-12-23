@@ -10,16 +10,22 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import {
+  type PostalCodesData,
+  type SwissPostalCode,
+  type PostalLookupResult,
+  cleanPostalCode,
+  normalizeCity,
+  isValidSwissPostalCodeFormat,
+} from '../../shared/dist/pii/index.js';
+
+// Re-export types for consumers
+export type { SwissPostalCode, PostalLookupResult };
 
 // Load JSON data at module initialization
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const dataPath = join(__dirname, '..', 'data', 'swissPostalCodes.json');
-
-interface PostalCodesData {
-  cantons: Record<string, string>;
-  postalCodes: Record<string, { city: string; canton: string; aliases: string[] }>;
-}
 
 let postalCodesData: PostalCodesData;
 try {
@@ -28,26 +34,6 @@ try {
   // Fallback for when running from dist directory
   const distPath = join(__dirname, '..', '..', 'src', 'data', 'swissPostalCodes.json');
   postalCodesData = JSON.parse(readFileSync(distPath, 'utf-8')) as PostalCodesData;
-}
-
-/**
- * Swiss postal code entry
- */
-export interface SwissPostalCode {
-  code: string;
-  city: string;
-  canton: string;
-  aliases: string[];
-}
-
-/**
- * Result from postal code lookup
- */
-export interface PostalLookupResult {
-  city: string;
-  canton: string;
-  cantonName: string;
-  aliases: string[];
 }
 
 /**
@@ -88,21 +74,21 @@ export class SwissPostalDatabase {
 
       this.postalCodes.set(code, entry);
 
-      // Index by city name (case-insensitive)
-      const cityLower = data.city.toLowerCase();
-      if (!this.cityToPostalCodes.has(cityLower)) {
-        this.cityToPostalCodes.set(cityLower, []);
+      // Index by city name (normalized for accent-insensitive lookup)
+      const cityNorm = normalizeCity(data.city);
+      if (!this.cityToPostalCodes.has(cityNorm)) {
+        this.cityToPostalCodes.set(cityNorm, []);
       }
-      const cityList = this.cityToPostalCodes.get(cityLower);
+      const cityList = this.cityToPostalCodes.get(cityNorm);
       if (cityList) cityList.push(code);
 
       // Index by aliases
       for (const alias of data.aliases || []) {
-        const aliasLower = alias.toLowerCase();
-        if (!this.cityToPostalCodes.has(aliasLower)) {
-          this.cityToPostalCodes.set(aliasLower, []);
+        const aliasNorm = normalizeCity(alias);
+        if (!this.cityToPostalCodes.has(aliasNorm)) {
+          this.cityToPostalCodes.set(aliasNorm, []);
         }
-        const aliasList = this.cityToPostalCodes.get(aliasLower);
+        const aliasList = this.cityToPostalCodes.get(aliasNorm);
         if (aliasList) aliasList.push(code);
       }
     }
@@ -115,22 +101,15 @@ export class SwissPostalDatabase {
    * @returns true if valid Swiss postal code, false otherwise
    */
   validate(code: string): boolean {
-    // Extract numeric part
-    const cleaned = this.cleanPostalCode(code);
-
-    // Must be 4 digits
-    if (!/^\d{4}$/.test(cleaned)) {
-      return false;
-    }
+    const cleaned = cleanPostalCode(code);
 
     // Check if in database
     if (this.postalCodes.has(cleaned)) {
       return true;
     }
 
-    // Also check range (1000-9999) for codes not in database
-    const num = parseInt(cleaned, 10);
-    return num >= 1000 && num <= 9999;
+    // Also validate format (4 digits in range 1000-9999)
+    return isValidSwissPostalCodeFormat(cleaned);
   }
 
   /**
@@ -140,7 +119,7 @@ export class SwissPostalDatabase {
    * @returns Lookup result or null if not found
    */
   lookup(code: string): PostalLookupResult | null {
-    const cleaned = this.cleanPostalCode(code);
+    const cleaned = cleanPostalCode(code);
     const entry = this.postalCodes.get(cleaned);
 
     if (!entry) {
@@ -162,8 +141,8 @@ export class SwissPostalDatabase {
    * @returns Array of matching postal codes
    */
   findByCity(city: string): string[] {
-    const cityLower = this.normalizeCity(city);
-    return this.cityToPostalCodes.get(cityLower) || [];
+    const cityNorm = normalizeCity(city);
+    return this.cityToPostalCodes.get(cityNorm) || [];
   }
 
   /**
@@ -173,8 +152,8 @@ export class SwissPostalDatabase {
    * @returns true if city is known, false otherwise
    */
   isKnownCity(city: string): boolean {
-    const cityLower = this.normalizeCity(city);
-    return this.cityToPostalCodes.has(cityLower);
+    const cityNorm = normalizeCity(city);
+    return this.cityToPostalCodes.has(cityNorm);
   }
 
   /**
@@ -203,7 +182,7 @@ export class SwissPostalDatabase {
    * @returns Canton code or null if not found
    */
   getCantonForPostalCode(code: string): string | null {
-    const cleaned = this.cleanPostalCode(code);
+    const cleaned = cleanPostalCode(code);
     const entry = this.postalCodes.get(cleaned);
     return entry ? entry.canton : null;
   }
@@ -235,33 +214,6 @@ export class SwissPostalDatabase {
       cities: this.cityToPostalCodes.size,
       cantons: this.cantonNames.size,
     };
-  }
-
-  /**
-   * Clean postal code input (remove CH- prefix, spaces)
-   */
-  private cleanPostalCode(code: string): string {
-    return code
-      .toUpperCase()
-      .replace(/^CH[-\s]?/, '')
-      .replace(/\s/g, '')
-      .trim();
-  }
-
-  /**
-   * Normalize city name for comparison
-   */
-  private normalizeCity(city: string): string {
-    return city
-      .toLowerCase()
-      .replace(/[äàâ]/g, 'a')
-      .replace(/[éèêë]/g, 'e')
-      .replace(/[îïì]/g, 'i')
-      .replace(/[öôò]/g, 'o')
-      .replace(/[üùû]/g, 'u')
-      .replace(/[ç]/g, 'c')
-      .replace(/[ß]/g, 'ss')
-      .trim();
   }
 }
 

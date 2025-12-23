@@ -1,150 +1,67 @@
 /**
- * Excel to Markdown Converter
- * Converts Excel files to Markdown tables (multi-sheet support)
+ * Excel to Markdown Converter (Electron/Node.js Version)
+ *
+ * File-path based wrapper around the shared ExcelConverter.
+ * Converts Excel files to Markdown tables with multi-sheet support.
  */
 
-import ExcelJS from 'exceljs';
+import fs from 'fs/promises';
 import path from 'path';
+import { ExcelConverter as SharedExcelConverter } from '../../shared/dist/converters/index.js';
+import type { ConverterInput, ExcelConverterOptions } from '../../shared/dist/converters/index.js';
 import { MarkdownConverter, MarkdownConverterOptions } from './MarkdownConverter.js';
 import { createLogger } from '../utils/LoggerFactory.js';
 
-export interface ExcelConverterOptions extends MarkdownConverterOptions {
-  maxRowsPerSheet?: number;
-}
-
 const log = createLogger('converter:excel');
 
-export class ExcelToMarkdown extends MarkdownConverter {
-  private maxRowsPerSheet: number;
+// Re-export options type for backwards compatibility
+export type { ExcelConverterOptions };
 
-  constructor(options: ExcelConverterOptions = {}) {
+/**
+ * Electron-specific wrapper that accepts file paths
+ * Extends MarkdownConverter for backwards compatibility with existing code
+ */
+export class ExcelToMarkdown extends MarkdownConverter {
+  private sharedConverter: SharedExcelConverter;
+
+  constructor(options: MarkdownConverterOptions & ExcelConverterOptions = {}) {
     super(options);
-    this.maxRowsPerSheet = options.maxRowsPerSheet || 1000;
+    this.sharedConverter = new SharedExcelConverter(options);
   }
 
   override async convert(filePath: string): Promise<string> {
     const filename = path.basename(filePath);
-    const workbook = new ExcelJS.Workbook();
 
     try {
-      await workbook.xlsx.readFile(filePath);
+      // Read file as ArrayBuffer
+      const buffer = await fs.readFile(filePath);
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength
+      );
 
-      // Generate frontmatter
-      const frontmatter = this.generateFrontmatter({
-        filename: this.sanitizeFilename(filename),
-        format: 'xlsx',
-        timestamp: new Date().toISOString(),
-        sheetCount: workbook.worksheets.length,
-      });
+      const input: ConverterInput = {
+        filename,
+        data: arrayBuffer,
+      };
 
-      const title = filename.replace(/\.xlsx?$/i, '');
-      let markdown = this.normalizeHeading(title, 1);
+      const result = await this.sharedConverter.convert(input, this.options);
 
-      // Process each worksheet
-      for (const worksheet of workbook.worksheets) {
-        markdown += this.convertWorksheet(worksheet);
+      // Log any conversion warnings
+      if (result.warnings && result.warnings.length > 0) {
+        log.warn('Excel conversion warnings', {
+          filename,
+          warningCount: result.warnings.length,
+          warnings: result.warnings,
+        });
       }
 
-      return frontmatter + markdown;
+      return result.markdown;
 
     } catch (error) {
       log.error('Error converting Excel', { filename, error: (error as Error).message });
       throw new Error(`Failed to convert Excel: ${(error as Error).message}`);
     }
-  }
-
-  private convertWorksheet(worksheet: ExcelJS.Worksheet): string {
-    const sheetName = worksheet.name;
-    let markdown = this.normalizeHeading(sheetName, 2);
-
-    // Get actual data range (skip empty rows/columns)
-    const rowCount = worksheet.actualRowCount;
-    const colCount = worksheet.actualColumnCount;
-
-    if (rowCount === 0 || colCount === 0) {
-      return markdown + '_(Empty sheet)_\n\n';
-    }
-
-    // Check if truncation needed
-    const truncated = rowCount > this.maxRowsPerSheet + 1; // +1 for header
-    const displayRows = truncated ? this.maxRowsPerSheet : rowCount - 1;
-
-    if (truncated) {
-      markdown += this.createBlockquote(
-        `Note: Showing first ${displayRows} of ${rowCount - 1} data rows`,
-      );
-    }
-
-    // Extract data
-    const headers: string[] = [];
-    const rows: string[][] = [];
-
-    // Get headers (first row)
-    const headerRow = worksheet.getRow(1);
-    for (let col = 1; col <= colCount; col++) {
-      const cell = headerRow.getCell(col);
-      headers.push(this.getCellValue(cell));
-    }
-
-    // Get data rows
-    for (let row = 2; row <= Math.min(displayRows + 1, rowCount); row++) {
-      const rowData: string[] = [];
-      const excelRow = worksheet.getRow(row);
-
-      for (let col = 1; col <= colCount; col++) {
-        const cell = excelRow.getCell(col);
-        rowData.push(this.getCellValue(cell));
-      }
-
-      rows.push(rowData);
-    }
-
-    // Create Markdown table
-    markdown += this.createTable(headers, rows);
-    markdown += '\n';
-
-    return markdown;
-  }
-
-  private getCellValue(cell: ExcelJS.Cell): string {
-    // Handle different cell types
-    if (!cell || cell.value === null || cell.value === undefined) {
-      return '';
-    }
-
-    // Handle formulas - show result
-    if (cell.type === ExcelJS.ValueType.Formula) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return String((cell.value as any).result || '');
-    }
-
-    // Handle rich text
-    if (cell.type === ExcelJS.ValueType.RichText) {
-      return (cell.value as ExcelJS.CellRichTextValue).richText.map(t => t.text).join('');
-    }
-
-    // Handle dates
-    if (cell.type === ExcelJS.ValueType.Date) {
-      const dateValue = cell.value as Date | undefined;
-      const safeDate = dateValue || new Date();
-      return safeDate.toISOString().split('T')[0] || '';
-    }
-
-    // Handle hyperlinks
-    if (cell.type === ExcelJS.ValueType.Hyperlink) {
-      const hyperlinkValue = cell.value as ExcelJS.CellHyperlinkValue;
-      const text = hyperlinkValue.text || hyperlinkValue.hyperlink || '';
-      const link = hyperlinkValue.hyperlink || '';
-      return this.createLink(text, link);
-    }
-
-    // Handle booleans
-    if (cell.type === ExcelJS.ValueType.Boolean) {
-      return (cell.value as boolean) ? 'TRUE' : 'FALSE';
-    }
-
-    // Default: convert to string
-    return String(cell.value);
   }
 }
 

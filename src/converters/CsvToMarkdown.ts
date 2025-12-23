@@ -1,105 +1,48 @@
 /**
- * CSV to Markdown Converter
- * Converts CSV files to Markdown tables
+ * CSV to Markdown Converter (Electron/Node.js Version)
+ *
+ * File-path based wrapper around the shared CsvConverter.
+ * Converts CSV files to Markdown tables.
  */
 
 import fs from 'fs/promises';
 import path from 'path';
+import { CsvConverter as SharedCsvConverter } from '../../shared/dist/converters/index.js';
+import type { ConverterInput, CsvConverterOptions } from '../../shared/dist/converters/index.js';
 import { MarkdownConverter, MarkdownConverterOptions } from './MarkdownConverter.js';
 
-export interface CsvConverterOptions extends MarkdownConverterOptions {
-  maxRows?: number;
-}
+// Re-export options type for backwards compatibility
+export type { CsvConverterOptions };
 
+/**
+ * Electron-specific wrapper that accepts file paths
+ * Extends MarkdownConverter for backwards compatibility with existing code
+ */
 export class CsvToMarkdown extends MarkdownConverter {
-  private maxRows: number;
+  private sharedConverter: SharedCsvConverter;
 
-  constructor(options: CsvConverterOptions = {}) {
+  constructor(options: MarkdownConverterOptions & CsvConverterOptions = {}) {
     super(options);
-    this.maxRows = options.maxRows || 1000;
+    this.sharedConverter = new SharedCsvConverter(options);
   }
 
   override async convert(filePath: string): Promise<string> {
-    const content = await fs.readFile(filePath, 'utf8');
     const filename = path.basename(filePath);
 
-    // Parse CSV
-    const lines = content.trim().split('\n');
-    if (lines.length === 0) {
-      return `# ${filename}\n\n(Empty CSV file)`;
-    }
+    // Read file as ArrayBuffer
+    const buffer = await fs.readFile(filePath);
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    );
 
-    // First line is header
-    const headers = this.parseCsvLine(lines[0] || '');
+    const input: ConverterInput = {
+      filename,
+      data: arrayBuffer,
+    };
 
-    // Remaining lines are data
-    const dataLines = lines.slice(1);
-    const totalRows = dataLines.length;
-    const truncated = totalRows > this.maxRows;
-    const displayLines = truncated ? dataLines.slice(0, this.maxRows) : dataLines;
-
-    const rows = displayLines.map(line => this.parseCsvLine(line));
-
-    // Generate frontmatter
-    const frontmatter = this.generateFrontmatter({
-      filename: this.sanitizeFilename(filename),
-      format: 'csv',
-      timestamp: new Date().toISOString(),
-      rowCount: totalRows,
-      truncated,
-    });
-
-    // Create title
-    const title = filename.replace(/\.csv$/i, '');
-    let markdown = this.normalizeHeading(title, 1);
-
-    if (truncated) {
-      markdown += this.createBlockquote(
-        `Note: Showing first ${this.maxRows} of ${totalRows} rows`,
-      );
-    }
-
-    // Create table
-    markdown += this.createTable(headers, rows);
-
-    return frontmatter + markdown;
-  }
-
-  /**
-   * Simple CSV parser - handles quoted fields
-   * For production, consider using a library like papaparse
-   */
-  private parseCsvLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && nextChar === '"') {
-          // Escaped quote
-          current += '"';
-          i++; // Skip next quote
-        } else {
-          // Toggle quote state
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        // Field separator
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-
-    // Add last field
-    result.push(current.trim());
-
-    return result;
+    const result = await this.sharedConverter.convert(input, this.options);
+    return result.markdown;
   }
 }
 
