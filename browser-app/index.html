@@ -9,87 +9,122 @@
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
 <body class="bg-gray-50 min-h-screen">
-  <div id="app" class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- Header -->
-    <header class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">PII Anonymizer</h1>
-      <p class="text-gray-600">Privacy-preserving document conversion - 100% local processing</p>
-      <div class="mt-2 flex items-center justify-center gap-2">
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
-          </svg>
-          No Data Leaves Your Browser
-        </span>
-      </div>
-    </header>
+  <div id="app" class="app-container">
+    <!-- Upload Section (collapsible) -->
+    <section id="upload-section" class="upload-section" data-testid="upload-section" aria-label="File Upload">
+      <!-- Header -->
+      <header class="text-center mb-6" data-testid="app-header">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2" data-testid="app-title">PII Anonymizer</h1>
+        <p class="text-gray-600">Privacy-preserving document conversion - 100% local processing</p>
+        <div class="mt-2 flex items-center justify-center gap-2">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" data-testid="privacy-badge">
+            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+            </svg>
+            No Data Leaves Your Browser
+          </span>
+        </div>
+      </header>
 
-    <!-- Model Loading Status -->
-    <div id="model-status" class="hidden mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-      <div class="flex items-center">
-        <svg class="animate-spin h-5 w-5 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <div class="flex-1">
-          <p class="text-sm font-medium text-blue-800">Loading ML Model...</p>
-          <div class="mt-1 w-full bg-blue-200 rounded-full h-2">
-            <div id="model-progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+      <!-- Model Loading Status -->
+      <div id="model-status" class="hidden mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200" data-testid="model-status" role="status" aria-live="polite">
+        <div class="flex items-center">
+          <svg class="animate-spin h-5 w-5 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-blue-800">Loading ML Model...</p>
+            <div class="mt-1 w-full bg-blue-200 rounded-full h-2" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <div id="model-progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" data-testid="model-progress" style="width: 0%"></div>
+            </div>
+            <p id="model-progress-text" class="text-xs text-blue-600 mt-1" data-testid="model-progress-text">Preparing...</p>
           </div>
-          <p id="model-progress-text" class="text-xs text-blue-600 mt-1">Preparing...</p>
         </div>
       </div>
-    </div>
 
-    <!-- Hidden file input (outside upload zone to prevent event issues) -->
-    <input type="file" id="file-input" class="hidden" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md">
+      <!-- Hidden file input (outside upload zone to prevent event issues) -->
+      <input type="file" id="file-input" class="hidden" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md" data-testid="file-input" aria-label="Select files to upload">
 
-    <!-- File Upload Zone -->
-    <div id="upload-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer mb-6">
-      <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <p class="text-lg font-medium text-gray-700 mb-1">Drop files here or click to upload</p>
-      <p class="text-sm text-gray-500">Supports PDF, DOCX, XLSX, CSV, TXT</p>
-    </div>
+      <!-- File Upload Zone -->
+      <div id="upload-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer mb-6" data-testid="upload-zone" role="button" tabindex="0" aria-label="Drop files here or click to upload">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-lg font-medium text-gray-700 mb-1">Drop files here or click to upload</p>
+        <p class="text-sm text-gray-500">Supports PDF, DOCX, XLSX, CSV, TXT</p>
+      </div>
 
-    <!-- File List -->
-    <div id="file-list" class="hidden mb-6">
-      <h2 class="text-lg font-semibold text-gray-800 mb-3">Selected Files</h2>
-      <div id="files-container" class="space-y-2"></div>
-      <button id="process-btn" class="mt-4 w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
-        Process Files
-      </button>
-    </div>
-
-    <!-- Processing Status -->
-    <div id="processing-status" class="hidden mb-6">
-      <h2 class="text-lg font-semibold text-gray-800 mb-3">Processing</h2>
-      <div id="processing-container" class="space-y-3"></div>
-    </div>
-
-    <!-- Results -->
-    <div id="results-section" class="hidden mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold text-gray-800">Results</h2>
-        <button id="download-all-btn" class="bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-          Download All (ZIP)
+      <!-- File List -->
+      <div id="file-list" class="hidden mb-6" data-testid="file-list" aria-label="Selected files">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Selected Files</h2>
+        <div id="files-container" class="space-y-2" data-testid="files-container" role="list"></div>
+        <button id="process-btn" class="mt-4 w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" data-testid="process-btn" aria-label="Process selected files">
+          Process Files
         </button>
       </div>
-      <div id="results-container" class="space-y-4"></div>
-    </div>
 
-    <!-- PII Summary -->
-    <div id="pii-summary" class="hidden mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-      <h3 class="text-sm font-semibold text-amber-800 mb-2">Detected PII Summary</h3>
-      <div id="pii-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
-    </div>
+      <!-- Processing Status -->
+      <div id="processing-status" class="hidden mb-6" data-testid="processing-status" aria-label="Processing status" role="status">
+        <div id="processing-container" class="space-y-2" data-testid="processing-container"></div>
+      </div>
 
-    <!-- Footer -->
-    <footer class="text-center text-sm text-gray-500 mt-12 pt-6 border-t border-gray-200">
-      <p>All processing happens locally in your browser. No data is sent to any server.</p>
-      <p class="mt-1">Powered by Transformers.js and pdf.js</p>
-    </footer>
+      <!-- Results Section -->
+      <section id="results-section" class="hidden" data-testid="results-section" aria-label="Processing results">
+        <div id="pii-summary" class="hidden mb-4 p-4 bg-amber-50 rounded-lg border border-amber-200" data-testid="pii-summary">
+          <h3 class="text-sm font-semibold text-amber-800 mb-2">PII Summary</h3>
+          <div id="pii-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="pii-stats"></div>
+        </div>
+        <div id="results-container" class="space-y-4" data-testid="results-container" role="list"></div>
+        <button id="download-all-btn" class="hidden mt-4 w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors" data-testid="download-all-btn" aria-label="Download All as ZIP">
+          Download All (ZIP)
+        </button>
+      </section>
+
+      <!-- Footer (in upload section) -->
+      <footer class="text-center text-sm text-gray-500 mt-8 pt-6 border-t border-gray-200" data-testid="footer">
+        <p>All processing happens locally in your browser. No data is sent to any server.</p>
+        <p class="mt-1">Powered by Transformers.js and pdf.js</p>
+      </footer>
+    </section>
+
+    <!-- Review Section (shown after processing starts) -->
+    <section id="review-section" class="review-section hidden" data-testid="review-section" aria-label="Entity Review">
+      <!-- Review Header -->
+      <header class="review-header" data-testid="review-header">
+        <div class="review-header-left">
+          <button id="back-to-upload-btn" class="back-button" title="Back to file selection" data-testid="back-btn" aria-label="Back to file selection">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-xl font-bold text-gray-800" data-testid="review-title">Review Detected PII</h1>
+            <p id="current-file-name" class="text-sm text-gray-500" data-testid="current-file-name">filename.pdf</p>
+          </div>
+        </div>
+        <div class="review-header-right">
+          <span id="detection-status" class="detection-badge" data-testid="detection-status" role="status">
+            <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Detecting...
+          </span>
+          <button id="download-btn" class="download-button hidden" disabled data-testid="download-btn" aria-label="Download anonymized document">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Download
+          </button>
+        </div>
+      </header>
+
+      <!-- Review Content: Preview Panel + Entity Sidebar -->
+      <div id="review-container" class="review-container" data-testid="review-container">
+        <!-- This will be populated by EntityReviewController / PreviewPanel -->
+      </div>
+    </section>
   </div>
 
   <script type="module" src="/src/main.ts"></script>
