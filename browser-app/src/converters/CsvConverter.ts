@@ -1,87 +1,48 @@
 /**
  * CSV to Markdown Converter (Browser Version)
  *
- * Converts CSV files to GitHub Flavored Markdown tables.
- * 100% browser compatible - no external dependencies.
+ * Re-exports the shared CsvConverter with a File-based wrapper for browser use.
  */
 
+import { CsvConverter as SharedCsvConverter } from '../../../shared/dist/converters/index.js';
+import type { ConverterInput } from '../../../shared/dist/converters/index.js';
+
+// Re-export the shared converter for direct use
+export { SharedCsvConverter };
+
+/**
+ * Browser-specific wrapper that accepts File objects
+ */
 export class CsvConverter {
-  static readonly SUPPORTED_TYPES = ['text/csv', 'application/csv'];
-  static readonly SUPPORTED_EXTENSIONS = ['.csv'];
+  static readonly SUPPORTED_TYPES = SharedCsvConverter.supportedTypes;
+  static readonly SUPPORTED_EXTENSIONS = SharedCsvConverter.supportedExtensions;
+
+  private sharedConverter: SharedCsvConverter;
+
+  constructor() {
+    this.sharedConverter = new SharedCsvConverter();
+  }
 
   supports(file: File): boolean {
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    return (
-      CsvConverter.SUPPORTED_TYPES.includes(file.type) ||
-      CsvConverter.SUPPORTED_EXTENSIONS.includes(ext)
-    );
+    const input: ConverterInput = {
+      filename: file.name,
+      data: new ArrayBuffer(0), // Not used for supports() check
+      mimeType: file.type,
+    };
+    return this.sharedConverter.supports(input);
   }
 
   async convert(file: File): Promise<string> {
-    const text = await file.text();
-    return this.csvToMarkdown(text);
-  }
+    const arrayBuffer = await file.arrayBuffer();
 
-  private csvToMarkdown(csv: string): string {
-    const lines = csv.trim().split(/\r?\n/);
-    if (lines.length === 0) return '';
+    const input: ConverterInput = {
+      filename: file.name,
+      data: arrayBuffer,
+      mimeType: file.type,
+    };
 
-    const rows = lines.map(line => this.parseCSVLine(line));
-    if (rows.length === 0) return '';
-
-    // Build markdown table
-    const header = rows[0];
-    const separator = header.map(() => '---');
-    const dataRows = rows.slice(1);
-
-    const mdLines = [
-      '| ' + header.map(cell => this.escapeMarkdown(cell)).join(' | ') + ' |',
-      '| ' + separator.join(' | ') + ' |',
-      ...dataRows.map(row =>
-        '| ' + row.map(cell => this.escapeMarkdown(cell)).join(' | ') + ' |'
-      ),
-    ];
-
-    return mdLines.join('\n');
-  }
-
-  private parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-
-      if (inQuotes) {
-        if (char === '"' && nextChar === '"') {
-          current += '"';
-          i++; // Skip next quote
-        } else if (char === '"') {
-          inQuotes = false;
-        } else {
-          current += char;
-        }
-      } else {
-        if (char === '"') {
-          inQuotes = true;
-        } else if (char === ',') {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-    }
-
-    result.push(current.trim());
-    return result;
-  }
-
-  private escapeMarkdown(text: string): string {
-    // Escape pipe characters in markdown table cells
-    return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+    const result = await this.sharedConverter.convert(input);
+    return result.markdown;
   }
 }
 

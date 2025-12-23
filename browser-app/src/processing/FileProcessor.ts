@@ -22,7 +22,7 @@ export class FileProcessor {
    */
   async processFile(
     file: File,
-    onProgress?: (progress: number, status: string) => void
+    onProgress?: (progress: number, status: string) => void,
   ): Promise<ProcessingResult> {
     onProgress?.(0, 'Starting...');
 
@@ -47,23 +47,25 @@ export class FileProcessor {
     onProgress?.(70, 'Anonymizing...');
 
     // Anonymize using shared session and functions
+    // Cast to PIIMatch[] - ExtendedPIIMatch is structurally compatible (has all required fields)
     const { anonymizedMarkdown, mappingTable } = anonymizeMarkdown(
       markdown,
-      piiMatches,
-      session
+      piiMatches as unknown as import('@core/index').PIIMatch[],
+      session,
     );
 
     onProgress?.(90, 'Generating statistics...');
 
     // Statistics
-    const stats = this.detector.getStatistics(piiMatches);
+    // Cast to PIIMatch[] - ExtendedPIIMatch is structurally compatible (has all required fields)
+    const stats = this.detector.getStatistics(piiMatches as unknown as import('@core/index').PIIMatch[]);
 
     onProgress?.(100, 'Complete');
 
     return {
       markdown,
       anonymizedMarkdown,
-      piiMatches,
+      piiMatches: piiMatches as unknown as import('@core/index').PIIMatch[],
       mappingTable,
       stats,
     };
@@ -74,7 +76,7 @@ export class FileProcessor {
    */
   async processFiles(
     files: File[],
-    onFileProgress?: (fileIndex: number, progress: number, status: string) => void
+    onFileProgress?: (fileIndex: number, progress: number, status: string) => void,
   ): Promise<Map<string, ProcessingResult>> {
     const results = new Map<string, ProcessingResult>();
 
@@ -125,7 +127,7 @@ export class FileProcessor {
 
         for (const entry of result.mappingTable) {
           lines.push(
-            `| ${entry.original.replace(/\|/g, '\\|')} | ${entry.replacement} | ${entry.type} | ${entry.occurrences} |`
+            `| ${entry.original.replace(/\|/g, '\\|')} | ${entry.replacement} | ${entry.type} | ${entry.occurrences} |`,
           );
         }
       }

@@ -29,7 +29,7 @@ export { FileProcessingSession };
 export function anonymizeText(
   text: string,
   matches: PIIMatch[],
-  session: FileProcessingSession
+  session: FileProcessingSession,
 ): { anonymizedText: string; mappingTable: MappingEntry[] } {
   const mappings = new Map<string, MappingEntry>();
 
@@ -62,8 +62,9 @@ export function anonymizeText(
 
     // Track mapping
     const key = match.text.toLowerCase();
-    if (mappings.has(key)) {
-      mappings.get(key)!.occurrences++;
+    const existingMapping = mappings.get(key);
+    if (existingMapping) {
+      existingMapping.occurrences++;
     } else {
       mappings.set(key, {
         original: match.text,
@@ -95,7 +96,7 @@ export function anonymizeText(
 export function anonymizeMarkdown(
   markdown: string,
   matches: PIIMatch[],
-  session: FileProcessingSession
+  session: FileProcessingSession,
 ): { anonymizedMarkdown: string; mappingTable: MappingEntry[] } {
   // Step 1: Extract code blocks (shared function)
   const { textWithoutCode, codeBlocks } = extractCodeBlocks(markdown);
@@ -107,7 +108,7 @@ export function anonymizeMarkdown(
   const { anonymizedText, mappingTable } = anonymizeText(
     textWithoutInline,
     matches,
-    session
+    session,
   );
 
   // Step 4: Restore inline code (shared function)

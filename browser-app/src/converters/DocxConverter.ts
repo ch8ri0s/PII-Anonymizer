@@ -1,73 +1,48 @@
 /**
  * DOCX to Markdown Converter (Browser Version)
  *
- * Uses mammoth.js which has native browser support.
- * Converts Word documents to clean Markdown.
+ * Re-exports the shared DocxConverter with a File-based wrapper for browser use.
  */
 
-import mammoth from 'mammoth';
-import TurndownService from 'turndown';
+import { DocxConverter as SharedDocxConverter } from '../../../shared/dist/converters/index.js';
+import type { ConverterInput } from '../../../shared/dist/converters/index.js';
 
-// Detect environment
-const isNode = typeof process !== 'undefined' && process.versions?.node;
+// Re-export the shared converter for direct use
+export { SharedDocxConverter };
 
+/**
+ * Browser-specific wrapper that accepts File objects
+ */
 export class DocxConverter {
-  static readonly SUPPORTED_TYPES = [
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ];
-  static readonly SUPPORTED_EXTENSIONS = ['.docx'];
+  static readonly SUPPORTED_TYPES = SharedDocxConverter.supportedTypes;
+  static readonly SUPPORTED_EXTENSIONS = SharedDocxConverter.supportedExtensions;
 
-  private turndown: TurndownService;
+  private sharedConverter: SharedDocxConverter;
 
   constructor() {
-    this.turndown = new TurndownService({
-      headingStyle: 'atx',
-      codeBlockStyle: 'fenced',
-      bulletListMarker: '-',
-    });
-
-    // Add rules for better markdown conversion
-    this.turndown.addRule('strikethrough', {
-      filter: ['del', 's'],
-      replacement: (content) => `~~${content}~~`,
-    });
+    this.sharedConverter = new SharedDocxConverter();
   }
 
   supports(file: File): boolean {
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    return (
-      DocxConverter.SUPPORTED_TYPES.includes(file.type) ||
-      DocxConverter.SUPPORTED_EXTENSIONS.includes(ext)
-    );
+    const input: ConverterInput = {
+      filename: file.name,
+      data: new ArrayBuffer(0), // Not used for supports() check
+      mimeType: file.type,
+    };
+    return this.sharedConverter.supports(input);
   }
 
   async convert(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
 
-    // mammoth Node.js API uses 'buffer', browser API uses 'arrayBuffer'
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let options: any;
-    if (isNode) {
-      // Node.js: convert ArrayBuffer to Buffer
-      options = { buffer: Buffer.from(arrayBuffer) };
-    } else {
-      // Browser: use arrayBuffer directly
-      options = { arrayBuffer };
-    }
+    const input: ConverterInput = {
+      filename: file.name,
+      data: arrayBuffer,
+      mimeType: file.type,
+    };
 
-    const result = await mammoth.convertToHtml(options);
-
-    if (result.messages.length > 0) {
-      console.warn('DOCX conversion warnings:', result.messages);
-    }
-
-    // Convert HTML to Markdown
-    const markdown = this.turndown.turndown(result.value);
-
-    // Clean up excessive whitespace
-    return markdown
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
+    const result = await this.sharedConverter.convert(input);
+    return result.markdown;
   }
 }
 

@@ -1,30 +1,48 @@
 /**
  * Text/Markdown Converter (Browser Version)
  *
- * Simple pass-through for plain text and markdown files.
- * 100% browser compatible - no external dependencies.
+ * Re-exports the shared TextConverter with a File-based wrapper for browser use.
  */
 
-export class TextConverter {
-  static readonly SUPPORTED_TYPES = [
-    'text/plain',
-    'text/markdown',
-    'text/x-markdown',
-    'application/x-markdown',
-  ];
+import { TextConverter as SharedTextConverter } from '../../../shared/dist/converters/index.js';
+import type { ConverterInput } from '../../../shared/dist/converters/index.js';
 
-  static readonly SUPPORTED_EXTENSIONS = ['.txt', '.md', '.markdown'];
+// Re-export the shared converter for direct use
+export { SharedTextConverter };
+
+/**
+ * Browser-specific wrapper that accepts File objects
+ */
+export class TextConverter {
+  static readonly SUPPORTED_TYPES = SharedTextConverter.supportedTypes;
+  static readonly SUPPORTED_EXTENSIONS = SharedTextConverter.supportedExtensions;
+
+  private sharedConverter: SharedTextConverter;
+
+  constructor() {
+    this.sharedConverter = new SharedTextConverter();
+  }
 
   supports(file: File): boolean {
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    return (
-      TextConverter.SUPPORTED_TYPES.includes(file.type) ||
-      TextConverter.SUPPORTED_EXTENSIONS.includes(ext)
-    );
+    const input: ConverterInput = {
+      filename: file.name,
+      data: new ArrayBuffer(0), // Not used for supports() check
+      mimeType: file.type,
+    };
+    return this.sharedConverter.supports(input);
   }
 
   async convert(file: File): Promise<string> {
-    return await file.text();
+    const arrayBuffer = await file.arrayBuffer();
+
+    const input: ConverterInput = {
+      filename: file.name,
+      data: arrayBuffer,
+      mimeType: file.type,
+    };
+
+    const result = await this.sharedConverter.convert(input);
+    return result.markdown;
   }
 }
 

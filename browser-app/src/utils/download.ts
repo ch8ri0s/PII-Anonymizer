@@ -30,7 +30,7 @@ export function downloadFile(content: string, filename: string, mimeType = 'text
  */
 export async function downloadZip(
   files: Map<string, string>,
-  zipFilename = 'anonymized-files.zip'
+  zipFilename = 'anonymized-files.zip',
 ): Promise<void> {
   const zip = new JSZip();
 

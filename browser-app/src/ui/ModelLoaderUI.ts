@@ -5,7 +5,7 @@
  * Provides user feedback during download and initialization.
  */
 
-import { DownloadProgress, MODEL_SIZE_BYTES } from '../model';
+import { DownloadProgress } from '../model';
 
 // DOM element references
 let statusElement: HTMLElement | null = null;

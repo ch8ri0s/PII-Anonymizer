@@ -1,0 +1,175 @@
+/**
+ * Layout Styles
+ * App structure, sections, and responsive layout
+ */
+
+/* ============================================
+   App Container
+   ============================================ */
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   Upload Section
+   ============================================ */
+
+.upload-section {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  width: 100%;
+}
+
+/* ============================================
+   Review Section
+   ============================================ */
+
+.review-section {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.review-section.hidden {
+  display: none;
+}
+
+/* Review Header */
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.review-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.review-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Back Button */
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.back-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+/* Detection Status Badge */
+.detection-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.detection-badge.detecting {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.detection-badge.complete {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.detection-badge.error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* Download Button */
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.download-button:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.download-button:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.download-button.hidden {
+  display: none;
+}
+
+/* Review Container */
+.review-container {
+  flex: 1;
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 640px) {
+  .upload-section {
+    padding: 1rem;
+  }
+
+  .review-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .review-header-left,
+  .review-header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .review-header-left h1 {
+    font-size: 1rem;
+  }
+
+  .detection-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}

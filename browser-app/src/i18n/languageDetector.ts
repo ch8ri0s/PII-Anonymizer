@@ -80,7 +80,7 @@ export function getStoredLanguage(): SupportedLocale | null {
     if (stored && isValidLocale(stored)) {
       return stored;
     }
-  } catch (e) {
+  } catch {
     // localStorage may not be available
     console.warn('Could not access localStorage for language preference');
   }
@@ -94,7 +94,7 @@ export function getStoredLanguage(): SupportedLocale | null {
 export function setStoredLanguage(locale: SupportedLocale): void {
   try {
     localStorage.setItem('pii-anonymizer-locale', locale);
-  } catch (e) {
+  } catch {
     console.warn('Could not store language preference in localStorage');
   }
 }
