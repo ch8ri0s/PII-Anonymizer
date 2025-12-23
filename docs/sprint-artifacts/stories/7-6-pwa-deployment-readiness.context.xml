@@ -1,0 +1,312 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>6</storyId>
+    <title>PWA &amp; Deployment Readiness</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/7-6-pwa-deployment-readiness.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user wanting offline access</asA>
+    <iWant>the browser app to work as a Progressive Web App</iWant>
+    <soThat>I can use it offline after initial model download</soThat>
+    <tasks>
+      <task n="1">PWA Manifest - Create manifest.json with app metadata, icons, theme colors, and link in index.html</task>
+      <task n="2">Service Worker - Create sw.js or use Vite PWA plugin with cache-first strategy for static assets</task>
+      <task n="3">Offline Support - Verify ML model cached in IndexedDB, handle graceful degradation, show offline indicator</task>
+      <task n="4">Install Experience - Detect beforeinstallprompt, show custom install banner, handle appinstalled event</task>
+      <task n="5">Vite PWA Configuration - Install vite-plugin-pwa, configure workbox options and manifest generation</task>
+      <task n="6">Deployment Configuration - Create GitHub Pages workflow, Vercel config, Netlify config, test deployment</task>
+      <task n="7">Lighthouse Audit - Run PWA audit, fix criteria failures, optimize scores (>90)</task>
+      <task n="8">Testing - Create manifest and service worker tests, test offline functionality, cross-browser testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">App icon appears on home screen/desktop after install</criterion>
+    <criterion id="AC2">App works offline (after model cached in IndexedDB)</criterion>
+    <criterion id="AC3">Service worker caches static assets (HTML, CSS, JS, icons)</criterion>
+    <criterion id="AC4">manifest.json enables install prompt on supported browsers</criterion>
+    <criterion id="AC5">App passes Lighthouse PWA audit (score > 90)</criterion>
+    <criterion id="AC6">Deployment works on GitHub Pages / Vercel / Netlify</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Project Classification, Success Criteria, Non-Functional Requirements</section>
+        <snippet>Offline Capability - Application must function without network connectivity after initial model download. Zero network calls during processing (100%). Desktop app with potential browser extension mentioned in Vision.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Technology Stack, Performance Considerations, Deployment Architecture</section>
+        <snippet>Vite for build, @xenova/transformers for ML inference (WASM-based, browser-compatible), model caching in IndexedDB. Performance targets: model load (cached) &lt;5s. Deployment: GitHub Pages, Vercel, Netlify mentioned for browser version.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown - Story 7.6</title>
+        <section>Epic 7: Browser Migration, Story 7.6</section>
+        <snippet>PWA &amp; Deployment Readiness story with acceptance criteria for manifest.json, service worker, offline support, install prompt, Lighthouse audit (>90), and deployment on GitHub Pages/Vercel/Netlify.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/7-5-file-download-batch-processing.md</path>
+        <title>Previous Story - File Download &amp; Batch Processing</title>
+        <section>Dev Notes, Technical Patterns</section>
+        <snippet>Download utilities use Blob API pattern (FileDownloader.ts, ZipDownloader.ts). 120 tests using vitest + happy-dom. Module-level state with init/destroy pattern. CSS injection pattern for UI components. TypeScript with ExtendedPIIMatch types.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>browser-app/vite.config.ts</path>
+        <kind>config</kind>
+        <symbol>defineConfig</symbol>
+        <reason>Vite build configuration - extend for PWA plugin, configure manifest generation and workbox options</reason>
+      </file>
+      <file>
+        <path>browser-app/index.html</path>
+        <kind>html</kind>
+        <symbol>head meta tags</symbol>
+        <reason>Add manifest link, PWA meta tags, theme-color, apple-touch-icon links</reason>
+      </file>
+      <file>
+        <path>browser-app/src/main.ts</path>
+        <kind>entry</kind>
+        <symbol>init()</symbol>
+        <reason>App entry point - add service worker registration, install prompt handling</reason>
+      </file>
+      <file>
+        <path>browser-app/src/model/ModelManager.ts</path>
+        <kind>service</kind>
+        <symbol>loadModel, getModelStatus</symbol>
+        <reason>ML model loading with IndexedDB caching via @huggingface/transformers - verify persistence for offline use</reason>
+      </file>
+      <file>
+        <path>browser-app/src/ui/ModelLoaderUI.ts</path>
+        <kind>component</kind>
+        <symbol>updateProgress, showSuccess</symbol>
+        <reason>Model loading UI - can add offline status indicator here</reason>
+      </file>
+      <file>
+        <path>browser-app/public/</path>
+        <kind>directory</kind>
+        <symbol>static assets</symbol>
+        <reason>Location for manifest.json, icons (192x192, 512x512), and potentially sw.js if not using plugin</reason>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@huggingface/transformers" version="^3.8.1">ML inference with IndexedDB caching</package>
+        <package name="vite" version="^5.4.0">Build tool - extend with vite-plugin-pwa</package>
+        <package name="vitest" version="^2.1.0">Unit testing framework</package>
+        <package name="@playwright/test" version="^1.57.0">E2E testing for PWA features</package>
+        <package name="happy-dom" version="^15.0.0">DOM environment for unit tests</package>
+        <package name="jszip" version="^3.10.1">ZIP file creation for batch downloads</package>
+        <toInstall name="vite-plugin-pwa" version="latest">PWA plugin for Vite - generates manifest, service worker, workbox config</toInstall>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="technical">Service worker must use cache-first for static assets, network-first for nothing (fully offline after model cached)</constraint>
+    <constraint type="technical">Model (~129MB) is cached via @huggingface/transformers in IndexedDB - do not duplicate in service worker cache</constraint>
+    <constraint type="technical">base URL in vite.config.ts must be './' for relative paths (currently set correctly)</constraint>
+    <constraint type="security">HTTPS required for service workers and install prompt - localhost exempt for development</constraint>
+    <constraint type="ux">Install prompt must appear AFTER user has successfully processed at least one file (per journey mapping)</constraint>
+    <constraint type="compatibility">iOS Safari has no beforeinstallprompt - must provide manual Add to Home Screen instructions</constraint>
+    <constraint type="storage">Request navigator.storage.persist() to prevent model eviction under storage pressure</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Service Worker API" kind="browser-api">
+      <signature>navigator.serviceWorker.register(scriptURL, options): Promise&lt;ServiceWorkerRegistration&gt;</signature>
+      <path>browser-app/src/main.ts (to add)</path>
+    </interface>
+    <interface name="beforeinstallprompt Event" kind="browser-event">
+      <signature>window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => void)</signature>
+      <path>browser-app/src/main.ts (to add)</path>
+    </interface>
+    <interface name="Storage Manager API" kind="browser-api">
+      <signature>navigator.storage.persist(): Promise&lt;boolean&gt;</signature>
+      <signature>navigator.storage.estimate(): Promise&lt;{quota: number, usage: number}&gt;</signature>
+      <path>browser-app/src/model/ModelManager.ts (to integrate)</path>
+    </interface>
+    <interface name="Web App Manifest" kind="json-schema">
+      <signature>{ name, short_name, icons[], start_url, display, theme_color, background_color }</signature>
+      <path>browser-app/public/manifest.json (to create)</path>
+    </interface>
+    <interface name="Vite PWA Plugin Config" kind="plugin-api">
+      <signature>VitePWA({ registerType, manifest, workbox })</signature>
+      <path>browser-app/vite.config.ts (to extend)</path>
+    </interface>
+  </interfaces>
+
+  <userJourney elicitation="journey-mapping">
+    <stage n="1" name="First Visit">
+      <touchpoint>User navigates to app URL (GitHub Pages/Vercel/Netlify)</touchpoint>
+      <emotions>Curious, hopeful about anonymizing docs without installing</emotions>
+      <painPoints>Slow initial load; confusion if no clear value proposition</painPoints>
+      <opportunities>Show "100% Local Processing" message immediately; display app capabilities</opportunities>
+    </stage>
+    <stage n="2" name="Model Download">
+      <touchpoint>ML model download (~129MB from HuggingFace CDN)</touchpoint>
+      <emotions>Impatient, anxious during download; relieved when complete</emotions>
+      <painPoints>Long download on slow connections; no clear indication; browser tab must stay open</painPoints>
+      <opportunities>Progress bar with ETA; "Download once, use forever" messaging; resumable downloads</opportunities>
+    </stage>
+    <stage n="3" name="First Use">
+      <touchpoint>User uploads first document, sees PII detection</touchpoint>
+      <emotions>Impressed, satisfied that data stayed local</emotions>
+      <painPoints>If processing feels slow; if UI is confusing</painPoints>
+      <opportunities>Show "Processing locally - your data never leaves this device"</opportunities>
+    </stage>
+    <stage n="4" name="Install Prompt">
+      <touchpoint>Browser shows install prompt OR custom install banner</touchpoint>
+      <emotions>Hesitant initially; convinced if value is clear</emotions>
+      <painPoints>Prompt timing (too early = annoying); iOS has no auto-prompt</painPoints>
+      <opportunities>Show install banner AFTER successful first use; iOS-specific instructions</opportunities>
+    </stage>
+    <stage n="5" name="Offline Use">
+      <touchpoint>User opens PWA without internet connection</touchpoint>
+      <emotions>Delighted that it works offline; confident in privacy</emotions>
+      <painPoints>Confusion if model not cached; unclear offline status</painPoints>
+      <opportunities>Show "Offline Ready" badge; graceful error if model missing</opportunities>
+    </stage>
+    <stage n="6" name="Return Visits">
+      <touchpoint>User returns days/weeks later</touchpoint>
+      <emotions>Satisfied if fast; frustrated if re-download needed</emotions>
+      <painPoints>Service worker update interrupts; cache invalidated; model evicted</painPoints>
+      <opportunities>Silent background updates; persistent model caching</opportunities>
+    </stage>
+    <keyInsights>
+      <insight n="1">Critical First Impression: Show value immediately with "100% offline, 100% private" messaging</insight>
+      <insight n="2">Model Download UX: Progress bar with percentage AND ETA; "Download once, use forever" messaging</insight>
+      <insight n="3">Smart Install Timing: Trigger install prompt AFTER user has successfully anonymized at least one document</insight>
+      <insight n="4">Offline Indicator: Always visible status - "Offline Ready" (green), "Online Mode" (blue), "Model Required" (yellow)</insight>
+      <insight n="5">iOS Special Handling: Custom "Add to Home Screen" instructions since Safari lacks beforeinstallprompt</insight>
+      <insight n="6">Cache Strategy: Service worker for static assets; IndexedDB with "never evict" hints for ML model</insight>
+    </keyInsights>
+  </userJourney>
+
+  <riskMatrix elicitation="risk-matrix">
+    <risk id="R1" priority="critical" score="16">
+      <description>Service worker caches stale assets after deployment</description>
+      <probability>High</probability>
+      <impact>High</impact>
+      <warningSigns>User reports app not updating; features missing after deploy</warningSigns>
+      <mitigation>Use workbox with skipWaiting and clientsClaim; implement version check on app load; show "Update Available" prompt; configure registerType: 'autoUpdate' in vite-plugin-pwa</mitigation>
+    </risk>
+    <risk id="R2" priority="critical" score="12">
+      <description>IndexedDB quota exceeded, ML model evicted by browser</description>
+      <probability>Medium</probability>
+      <impact>High</impact>
+      <warningSigns>Model loading fails on return visit; slow startup</warningSigns>
+      <mitigation>Request persistent storage via navigator.storage.persist(); check storage estimate; show warning if persistence denied; implement model integrity check on startup</mitigation>
+    </risk>
+    <risk id="R3" priority="high" score="15">
+      <description>iOS Safari lacks beforeinstallprompt API</description>
+      <probability>Certain</probability>
+      <impact>Medium</impact>
+      <warningSigns>iOS users don't know they can install the app</warningSigns>
+      <mitigation>Detect iOS via userAgent; show custom banner with "Add to Home Screen" step-by-step instructions; use share icon guidance</mitigation>
+    </risk>
+    <risk id="R4" priority="high" score="12">
+      <description>Service worker registration fails silently</description>
+      <probability>Medium</probability>
+      <impact>High</impact>
+      <warningSigns>PWA features don't work; no console errors visible to user</warningSigns>
+      <mitigation>Wrap registration in try-catch with user-visible error; log SW status; show "Offline mode unavailable" on failure; verify HTTPS</mitigation>
+    </risk>
+    <risk id="R5" priority="high" score="12">
+      <description>Cross-origin issues with HuggingFace model CDN</description>
+      <probability>Medium</probability>
+      <impact>High</impact>
+      <warningSigns>Model download fails; CORS errors in console</warningSigns>
+      <mitigation>Verify HuggingFace CDN CORS headers; add fallback CDN option; configure CSP; cache model in IndexedDB after download</mitigation>
+    </risk>
+    <risk id="R6" priority="medium" score="9">
+      <description>Lighthouse PWA audit fails with score below 90</description>
+      <probability>Medium</probability>
+      <impact>Medium</impact>
+      <mitigation>Run audit during development; fix issues iteratively; add Lighthouse CI check in GitHub Actions</mitigation>
+    </risk>
+    <risk id="R7" priority="medium" score="9">
+      <description>GitHub Pages base URL misconfiguration</description>
+      <probability>Medium</probability>
+      <impact>Medium</impact>
+      <mitigation>Configure base in vite.config.ts correctly; test deployment early in development cycle</mitigation>
+    </risk>
+    <risk id="R9" priority="medium" score="8">
+      <description>Service worker update causes infinite reload loop</description>
+      <probability>Low</probability>
+      <impact>High</impact>
+      <mitigation>Test SW updates thoroughly; implement update counter/circuit breaker pattern</mitigation>
+    </risk>
+    <monitoringChecklist>
+      <item>Add SW registration error handling with user feedback</item>
+      <item>Implement storage persistence request on first model download</item>
+      <item>Add iOS detection and custom install instructions</item>
+      <item>Configure service worker auto-update with user notification</item>
+      <item>Test on all target browsers (Chrome, Firefox, Safari, Edge)</item>
+      <item>Add Lighthouse CI check in GitHub Actions</item>
+      <item>Implement model integrity verification on startup</item>
+    </monitoringChecklist>
+  </riskMatrix>
+
+  <tests>
+    <standards>
+      <standard>Use vitest with happy-dom environment for unit tests</standard>
+      <standard>Use @playwright/test for E2E PWA testing</standard>
+      <standard>Mock browser APIs (Service Worker, beforeinstallprompt) in unit tests</standard>
+      <standard>Test file pattern: test/**/*.test.ts</standard>
+      <standard>30-second timeout for async operations</standard>
+      <standard>Use vi.mock() for external dependencies</standard>
+      <standard>Reset state in beforeEach/afterEach hooks</standard>
+    </standards>
+    <locations>
+      <location>browser-app/test/pwa/ (to create - PWA-specific unit tests)</location>
+      <location>browser-app/e2e/ (existing - E2E tests for PWA features)</location>
+      <location>browser-app/vitest.config.ts (test configuration)</location>
+      <location>browser-app/playwright.config.ts (E2E configuration)</location>
+    </locations>
+    <ideas>
+      <idea category="unit" priority="high">
+        <test>ServiceWorkerRegistration.test.ts - test SW registration success/failure, error handling</test>
+        <mock>navigator.serviceWorker.register</mock>
+      </idea>
+      <idea category="unit" priority="high">
+        <test>InstallPrompt.test.ts - test beforeinstallprompt capture, deferred prompt, iOS detection</test>
+        <mock>window 'beforeinstallprompt' event, navigator.userAgent</mock>
+      </idea>
+      <idea category="unit" priority="high">
+        <test>OfflineStatus.test.ts - test online/offline detection, status indicator updates</test>
+        <mock>navigator.onLine, 'online'/'offline' events</mock>
+      </idea>
+      <idea category="unit" priority="medium">
+        <test>StoragePersistence.test.ts - test persist() request, quota estimation, warning display</test>
+        <mock>navigator.storage.persist, navigator.storage.estimate</mock>
+      </idea>
+      <idea category="e2e" priority="high">
+        <test>pwa-install.spec.ts - E2E test for install prompt flow (Chromium only - webkit/firefox no support)</test>
+        <approach>Use Playwright to simulate installable PWA context</approach>
+      </idea>
+      <idea category="e2e" priority="high">
+        <test>offline-mode.spec.ts - E2E test for offline functionality after model cached</test>
+        <approach>Load app, cache model, go offline (context.setOffline), verify app works</approach>
+      </idea>
+      <idea category="e2e" priority="medium">
+        <test>lighthouse-pwa.spec.ts - Programmatic Lighthouse audit in CI</test>
+        <approach>Use lighthouse npm package or Playwright lighthouse integration</approach>
+      </idea>
+      <idea category="manual" priority="high">
+        <test>Cross-browser PWA install on Chrome, Edge, Safari (iOS), Firefox (Android)</test>
+        <approach>Manual testing checklist with screenshots</approach>
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

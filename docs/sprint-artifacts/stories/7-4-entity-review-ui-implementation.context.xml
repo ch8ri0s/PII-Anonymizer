@@ -1,0 +1,149 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>4</storyId>
+    <title>Entity Review UI Implementation</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-22</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/7-4-entity-review-ui-implementation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user reviewing detected PII in the browser</asA>
+    <iWant>the same entity review interface as the desktop app</iWant>
+    <soThat>I can filter, select, and manually mark entities before anonymization</soThat>
+    <tasks>
+      <task id="1" ac="1,2">Create Entity Sidebar Component - group entities by type, show confidence/source</task>
+      <task id="2" ac="3">Implement Entity Type Filtering - checkboxes per type, persist state</task>
+      <task id="3" ac="4">Implement Selective Anonymization - checkbox per entity, bulk selection</task>
+      <task id="4" ac="5">Implement Manual PII Marking - context menu for text selection</task>
+      <task id="5" ac="6">Implement Entity Navigation - click-to-scroll with highlight</task>
+      <task id="6" ac="7">Integrate with Preview Panel - sidebar layout, Tailwind styling</task>
+      <task id="7" ac="1-6">Integration with PIIDetector - connect to detect() results</task>
+      <task id="8" ac="1-7">Testing - 40+ new tests for UI components</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Entity sidebar displays all entities grouped by type (PERSON, ORG, ADDRESS, EMAIL, PHONE, etc.)</criterion>
+    <criterion id="AC2">Each entity shows confidence score (0-100%) and detection source (ML/RULE/BOTH/MANUAL)</criterion>
+    <criterion id="AC3">Entity type filtering works via checkboxes per type (show/hide entity groups)</criterion>
+    <criterion id="AC4">Selective anonymization via checkbox per entity (include/exclude from anonymization)</criterion>
+    <criterion id="AC5">Manual PII marking via text selection and context menu works</criterion>
+    <criterion id="AC6">Clicking entity scrolls preview to that location with visual highlight</criterion>
+    <criterion id="AC7">UI matches desktop app styling (Tailwind CSS)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Epic to Architecture Mapping">
+        Epic 4: User Review components map to src/ui/EntitySidebar.ts, renderer.js, index.html. Uses Tailwind CSS, contextBridge IPC.
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Entity Data Structure">
+        Entity interface: type, text, start, end, confidence, source ('ML'|'RULE'|'BOTH'|'MANUAL'), validationStatus, components.
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Novel Pattern Designs">
+        Multi-pass detection pipeline with Pass 1 (high recall), Pass 2 (format validation), Pass 3 (context scoring).
+      </doc>
+      <doc path="docs/sprint-artifacts/stories/7-3-pii-detection-pipeline-browser-port.md" title="Story 7.3" section="Dev Agent Record">
+        PIIDetector.detect() and detectWithPipeline() APIs available. ExtendedPIIMatch includes source and mlScore. Vite aliases: @core, @pii, @types.
+      </doc>
+    </docs>
+
+    <code>
+      <file path="browser-app/src/processing/PIIDetector.ts" kind="service" symbol="PIIDetector" lines="1-100" reason="Main detection API - connect sidebar to detect() results, use ExtendedPIIMatch type">
+        Exports: PIIDetector class with detect(), detectWithPipeline(), initializePipeline(), initializeWorker() methods. ExtendedPIIMatch type with source property.
+      </file>
+      <file path="browser-app/src/types.ts" kind="types" symbol="FileInfo, ProcessingResult, MappingEntry" lines="1-44" reason="Browser-specific types, ProcessingResult.piiMatches is the entity list">
+        ProcessingResult contains markdown, anonymizedMarkdown, piiMatches, mappingTable, stats. MappingEntry for sidebar display.
+      </file>
+      <file path="browser-app/src/main.ts" kind="entry" symbol="init, renderResults, renderFileList" lines="1-463" reason="Main app entry - integrate EntitySidebar into results rendering flow at line 311-381">
+        Current renderResults() shows basic PII stats in cards. EntitySidebar should integrate here. uploadZone, resultsSection, resultsContainer DOM elements available.
+      </file>
+      <file path="browser-app/src/ui/ModelLoaderUI.ts" kind="component" symbol="ModelLoaderUI" lines="all" reason="Existing UI component pattern to follow for EntitySidebar">
+        Pattern for browser UI components with DOM manipulation, event handlers, state management.
+      </file>
+      <file path="browser-app/src/pii/index.ts" kind="exports" symbol="exports" lines="all" reason="PII module exports including Entity types via @types/detection alias">
+        Re-exports Entity, EntityType, DetectionResult, DetectionPipeline for use in UI components.
+      </file>
+      <file path="browser-app/src/workers/types.ts" kind="types" symbol="WorkerRequest, WorkerResponse, ProgressCallback" lines="1-103" reason="Progress callback type for detection progress display in sidebar">
+        ProgressCallback: (progress: number, stage: string) => void. Can use for sidebar loading states.
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <dependency name="vite" version="^5.4.0" purpose="Build tool with path aliases" />
+        <dependency name="vitest" version="^2.1.0" purpose="Test runner" />
+        <dependency name="happy-dom" version="^15.0.0" purpose="DOM testing environment" />
+        <dependency name="typescript" version="^5.3.0" purpose="Type checking" />
+        <dependency name="@playwright/test" version="^1.57.0" purpose="E2E testing" />
+      </node>
+      <vite-aliases note="Configure in vitest.config.ts and tsconfig.json">
+        <alias name="@core" path="../src/core" />
+        <alias name="@pii" path="../src/pii" />
+        <alias name="@types" path="../src/types" />
+        <alias name="@utils" path="../src/utils" />
+      </vite-aliases>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="browser-compatibility">No Node.js APIs - pure browser APIs only (no fs, path, electron)</constraint>
+    <constraint type="styling">Use Tailwind CSS classes matching desktop app (src/input.css already included)</constraint>
+    <constraint type="dom-manipulation">Vanilla TypeScript for DOM - no React/Vue (follow ModelLoaderUI.ts pattern)</constraint>
+    <constraint type="types">Import Entity types from @types/detection via Vite alias</constraint>
+    <constraint type="state-management">Use component-local state or module-level variables (no external state library)</constraint>
+    <constraint type="accessibility">Keyboard navigation for sidebar entities, ARIA labels for screen readers</constraint>
+    <constraint type="responsive">Sidebar should collapse on mobile (breakpoint: md/768px)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="PIIDetector.detect" kind="method" path="browser-app/src/processing/PIIDetector.ts:148">
+      async detect(text: string): Promise&lt;ExtendedPIIMatch[]&gt; - Returns array of detected PII with source tagging
+    </interface>
+    <interface name="ExtendedPIIMatch" kind="type" path="browser-app/src/processing/PIIDetector.ts:52-57">
+      interface ExtendedPIIMatch extends PIIMatch { source: 'ML' | 'REGEX' | 'BOTH'; mlScore?: number; }
+    </interface>
+    <interface name="PIIMatch" kind="type" path="@core/index (via alias)">
+      interface PIIMatch { type: string; text: string; start: number; end: number; confidence: number; }
+    </interface>
+    <interface name="ProcessingResult" kind="type" path="browser-app/src/types.ts:28-35">
+      interface ProcessingResult { markdown: string; anonymizedMarkdown: string; piiMatches: PIIMatch[]; mappingTable: MappingEntry[]; stats: Record&lt;string, number&gt;; }
+    </interface>
+    <interface name="EntityWithSelection" kind="type" path="NEW - define in components">
+      interface EntityWithSelection extends ExtendedPIIMatch { id: string; selected: boolean; visible: boolean; }
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest with happy-dom for DOM testing. Tests in browser-app/test/ mirroring src/ structure.
+      Use vi.mock() for dependencies. Async tests with proper await.
+      Test patterns established in existing tests: describe/it blocks, expect assertions.
+      Current total: 346 tests passing. Target: 380+ after 40 new component tests.
+    </standards>
+    <locations>
+      <pattern>browser-app/test/components/*.test.ts (NEW - create directory)</pattern>
+      <pattern>browser-app/test/pii/*.test.ts (existing PII tests)</pattern>
+      <pattern>browser-app/test/integration/*.test.ts (existing integration tests)</pattern>
+    </locations>
+    <ideas>
+      <idea ac="1">Test EntitySidebar groups entities by type correctly</idea>
+      <idea ac="1">Test entity count badges display correct numbers</idea>
+      <idea ac="2">Test confidence score color coding (green/yellow/red thresholds)</idea>
+      <idea ac="2">Test source icon rendering (ML/RULE/BOTH/MANUAL)</idea>
+      <idea ac="3">Test filter checkbox toggles entity visibility</idea>
+      <idea ac="3">Test filter state persists in sessionStorage</idea>
+      <idea ac="4">Test entity checkbox selection state</idea>
+      <idea ac="4">Test bulk selection with Shift+Click</idea>
+      <idea ac="5">Test context menu appears on text selection</idea>
+      <idea ac="5">Test manual entity creation with correct properties</idea>
+      <idea ac="6">Test click-to-scroll navigates to entity position</idea>
+      <idea ac="6">Test highlight animation applied and cleared</idea>
+      <idea ac="7">Test sidebar renders with Tailwind classes</idea>
+      <idea ac="7">Test responsive collapse on mobile viewport</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,143 @@
+<story-context id="bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>3</storyId>
+    <title>PII Detection Pipeline Browser Port</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-22</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/7-3-pii-detection-pipeline-browser-port.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer maintaining the browser app</asA>
+    <iWant>the multi-pass PII detection pipeline ported to browser</iWant>
+    <soThat>browser users get the same 94%+ accuracy as desktop users</soThat>
+    <tasks>
+      <task id="1" ac="1,2,3">Port Core PII Types &amp; Interfaces - Create browser-app/src/pii/types.ts with Entity, DetectionPass, PipelineContext interfaces</task>
+      <task id="2" ac="1,2,3">Port DetectionPipeline to Browser - Create browser-app/src/pii/DetectionPipeline.ts with pass registry and sequencing</task>
+      <task id="3" ac="1">Port Pass 1 - High-Recall Detection with ML threshold 0.3 and source tagging</task>
+      <task id="4" ac="2">Port Pass 2 - Format Validation with AVS, IBAN, Phone, Email, Date validators</task>
+      <task id="5" ac="3">Port Pass 3 - Context Scoring with proximity, labels, position weighting</task>
+      <task id="6" ac="4">Port Address Relationship Modeling - AddressClassifier, Linker, Scorer, PostalDatabase</task>
+      <task id="7" ac="4">Port Document Type Detection - DocumentClassifier, RuleEngine, document-specific rules</task>
+      <task id="8" ac="6">Create Web Worker for Background Processing - pii.worker.ts with progress events</task>
+      <task id="9" ac="1-6">Update PIIDetector to Use Pipeline - integrate with Web Worker</task>
+      <task id="10" ac="5">Testing - accuracy comparison, 95%+ coverage, ~300 tests target</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Pass 1 (high-recall detection) executes with regex + ML model (threshold 0.3)</criterion>
+    <criterion id="AC2">Pass 2 (format validation) validates entity formats (AVS checksum, IBAN, phone, email, dates)</criterion>
+    <criterion id="AC3">Pass 3 (context scoring) assigns confidence scores based on proximity, labels, position</criterion>
+    <criterion id="AC4">SwissEuDetector patterns work identically to Electron version</criterion>
+    <criterion id="AC5">Detection accuracy matches Electron version (within 1%)</criterion>
+    <criterion id="AC6">Processing uses Web Worker for non-blocking UI</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Multi-Pass Detection Pipeline" snippet="Implements DetectionPipeline class with DetectionPass interface. Passes execute in sequence: Pass 1 (High-Recall) → Pass 2 (Format Validation) → Pass 3 (Context Scoring)." />
+      <doc path="docs/architecture.md" title="Architecture Document" section="Address Component Linking" snippet="Groups address components (street, number, postal, city) into unified ADDRESS entities using proximity-based linking and pattern matching." />
+      <doc path="docs/epics.md" title="Epic Breakdown" section="Epic 7: Browser Migration" snippet="Story 7.3 ports multi-pass PII detection pipeline to browser with Web Worker support for non-blocking UI." />
+      <doc path="docs/prd.md" title="PRD" section="Multi-Pass Detection Architecture" snippet="Pass 1: Raw Entity Detection (high recall) → Pass 2: Entity Relationship Modeling → Pass 3: Context Validation → Pass 4: Document-Type Adjustment." />
+      <doc path="docs/sprint-artifacts/stories/7-2-ml-model-browser-integration.md" title="Previous Story" section="Dev Notes" snippet="ModelManager exports isModelReady(), isFallbackMode(), runInference(). 246 tests passing. System gracefully degrades when model fails." />
+    </docs>
+
+    <code>
+      <!-- Detection Pipeline Core -->
+      <file path="src/pii/DetectionPipeline.ts" kind="pipeline" symbol="DetectionPipeline" lines="43-174" reason="Core orchestrator to port - process(), deduplicateEntities(), flagForReview()" />
+      <file path="src/types/detection.ts" kind="types" symbol="Entity, DetectionPass, PipelineContext" lines="1-396" reason="Complete type definitions for detection system" />
+
+      <!-- Detection Passes -->
+      <file path="src/pii/passes/HighRecallPass.ts" kind="pass" symbol="HighRecallPass" lines="all" reason="Pass 1 implementation - ML + regex with lowered threshold" />
+      <file path="src/pii/passes/FormatValidationPass.ts" kind="pass" symbol="FormatValidationPass" lines="all" reason="Pass 2 implementation - entity format validation" />
+      <file path="src/pii/passes/ContextScoringPass.ts" kind="pass" symbol="ContextScoringPass" lines="all" reason="Pass 3 implementation - context-based confidence scoring" />
+      <file path="src/pii/passes/AddressRelationshipPass.ts" kind="pass" symbol="AddressRelationshipPass" lines="all" reason="Address component linking pass" />
+      <file path="src/pii/passes/DocumentTypePass.ts" kind="pass" symbol="DocumentTypePass" lines="all" reason="Document type detection pass" />
+
+      <!-- Validators -->
+      <file path="src/pii/validators/index.ts" kind="validators" symbol="validators" lines="all" reason="All format validators (AVS, IBAN, Phone, Email, Date)" />
+
+      <!-- Address Modeling -->
+      <file path="src/pii/AddressClassifier.ts" kind="classifier" symbol="AddressClassifier" lines="all" reason="Address component classification" />
+      <file path="src/pii/AddressLinker.ts" kind="linker" symbol="AddressLinker" lines="all" reason="Proximity-based address component linking" />
+      <file path="src/pii/AddressScorer.ts" kind="scorer" symbol="AddressScorer" lines="all" reason="Address confidence scoring" />
+      <file path="src/pii/SwissPostalDatabase.ts" kind="database" symbol="SwissPostalDatabase" lines="all" reason="Swiss postal code validation" />
+
+      <!-- Document Type Detection -->
+      <file path="src/pii/DocumentClassifier.ts" kind="classifier" symbol="DocumentClassifier" lines="all" reason="Document type classification (INVOICE, LETTER, etc.)" />
+      <file path="src/pii/RuleEngine.ts" kind="engine" symbol="RuleEngine" lines="all" reason="Document-type-specific detection rules" />
+
+      <!-- Browser App - Existing Code -->
+      <file path="browser-app/src/processing/PIIDetector.ts" kind="detector" symbol="PIIDetector" lines="40-318" reason="Current browser detector to refactor - add full pipeline support" />
+      <file path="browser-app/src/model/index.ts" kind="module" symbol="ModelManager exports" lines="all" reason="isModelReady(), isFallbackMode(), runInference() functions to use" />
+      <file path="browser-app/src/model/ModelManager.ts" kind="service" symbol="ModelManager" lines="all" reason="ML model loading and inference interface" />
+
+      <!-- Tests to Port -->
+      <file path="test/unit/pii/DetectionPipeline.test.js" kind="test" symbol="DetectionPipeline tests" lines="all" reason="Core pipeline tests to port to browser" />
+      <file path="test/unit/pii/AddressModeling.test.js" kind="test" symbol="Address modeling tests" lines="all" reason="Address relationship tests" />
+    </code>
+
+    <dependencies>
+      <ecosystem name="browser-app">
+        <package name="@huggingface/transformers" version="^3.8.1" purpose="ML model inference in browser" />
+        <package name="vitest" version="^2.1.0" purpose="Unit testing framework" />
+        <package name="@playwright/test" version="^1.57.0" purpose="E2E testing" />
+        <package name="typescript" version="^5.3.0" purpose="Type checking" />
+        <package name="vite" version="^5.4.0" purpose="Build tool with Web Worker support" />
+      </ecosystem>
+      <ecosystem name="vite-aliases">
+        <alias name="@core" path="../src/core" purpose="Shared core modules" />
+        <alias name="@pii" path="../src/pii" purpose="PII detection modules - can import directly" />
+        <alias name="@types" path="../src/types" purpose="Shared type definitions" />
+        <alias name="@utils" path="../src/utils" purpose="Utility functions" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">No Node.js APIs in browser code - no fs, path, electron modules</constraint>
+    <constraint source="architecture">Use async/await pattern for all pipeline operations</constraint>
+    <constraint source="architecture">Web Worker must use postMessage for communication</constraint>
+    <constraint source="story-7-2">Reuse ModelManager functions: isModelReady(), isFallbackMode(), runInference()</constraint>
+    <constraint source="story-7-2">Maintain fallback mode - graceful degradation to regex-only when model fails</constraint>
+    <constraint source="vite-config">Use @pii alias to import existing passes/validators from src/pii/</constraint>
+    <constraint source="architecture">Maintain backward compatibility with existing PIIDetector.detect() API</constraint>
+    <constraint source="prd">ML threshold 0.3 for high-recall Pass 1 (prefer false positives over false negatives)</constraint>
+    <constraint source="prd">Confidence threshold 0.6 for auto-anonymization</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="DetectionPass" kind="typescript interface" path="src/types/detection.ts" signature="interface DetectionPass { name: string; order: number; enabled: boolean; execute(text: string, entities: Entity[], context: PipelineContext): Promise&lt;Entity[]&gt;; }" />
+    <interface name="DetectionPipeline.process" kind="async method" path="src/pii/DetectionPipeline.ts" signature="async process(text: string, documentId?: string, language?: 'en' | 'fr' | 'de'): Promise&lt;DetectionResult&gt;" />
+    <interface name="PIIDetector.detect" kind="async method" path="browser-app/src/processing/PIIDetector.ts" signature="async detect(text: string): Promise&lt;ExtendedPIIMatch[]&gt;" />
+    <interface name="runInference" kind="function" path="browser-app/src/model/ModelManager.ts" signature="async runInference(text: string): Promise&lt;Array&lt;{ word: string; entity: string; score: number; start: number; end: number }&gt;&gt;" />
+    <interface name="Web Worker Message" kind="postMessage" path="browser-app/src/workers/pii.worker.ts" signature="{ type: 'detect' | 'result' | 'progress' | 'error', text?: string, entities?: Entity[], progress?: number, error?: string }" />
+  </interfaces>
+
+  <tests>
+    <standards>
+      Browser-app uses Vitest for unit tests and Playwright for E2E tests. Tests follow describe/it pattern with happy-dom for DOM simulation. Mock ML model with predefined responses for fast tests. Current test count: 246 passing. Target: 300+ after this story.
+    </standards>
+    <locations>
+      <location>browser-app/test/</location>
+      <location>browser-app/test/pii/ (to be created)</location>
+      <location>browser-app/e2e/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test HighRecallPass executes ML detection with threshold 0.3 and returns entities with source tags</idea>
+      <idea ac="AC2">Test FormatValidationPass validates Swiss AVS with mod-97 checksum, returns valid/invalid status</idea>
+      <idea ac="AC2">Test IbanValidator with ISO 7064 Mod 97-10 for CH, DE, FR IBANs</idea>
+      <idea ac="AC3">Test ContextScoringPass proximity scoring within 50-char window</idea>
+      <idea ac="AC3">Test label keyword detection ("Tel:", "Email:", "Name:") boosts confidence</idea>
+      <idea ac="AC4">Test SwissEuDetector patterns match identically to Electron version</idea>
+      <idea ac="AC5">Create accuracy comparison test using test/fixtures/piiAnnotated/ golden dataset</idea>
+      <idea ac="AC6">Test Web Worker receives postMessage and returns entities asynchronously</idea>
+      <idea ac="AC6">Test pipeline cancellation via AbortController</idea>
+      <idea ac="AC6">Test progress events during long document processing</idea>
+      <idea ac="all">Integration test: full pipeline with mock model, verify entity deduplication and flagging</idea>
+    </ideas>
+  </tests>
+</story-context>

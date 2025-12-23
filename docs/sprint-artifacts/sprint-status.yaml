@@ -100,8 +100,9 @@ development_status:
   epic-7: backlog
   7-1-document-converter-testing-fixes: done  # Completed 2025-12-19 - 203 tests passing
   7-2-ml-model-browser-integration: done  # Completed 2025-12-19 - 246 tests passing
-  7-3-pii-detection-pipeline-browser-port: backlog
-  7-4-entity-review-ui-implementation: backlog
-  7-5-file-download-batch-processing: backlog
-  7-6-pwa-deployment-readiness: backlog
+  7-3-pii-detection-pipeline-browser-port: done  # Code review APPROVED 2025-12-22
+  7-4-entity-review-ui-implementation: done  # Code review APPROVED 2025-12-22
+  7-5-file-download-batch-processing: done  # Code review APPROVED 2025-12-23 - 120 tests
+  7-6-pwa-deployment-readiness: ready-for-dev  # Context created 2025-12-23
+  7-7-manual-pii-marking-ui: drafted  # Added 2025-12-23 via correct-course
   epic-7-retrospective: optional

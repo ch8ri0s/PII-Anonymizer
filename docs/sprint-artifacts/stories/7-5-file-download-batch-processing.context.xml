@@ -1,0 +1,213 @@
+<story-context id="7-5-file-download-batch-processing" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>5</storyId>
+    <title>File Download &amp; Batch Processing</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-12-22</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/7-5-file-download-batch-processing.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user anonymizing files in the browser</asA>
+    <iWant>to download results and process multiple files</iWant>
+    <soThat>I can efficiently anonymize batches of documents</soThat>
+    <tasks>
+      <task id="1" ac="1,2">Single File Download - Create FileDownloader.ts with Blob API download</task>
+      <task id="2" ac="3,5">Batch Queue Manager - Port queue logic from Electron, define BatchItem interface</task>
+      <task id="3" ac="3,5">Batch Processing UI - Create BatchPanel.ts with status indicators and progress</task>
+      <task id="4" ac="4">ZIP Download - Implement ZipDownloader.ts using JSZip</task>
+      <task id="5" ac="6">Error Handling - Per-file error isolation, partial results, retry option</task>
+      <task id="6" ac="1-6">Integration with Entity Review - Connect to EntityReviewController</task>
+      <task id="7" ac="1-6">Testing - 40+ new tests for download and batch functionality</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Anonymized Markdown file downloads via browser</criterion>
+    <criterion id="2">Mapping file (JSON) downloads alongside anonymized file</criterion>
+    <criterion id="3">Batch processing supports multiple files (queue display, per-file status)</criterion>
+    <criterion id="4">ZIP download option for multiple files (using JSZip)</criterion>
+    <criterion id="5">Progress indicator shows per-file status during batch processing</criterion>
+    <criterion id="6">Partial results downloadable if one file fails</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 7.5: File Download &amp; Batch Processing</section>
+        <snippet>Implements file download using Blob API, batch queue manager, ZIP download with JSZip, and progress indicators for multiple file processing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/stories/7-4-entity-review-ui-implementation.md</path>
+        <title>Previous Story - Entity Review UI</title>
+        <section>Dev Agent Record</section>
+        <snippet>Created EntitySidebar, ContextMenu, EntityHighlight, PreviewPanel, EntityReviewController components. Used vitest + happy-dom for testing. Module-level state with init/destroy pattern.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- Existing download utilities -->
+      <file>
+        <path>browser-app/src/utils/download.ts</path>
+        <kind>utility</kind>
+        <symbol>downloadFile, downloadZip, formatFileSize</symbol>
+        <lines>1-67</lines>
+        <reason>EXISTING download utilities - downloadFile() and downloadZip() already implemented. Extend or reuse for story implementation.</reason>
+      </file>
+
+      <!-- Anonymizer - core anonymization logic -->
+      <file>
+        <path>browser-app/src/processing/Anonymizer.ts</path>
+        <kind>service</kind>
+        <symbol>anonymizeText, anonymizeMarkdown, FileProcessingSession</symbol>
+        <lines>1-126</lines>
+        <reason>Core anonymization logic. Use FileProcessingSession for state management and anonymizeMarkdown() for processing.</reason>
+      </file>
+
+      <!-- Electron batch queue manager to port -->
+      <file>
+        <path>src/services/batchQueueManager.ts</path>
+        <kind>service</kind>
+        <symbol>BatchQueueManager, getBatchQueueManager</symbol>
+        <lines>1-400</lines>
+        <reason>Electron batch queue implementation to PORT. Contains BatchQueueItem interface, state management, progress tracking.</reason>
+      </file>
+
+      <!-- Entity Review Controller - integration point -->
+      <file>
+        <path>browser-app/src/components/EntityReviewController.ts</path>
+        <kind>controller</kind>
+        <symbol>initEntityReviewController, loadDocument, getSelectedEntities, getAllEntities</symbol>
+        <reason>Integration point for download buttons. Get selected entities for anonymization.</reason>
+      </file>
+
+      <!-- Preview Panel - UI location for download buttons -->
+      <file>
+        <path>browser-app/src/components/PreviewPanel.ts</path>
+        <kind>component</kind>
+        <symbol>initPreviewPanel, setPreviewContent, getPreviewSelectedEntities</symbol>
+        <reason>UI component where download buttons should be added. Has onAnonymize callback.</reason>
+      </file>
+
+      <!-- Converters for batch processing -->
+      <file>
+        <path>browser-app/src/converters/index.ts</path>
+        <kind>module</kind>
+        <symbol>PdfConverter, DocxConverter, ExcelConverter, CsvConverter, TextConverter</symbol>
+        <reason>Document converters for batch processing pipeline.</reason>
+      </file>
+
+      <!-- PII Detector for batch processing -->
+      <file>
+        <path>browser-app/src/processing/PIIDetector.ts</path>
+        <kind>service</kind>
+        <symbol>PIIDetector, detectWithPipeline</symbol>
+        <reason>PII detection for batch processing. Use detectWithPipeline() with progress callbacks.</reason>
+      </file>
+
+      <!-- Types reference -->
+      <file>
+        <path>browser-app/src/types.ts</path>
+        <kind>types</kind>
+        <symbol>MappingEntry, ProcessingResult</symbol>
+        <reason>Existing type definitions. MappingEntry used by Anonymizer.</reason>
+      </file>
+
+      <!-- Component patterns from 7.4 -->
+      <file>
+        <path>browser-app/src/components/EntitySidebar.ts</path>
+        <kind>component</kind>
+        <symbol>initEntitySidebar, EntityWithSelection</symbol>
+        <reason>Reference for component patterns: CSS injection, module-level state, init/destroy lifecycle.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <npm>
+        <production>
+          <package name="jszip" version="^3.10.1">ZIP file creation for batch downloads</package>
+          <package name="@huggingface/transformers" version="^3.8.1">ML model for PII detection</package>
+          <package name="exceljs" version="^4.4.0">Excel file conversion</package>
+          <package name="mammoth" version="^1.6.0">DOCX file conversion</package>
+          <package name="pdfjs-dist" version="^4.0.379">PDF file conversion</package>
+        </production>
+        <development>
+          <package name="vitest" version="^2.1.0">Test framework</package>
+          <package name="happy-dom" version="^15.0.0">DOM testing environment</package>
+          <package name="typescript" version="^5.3.0">TypeScript compiler</package>
+          <package name="@playwright/test" version="^1.57.0">E2E testing</package>
+        </development>
+      </npm>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface>
+      <name>downloadFile</name>
+      <kind>function</kind>
+      <signature>downloadFile(content: string, filename: string, mimeType?: string): void</signature>
+      <path>browser-app/src/utils/download.ts:12</path>
+    </interface>
+    <interface>
+      <name>downloadZip</name>
+      <kind>function</kind>
+      <signature>downloadZip(files: Map&lt;string, string&gt;, zipFilename?: string): Promise&lt;void&gt;</signature>
+      <path>browser-app/src/utils/download.ts:31</path>
+    </interface>
+    <interface>
+      <name>anonymizeMarkdown</name>
+      <kind>function</kind>
+      <signature>anonymizeMarkdown(markdown: string, matches: PIIMatch[], session: FileProcessingSession): { anonymizedMarkdown: string; mappingTable: MappingEntry[] }</signature>
+      <path>browser-app/src/processing/Anonymizer.ts:95</path>
+    </interface>
+    <interface>
+      <name>getSelectedEntities</name>
+      <kind>function</kind>
+      <signature>getSelectedEntities(): EntityWithSelection[]</signature>
+      <path>browser-app/src/components/EntityReviewController.ts</path>
+    </interface>
+    <interface>
+      <name>BatchQueueItem</name>
+      <kind>interface</kind>
+      <signature>{ id: string; filePath: string; filename: string; status: BatchFileStatus; addedAt: Date; startedAt?: Date; completedAt?: Date; error?: string; metadata?: {...} }</signature>
+      <path>src/types/batchQueue.ts</path>
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint type="architecture">Use existing download.ts utilities - extend rather than recreate downloadFile() and downloadZip()</constraint>
+    <constraint type="pattern">Follow component patterns from Story 7.4: module-level state, init/destroy lifecycle, CSS injection via appendChild(styleSheet)</constraint>
+    <constraint type="pattern">Use callbacks interface pattern for parent-child communication (see ReviewCallbacks in EntityReviewController)</constraint>
+    <constraint type="testing">Use vitest + happy-dom for unit tests, follow existing test patterns in browser-app/test/</constraint>
+    <constraint type="browser">All file operations must use browser APIs (Blob, URL.createObjectURL) - no Node.js fs module</constraint>
+    <constraint type="error">Implement per-file error isolation - one failure must not stop batch processing</constraint>
+    <constraint type="ux">Show progress indicators for all async operations, allow cancellation</constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      Use vitest as the test framework with happy-dom for DOM testing environment. Tests follow describe/it pattern with vi.mock for mocking dependencies. Create test files mirroring source structure in browser-app/test/. Component tests should use setupDOM() helper to initialize document.body. Mock crypto.randomUUID and sessionStorage as needed.
+    </standards>
+    <locations>
+      <location>browser-app/test/download/</location>
+      <location>browser-app/test/batch/</location>
+      <location>browser-app/test/components/BatchPanel.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test downloadFile creates Blob with correct MIME type and triggers download link click</idea>
+      <idea ac="2">Test mapping JSON file download with correct structure</idea>
+      <idea ac="3">Test BatchQueueManager addToQueue, processQueue, status transitions</idea>
+      <idea ac="4">Test ZIP file creation with correct folder structure (anonymized/, mappings/)</idea>
+      <idea ac="5">Test progress callbacks fire correctly during batch processing</idea>
+      <idea ac="6">Test partial results available when one file fails, error isolation works</idea>
+      <idea ac="6">Test retry functionality for failed files</idea>
+      <idea>Test cancellation during batch processing</idea>
+      <idea>Test empty batch edge case</idea>
+      <idea>Test large file handling</idea>
+    </ideas>
+  </tests>
+</story-context>
