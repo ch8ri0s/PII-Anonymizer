@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
@@ -17,6 +18,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
+      // Import shared core modules from parent project
+      '@core': path.resolve(__dirname, '../src/core'),
+      '@pii': path.resolve(__dirname, '../src/pii'),
+      '@types': path.resolve(__dirname, '../src/types'),
+      '@utils': path.resolve(__dirname, '../src/utils'),
+      // Import shared test utilities
+      '@shared-test': path.resolve(__dirname, '../shared/test'),
     },
   },
 });

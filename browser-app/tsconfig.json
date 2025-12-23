@@ -15,7 +15,15 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["../src/core/*"],
+      "@pii/*": ["../src/pii/*"],
+      "@types/*": ["../src/types/*"],
+      "@utils/*": ["../src/utils/*"],
+      "@shared-test/*": ["../shared/test/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "test", "e2e"]
 }
