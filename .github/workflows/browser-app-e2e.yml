@@ -1,0 +1,121 @@
+name: Browser App E2E Tests
+
+on:
+  push:
+    branches: [main, develop, 019-pdf-table-detection]
+    paths:
+      - 'browser-app/**'
+      - '.github/workflows/browser-app-e2e.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'browser-app/**'
+
+jobs:
+  e2e-tests:
+    name: E2E Tests on ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: browser-app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: browser-app
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        working-directory: browser-app
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run E2E tests
+        working-directory: browser-app
+        run: npm run test:e2e -- --project=${{ matrix.browser }}
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: browser-app/playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos-${{ matrix.browser }}
+          path: browser-app/test-results/
+          retention-days: 7
+
+  e2e-mobile:
+    name: E2E Tests - Mobile Viewports
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: browser-app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: browser-app
+        run: npm ci
+
+      - name: Install Playwright
+        working-directory: browser-app
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Mobile E2E tests
+        working-directory: browser-app
+        run: npm run test:e2e -- --project=mobile-chrome --project=mobile-safari
+        env:
+          CI: true
+
+      - name: Upload mobile test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-mobile
+          path: browser-app/playwright-report/
+          retention-days: 30
+
+  test-report:
+    name: Publish Test Report
+    runs-on: ubuntu-latest
+    needs: [e2e-tests, e2e-mobile]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+
+      - name: Publish Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-test-report
+          path: all-reports/
+          retention-days: 30

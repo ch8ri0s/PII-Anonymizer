@@ -84,3 +84,6 @@ oldExampleStyles.css
 output.css
 output.css.map
 dist/mac-arm64/Softcom PII Anonymiser.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources/af.lproj/
+
+# Test files with real PII (not committed)
+test/.files/
