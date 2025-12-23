@@ -33,6 +33,14 @@ import {
   startReview,
   updateDetectionStatus,
 } from './ui';
+import {
+  initPWAManager,
+  initInstallBanner,
+  initStatusIndicator,
+  notifyFileProcessed,
+  setModelCached,
+  requestPersistentStorage,
+} from './pwa';
 
 // Application state
 const state = {
@@ -47,6 +55,11 @@ const processor = new FileProcessor();
  * Initialize the application
  */
 async function init(): Promise<void> {
+  // Initialize PWA functionality
+  initPWAManager();
+  initInstallBanner();
+  initStatusIndicator();
+
   // Initialize model loader UI
   initModelLoaderUI();
   setOnCancel(handleCancelModelLoad);
@@ -64,6 +77,9 @@ async function init(): Promise<void> {
 
   // Load the ML model
   await initializeModel();
+
+  // Request persistent storage after model is loaded
+  void requestPersistentStorage();
 }
 
 /**
@@ -79,6 +95,7 @@ async function initializeModel(): Promise<void> {
 
     if (result.success) {
       state.modelReady = true;
+      setModelCached(true);
       showSuccess();
       console.log('[PII Anonymizer] ML model loaded successfully');
     } else if (result.fallbackMode) {
@@ -167,6 +184,9 @@ async function handleProcessFiles(files: Map<string, FileInfo>): Promise<void> {
     // Start review with converted content (use original markdown before anonymization)
     const content = result.markdown || result.anonymizedMarkdown;
     await startReview(firstFile.name, content);
+
+    // Notify PWA that a file was processed (triggers install prompt after success)
+    notifyFileProcessed();
   } catch (error) {
     console.error('[PII Anonymizer] Processing error:', error);
     updateDetectionStatus('error', (error as Error).message);

@@ -1,10 +1,81 @@
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
   base: './',
   // Treat ONNX model files as static assets
   assetsInclude: ['**/*.onnx', '**/*.wasm'],
+  plugins: [
+    VitePWA({
+      registerType: 'autoUpdate',
+      // Include service worker in dev mode for testing
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+      // Workbox configuration for service worker
+      workbox: {
+        // Cache static assets with cache-first strategy
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Don't precache ML model files (they're cached in IndexedDB by @huggingface/transformers)
+        globIgnores: ['**/node_modules/**/*', '**/*.onnx', '**/*.wasm'],
+        // Maximum file size to precache (2MB)
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        // Runtime caching for additional assets
+        runtimeCaching: [
+          {
+            // Cache locale files
+            urlPattern: /\/locales\/.*\.json$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'locales-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+          {
+            // Cache images
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+          {
+            // Network-only for external API calls (HuggingFace model downloads)
+            urlPattern: /^https:\/\/huggingface\.co\//,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Network-only for CDN model downloads
+            urlPattern: /^https:\/\/cdn-lfs\.huggingface\.co\//,
+            handler: 'NetworkOnly',
+          },
+        ],
+        // Clean up old caches
+        cleanupOutdatedCaches: true,
+        // Skip waiting to activate new service worker immediately
+        skipWaiting: true,
+        // Take control of clients immediately
+        clientsClaim: true,
+      },
+      // Inline the manifest (we have our own manifest.json in public/)
+      injectManifest: {
+        injectionPoint: undefined,
+      },
+      // Use our existing manifest.json
+      manifest: false,
+      // Enable strategies for auto-update with user notification
+      selfDestroying: false,
+    }),
+  ],
   build: {
     outDir: 'dist',
     sourcemap: true,
