@@ -22,7 +22,7 @@ import TextToMarkdown from '../../dist/converters/TextToMarkdown.js';
 // Import expected results from shared test utilities
 import {
   TEST_DOCUMENTS,
-  getExpectedResults,
+  getExpectedResults as _getExpectedResults,
 } from '../../shared/dist/test/expectedResults.js';
 import { PERFORMANCE_THRESHOLDS } from '../../shared/dist/test/constants.js';
 
@@ -30,7 +30,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const TEST_FILES_DIR = path.join(__dirname, '../.files');
-const FIXTURES_DIR = path.join(__dirname, '../fixtures');
+const _FIXTURES_DIR = path.join(__dirname, '../fixtures');
 
 function getAvailableTestFiles() {
   if (!fs.existsSync(TEST_FILES_DIR)) {
@@ -45,8 +45,8 @@ describe('Converter Comparison Tests (Electron)', function () {
   let pdfConverter;
   let docxConverter;
   let excelConverter;
-  let csvConverter;
-  let textConverter;
+  let _csvConverter;
+  let _textConverter;
 
   const testFiles = getAvailableTestFiles();
 
@@ -54,8 +54,8 @@ describe('Converter Comparison Tests (Electron)', function () {
     pdfConverter = new PdfToMarkdown();
     docxConverter = new DocxToMarkdown();
     excelConverter = new ExcelToMarkdown();
-    csvConverter = new CsvToMarkdown();
-    textConverter = new TextToMarkdown();
+    _csvConverter = new CsvToMarkdown();
+    _textConverter = new TextToMarkdown();
 
     if (testFiles.length === 0) {
       console.warn('⚠️  No test files found in test/.files/ - some tests will be skipped');

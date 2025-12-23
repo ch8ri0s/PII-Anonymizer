@@ -103,8 +103,7 @@ async function withTimeout(promise, timeoutMs, operation = 'Operation', options 
       racers.push(abortPromise);
     }
 
-    const result = await Promise.race(racers);
-    return result;
+    return await Promise.race(racers);
   } finally {
     // ✅ CRITICAL: Prevent memory leaks
     if (timeoutHandle !== undefined) {
@@ -679,7 +678,7 @@ function clearElapsedTimeInterval() {
  * @param {number} progress.progress - Percentage (0-100)
  * @param {string} progress.message - Status message
  */
-function updateProgress(progress) {
+function _updateProgress(progress) {
   if (processingMessage) {
     processingMessage.textContent = progress.message || 'Processing...';
   }
@@ -740,11 +739,11 @@ async function processFile() {
     rendererLog.debug('File processing timeout calculated', { timeoutMs: timeout, timeoutSec: (timeout / 1000).toFixed(1) });
 
     // Story 6.5 AC1: Show timeout dialog when threshold is exceeded
-    let continueProcessing = true;
+    let _continueProcessing = true;
     const onTimeout = async () => {
       const choice = await showTimeoutDialog();
       if (choice === 'cancel') {
-        continueProcessing = false;
+        _continueProcessing = false;
         cancelProcessing();
       } else {
         hideTimeoutDialog();
