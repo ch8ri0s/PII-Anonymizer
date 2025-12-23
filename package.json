@@ -24,7 +24,8 @@
     "build": "electron-builder",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
-    "build:linux": "electron-builder --linux"
+    "build:linux": "electron-builder --linux",
+    "prepare": "husky"
   },
   "keywords": [
     "pii",
@@ -72,6 +73,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-sonarjs": "^3.0.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "mocha": "^11.7.5",
     "pdfkit": "^0.17.2",
     "postcss": "^8.5.6",
@@ -134,6 +137,15 @@
           "icon.png"
         ]
       }
+    ]
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs}": [
+      "eslint --fix --max-warnings 0 --no-warn-ignored"
+    ],
+    "*.ts": [
+      "eslint --fix --max-warnings 0 --no-warn-ignored",
+      "bash -c 'npm run typecheck'"
     ]
   }
 }

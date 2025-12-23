@@ -167,6 +167,7 @@ export default [
         process: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
+        NodeJS: 'readonly',
         // Browser globals (for renderer TypeScript files)
         window: 'readonly',
         document: 'readonly',
@@ -403,6 +404,7 @@ export default [
       'docs/**',
       'locales/**',
       'browser-app/**',
+      'shared/**', // Has its own tsconfig.json
     ],
   },
 ];
