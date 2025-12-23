@@ -9,7 +9,7 @@ import { processFile } from './fileProcessor.js';
 import fs from 'fs/promises';
 import _path from 'path';
 
-const PDF_PATH = '/Users/olivier/Downloads/Softcom_Attestation_LPP.pdf';
+const PDF_PATH = './test/fixtures/sample-document.pdf';
 const OUTPUT_DIR = '/Users/olivier/Downloads';
 
 async function testPdfFixes() {

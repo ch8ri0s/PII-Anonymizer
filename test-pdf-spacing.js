@@ -8,7 +8,7 @@ import fs from 'fs/promises';
 async function testPdfSpacing() {
   console.log('Testing PDF spacing fixes...\n');
 
-  const pdfPath = '/Users/olivier/Downloads/Softcom_Attestation_LPP.pdf';
+  const pdfPath = './test/fixtures/sample-document.pdf';
   const converter = new PdfToMarkdown();
 
   try {

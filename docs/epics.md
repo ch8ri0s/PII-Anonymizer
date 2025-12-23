@@ -23,9 +23,9 @@ This document provides the epic and story breakdown for A5-PII-Anonymizer v3.0 e
 | Epic 4 | User Review Workflow | 4 | FR-3.5, FR-5.7, FR-5.8 |
 | Epic 5 | Confidence Scoring & Feedback | 3 | Quality improvement |
 | Epic 6 | Infrastructure & Developer Experience | 8 | DX-1-4, SEC-1-2, UX-1, BUG-1 |
-| Epic 7 | Browser Migration | 6 | FR-6.1-6.6 (New) |
+| Epic 7 | Browser Migration | 7 | FR-6.1-6.6, FR-5.8 (browser) |
 
-**Total:** 7 Epics, 34 Stories
+**Total:** 7 Epics, 35 Stories
 
 ---
 
@@ -1199,6 +1199,35 @@ So that **I can use it offline after initial model download**.
 
 ---
 
+### Story 7.7: Manual PII Marking UI Polish
+
+As a **user who found missed PII in the browser app**,
+I want **to manually mark text as PII using an intuitive right-click context menu**,
+So that **the system includes my corrections in the anonymization and I can confidently protect all sensitive data**.
+
+**Acceptance Criteria:**
+
+**Given** a document is loaded with detected PII in the browser preview
+**When** user selects text and wants to mark it as PII
+**Then** right-click on selected text shows context menu with "Mark as PII" option
+
+**And** clicking entity type adds selection as manual entity
+**And** manual entities appear in sidebar with "Manual" badge and 100% confidence
+**And** keyboard shortcut (Cmd/Ctrl+M) opens entity type selector
+**And** toast notification confirms entity addition
+**And** manual entity can be removed by deselecting in sidebar
+
+**Prerequisites:** Story 7.4 (entity review UI)
+
+**Technical Notes:**
+- Fix context menu trigger: change from `mouseup` to `contextmenu` (right-click)
+- Add keyboard shortcut support for power users
+- Create Toast component for notifications
+- Ensure manual entities integrate with anonymization pipeline
+- Test across Chrome, Firefox, Safari, Edge
+
+---
+
 ## FR Coverage Matrix
 
 | FR ID | Description | Epic | Stories | Status |
@@ -1223,6 +1252,7 @@ So that **I can use it offline after initial model download**.
 | FR-6.4 | Entity review UI (browser) | Epic 7 | 7.4 | Planned |
 | FR-6.5 | Browser file I/O | Epic 7 | 7.5 | Planned |
 | FR-6.6 | PWA support | Epic 7 | 7.6 | Planned |
+| FR-5.8 | Manual PII marking (browser) | Epic 7 | 7.7 | Planned |
 
 **Coverage Validation:** All planned FRs from PRD are covered by at least one story.
 

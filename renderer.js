@@ -2516,15 +2516,26 @@ async function checkAndDownloadModel() {
       return;
     }
 
-    // Get detected locale
-    const localeResponse = await window.i18nAPI.getDetectedLocale();
-    if (!localeResponse || !localeResponse.success) {
-      i18nLog.warn('Failed to detect locale, using fallback');
-      return;
-    }
+    // Check for saved language preference first
+    const storedLanguage = localStorage.getItem('preferredLanguage');
+    const languageSource = localStorage.getItem('languageSource');
 
-    const locale = localeResponse.language || 'en';
-    i18nLog.info('Detected locale', { locale });
+    let locale;
+    if (storedLanguage && languageSource === 'manual' && ['en', 'fr', 'de'].includes(storedLanguage)) {
+      // User explicitly set a language preference - respect it
+      locale = storedLanguage;
+      i18nLog.info('Using saved language preference', { locale, source: 'manual' });
+    } else {
+      // No manual preference - detect system language
+      const localeResponse = await window.i18nAPI.getDetectedLocale();
+      if (!localeResponse || !localeResponse.success) {
+        i18nLog.warn('Failed to detect locale, using fallback');
+        locale = 'en';
+      } else {
+        locale = localeResponse.language || 'en';
+        i18nLog.info('Using system language', { locale, systemLocale: localeResponse.systemLocale });
+      }
+    }
 
     // Load translations for detected locale
     const translationsResponse = await window.i18nAPI.getTranslations(locale);

@@ -8,7 +8,7 @@ import fs from 'fs/promises';
 async function testRawPdf() {
   console.log('Extracting raw PDF text...\n');
 
-  const pdfPath = '/Users/olivier/Downloads/Softcom_Attestation_LPP.pdf';
+  const pdfPath = './test/fixtures/sample-document.pdf';
   const dataBuffer = await fs.readFile(pdfPath);
 
   try {
