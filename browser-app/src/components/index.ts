@@ -24,6 +24,8 @@ export {
   destroyContextMenu,
   setupTextSelectionHandler,
   createTextOffsetCalculator,
+  getPendingSelection,
+  getEntityTypes,
   type OnMarkCallback,
 } from './ContextMenu';
 
@@ -131,3 +133,30 @@ export {
   destroyPreviewBody,
   type PreviewBodyConfig,
 } from './preview/PreviewBody';
+
+export {
+  showToast,
+  showSuccess,
+  showError,
+  showInfo,
+  dismissToast,
+  dismissAllToasts,
+  getToastCount,
+  destroyToasts,
+  type ToastType,
+  type ToastOptions,
+} from './Toast';
+
+export {
+  initKeyboardShortcuts,
+  destroyKeyboardShortcuts,
+  isKeyboardShortcutsInitialized,
+} from './KeyboardShortcuts';
+
+// Feedback logging settings panel (Story 7.8)
+export {
+  initFeedbackSettingsPanel,
+  updateFeedbackSettingsPanel,
+  destroyFeedbackSettingsPanel,
+  createCompactFeedbackToggle,
+} from './FeedbackSettingsPanel';

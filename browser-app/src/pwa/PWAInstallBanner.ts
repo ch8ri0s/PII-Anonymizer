@@ -12,7 +12,6 @@ import {
   onInstallStateChange,
   promptInstall,
   isIOS,
-  getIOSInstallInstructions,
   type PWAInstallState,
 } from './PWAManager';
 
@@ -387,7 +386,7 @@ function showBanner(): void {
     const action = target.dataset.action;
 
     if (action === 'install') {
-      handleInstallClick();
+      void handleInstallClick();
     } else if (action === 'dismiss') {
       hideBanner();
     }

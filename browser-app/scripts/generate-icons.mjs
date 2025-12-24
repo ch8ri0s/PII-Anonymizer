@@ -8,8 +8,7 @@
  * Usage: node scripts/generate-icons.mjs
  */
 
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
+import { readFile, writeFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -38,7 +37,7 @@ async function generateIcons() {
   let sharp;
   try {
     sharp = (await import('sharp')).default;
-  } catch (e) {
+  } catch {
     console.log('sharp not installed. Creating placeholder PNGs...');
     console.log('Run: npm install sharp --save-dev to generate proper icons');
     await createPlaceholderIcons();
@@ -66,7 +65,7 @@ async function generateIcons() {
           bottom: padding,
           left: padding,
           right: padding,
-          background: { r: 79, g: 70, b: 229, alpha: 1 } // theme color background
+          background: { r: 79, g: 70, b: 229, alpha: 1 }, // theme color background
         });
     }
 
@@ -91,7 +90,7 @@ async function createPlaceholderIcons() {
     0x54, 0x08, 0xD7, 0x63, 0x98, 0x8D, 0xCD, 0x01,
     0x00, 0x02, 0x29, 0x00, 0xEB, 0x8C, 0x04, 0xE3,
     0x9F, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
-    0x44, 0xAE, 0x42, 0x60, 0x82
+    0x44, 0xAE, 0x42, 0x60, 0x82,
   ]);
 
   for (const { name } of ICON_SIZES) {

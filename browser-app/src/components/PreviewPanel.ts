@@ -23,7 +23,17 @@ import {
   destroyContextMenu,
   setupTextSelectionHandler,
   createTextOffsetCalculator,
+  setOffsetMapperState,
 } from './ContextMenu';
+import { showSuccess } from './Toast';
+import { initKeyboardShortcuts, destroyKeyboardShortcuts } from './KeyboardShortcuts';
+import {
+  setCurrentDocument,
+  clearCurrentDocument,
+  initializeSelectionTracking,
+  handleSelectionChanges,
+  handleManualMark as logManualMark,
+} from '../services/FeedbackIntegration';
 import {
   initPreviewHeader,
   setHeaderFile,
@@ -36,6 +46,8 @@ import {
   setBodyEntities,
   scrollToBodyEntity,
   getContentElement,
+  getBodyEntities,
+  isShowingAnonymized,
   destroyPreviewBody,
 } from './preview/PreviewBody';
 
@@ -264,9 +276,15 @@ export function initPreviewPanel(
   // Setup context menu for manual marking
   const contentElement = getContentElement();
   if (contentElement) {
+    // Set offset mapper state before initializing context menu
+    // This enables proper offset mapping from rendered DOM to original content
+    setOffsetMapperState(getBodyEntities, isShowingAnonymized);
     initContextMenu(handleManualMark);
     setupTextSelectionHandler(contentElement, createTextOffsetCalculator(contentElement));
   }
+
+  // Setup keyboard shortcuts (Cmd/Ctrl+M)
+  initKeyboardShortcuts();
 
   // Setup event handlers
   collapseButton?.addEventListener('click', toggleSidebar);
@@ -283,6 +301,9 @@ export function setPreviewContent(content: string, fileName?: string): void {
 
   setBodyContent(content);
   setHeaderFile(state.fileName, content);
+
+  // Set document context for feedback logging (Story 7.8)
+  setCurrentDocument(content, state.fileName);
 }
 
 /**
@@ -308,6 +329,9 @@ export function setPreviewEntities(entities: ExtendedPIIMatch[]): void {
   updateEntities(entitiesWithSelection);
   setBodyEntities(entitiesWithSelection);
   setHeaderEntities(entitiesWithSelection);
+
+  // Initialize selection tracking for feedback logging (Story 7.8)
+  initializeSelectionTracking(entitiesWithSelection);
 }
 
 /**
@@ -326,6 +350,9 @@ function handleSelectionChange(entities: EntityWithSelection[]): void {
   // Update sub-components
   setBodyEntities(entities);
   setHeaderEntities(entities);
+
+  // Log selection changes for feedback (Story 7.8 - AC1, AC3)
+  void handleSelectionChanges(entities);
 
   // Notify parent
   config.onEntityChange?.(entities);
@@ -357,6 +384,13 @@ function handleManualMark(
 
   setBodyEntities(state.entities);
   setHeaderEntities(state.entities);
+
+  // Log manual marking for feedback (Story 7.8 - AC1, AC2)
+  void logManualMark(text, type, start, end);
+
+  // Show success toast notification (AC6)
+  const truncatedText = text.length > 30 ? text.substring(0, 30) + '...' : text;
+  showSuccess(`Marked "${truncatedText}" as ${type}`);
 
   config.onEntityChange?.(state.entities);
 }
@@ -406,6 +440,9 @@ export function clearPreviewEntities(): void {
   setBodyEntities([]);
   setHeaderEntities([]);
   state.entities = [];
+
+  // Clear document context for feedback logging (Story 7.8)
+  clearCurrentDocument();
 }
 
 /**
@@ -441,6 +478,10 @@ export function destroyPreviewPanel(): void {
   destroyPreviewBody();
   destroyEntitySidebar();
   destroyContextMenu();
+  destroyKeyboardShortcuts();
+
+  // Clear document context for feedback logging (Story 7.8)
+  clearCurrentDocument();
 
   if (panelContainer) {
     panelContainer.innerHTML = '';

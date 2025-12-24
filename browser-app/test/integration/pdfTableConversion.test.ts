@@ -20,7 +20,9 @@ const BROWSER_FIXTURES_DIR = path.join(__dirname, '../fixtures');
 
 // Helper to create File from buffer
 function bufferToFile(buffer: Buffer, filename: string): File {
-  const blob = new Blob([buffer]);
+  // Convert Buffer to Uint8Array to avoid type compatibility issues
+  const uint8Array = new Uint8Array(buffer);
+  const blob = new Blob([uint8Array]);
   return new File([blob], filename, { type: getMimeType(filename) });
 }
 

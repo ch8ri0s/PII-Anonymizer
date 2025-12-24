@@ -288,12 +288,12 @@ function showUpdateBanner(): void {
   container.innerHTML = createUpdateBannerHTML();
   updateBannerElement = container.firstElementChild as HTMLElement;
 
-  updateBannerElement.addEventListener('click', async (e) => {
+  updateBannerElement.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const action = target.dataset.action || target.closest('[data-action]')?.getAttribute('data-action');
 
     if (action === 'update') {
-      await applyUpdate();
+      void applyUpdate();
     } else if (action === 'dismiss') {
       updateBannerElement?.remove();
       updateBannerElement = null;

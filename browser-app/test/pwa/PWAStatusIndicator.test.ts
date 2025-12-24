@@ -26,7 +26,6 @@ const mockUpdateState = {
 };
 
 let offlineCallback: ((state: typeof mockOfflineState) => void) | null = null;
-let updateCallback: ((state: typeof mockUpdateState) => void) | null = null;
 
 vi.mock('../../src/pwa/PWAManager', () => ({
   getOfflineState: vi.fn(() => ({ ...mockOfflineState })),
@@ -35,10 +34,7 @@ vi.mock('../../src/pwa/PWAManager', () => ({
     offlineCallback = cb;
     return vi.fn();
   }),
-  onUpdateStateChange: vi.fn((cb) => {
-    updateCallback = cb;
-    return vi.fn();
-  }),
+  onUpdateStateChange: vi.fn(() => vi.fn()),
   applyUpdate: vi.fn(() => Promise.resolve()),
 }));
 
@@ -46,7 +42,6 @@ import {
   initStatusIndicator,
   destroyStatusIndicator,
   getIndicatorElement,
-  mountIndicator,
 } from '../../src/pwa/PWAStatusIndicator';
 import * as PWAManager from '../../src/pwa/PWAManager';
 
@@ -54,7 +49,6 @@ describe('PWAStatusIndicator', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div class="review-header-left"></div>';
     offlineCallback = null;
-    updateCallback = null;
     vi.clearAllMocks();
 
     // Reset mock state

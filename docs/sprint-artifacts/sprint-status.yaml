@@ -103,7 +103,17 @@ development_status:
   7-3-pii-detection-pipeline-browser-port: done  # Code review APPROVED 2025-12-22
   7-4-entity-review-ui-implementation: done  # Code review APPROVED 2025-12-22
   7-5-file-download-batch-processing: done  # Code review APPROVED 2025-12-23 - 120 tests
-  7-6-pwa-deployment-readiness: ready-for-dev  # Context created 2025-12-23
-  7-7-manual-pii-marking-ui: drafted  # Added 2025-12-23 via correct-course
-  7-8-user-correction-feedback-logging: drafted  # Added 2025-12-23 via correct-course
+  7-6-pwa-deployment-readiness: done  # Code review APPROVED 2025-12-23 - 39 tests
+  7-7-manual-pii-marking-ui: done  # Code review APPROVED 2025-12-23
+  7-8-user-correction-feedback-logging: done  # Code Review APPROVED 2025-12-24 - 113 tests
   epic-7-retrospective: optional
+
+  # Epic 8: PII Detection Quality Improvement - Presidio-inspired patterns
+  epic-8: contexted  # Tech spec created 2025-12-23
+  8-1-denylist-system-implementation: drafted  # False positive filtering
+  8-2-context-words-database: drafted  # Multilingual context words (EN/FR/DE)
+  8-3-context-enhancement-system: drafted  # Presidio-style confidence boosting
+  8-4-pipeline-integration: drafted  # Wire into HighRecallPass & ContextScoringPass
+  8-5-country-specific-recognizer-architecture: drafted  # Extensible pattern modules
+  8-6-integration-tests-quality-validation: drafted  # Precision >90%, Recall ≥90%
+  epic-8-retrospective: optional

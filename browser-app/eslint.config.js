@@ -184,6 +184,12 @@ export default [
         performance: 'readonly',
         navigator: 'readonly',
         self: 'readonly',
+        indexedDB: 'readonly',
+        IDBDatabase: 'readonly',
+        IDBKeyRange: 'readonly',
+        IDBRequest: 'readonly',
+        IDBCursorWithValue: 'readonly',
+        IDBOpenDBRequest: 'readonly',
         // Test globals (Vitest)
         describe: 'readonly',
         it: 'readonly',
@@ -379,6 +385,17 @@ export default [
   },
 
   // ===========================================
+  // Relaxed rules for services (feedback logging)
+  // ===========================================
+  {
+    files: ['src/services/**/*.ts'],
+    rules: {
+      'security/detect-object-injection': 'off',
+      'sonarjs/no-duplicate-string': 'off',
+    },
+  },
+
+  // ===========================================
   // Relaxed rules for test files
   // ===========================================
   {
@@ -451,6 +468,7 @@ export default [
     ignores: [
       'node_modules/**',
       'dist/**',
+      'dev-dist/**',
       'build/**',
       'public/**',
       '*.config.js',

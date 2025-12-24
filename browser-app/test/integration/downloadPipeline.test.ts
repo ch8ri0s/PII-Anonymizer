@@ -15,8 +15,6 @@ import { describe, it, expect } from 'vitest';
 import {
   createMockProcessingResult,
   createMockEntityReviewState,
-  getReviewResult,
-  applySelectiveAnonymization,
   generateMarkdownOutput,
   generateMappingOutput,
   type EntityReviewState,
