@@ -41,8 +41,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: browser-app/package-lock.json
 
-      - name: Install root dependencies
-        run: npm ci
+      - name: Install TypeScript for shared module
+        run: npm install --no-save typescript
 
       - name: Build shared module
         run: npx tsc -p shared/tsconfig.json
