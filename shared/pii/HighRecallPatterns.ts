@@ -12,6 +12,7 @@
  */
 export type EntityType =
   | 'PERSON'
+  | 'PERSON_NAME'
   | 'ORGANIZATION'
   | 'LOCATION'
   | 'DATE'
@@ -37,6 +38,8 @@ export interface PatternDef {
   pattern: RegExp;
   /** Priority for conflict resolution (lower = higher priority) */
   priority: number;
+  /** Optional validation function to filter false positives */
+  validate?: (match: string) => boolean;
 }
 
 /**
@@ -45,6 +48,7 @@ export interface PatternDef {
 export const ML_ENTITY_MAPPING: Record<string, EntityType> = {
   PER: 'PERSON',
   PERSON: 'PERSON',
+  PERSON_NAME: 'PERSON_NAME',
   ORG: 'ORGANIZATION',
   ORGANIZATION: 'ORGANIZATION',
   LOC: 'LOCATION',
@@ -140,10 +144,12 @@ export function buildHighRecallPatterns(): PatternDef[] {
     // === Priority 3: Address patterns ===
 
     // Swiss postal codes with city
+    // Note: Swiss postal codes are 1000-9999, but we exclude patterns that look like
+    // ISO timestamps (year followed by T or -) to avoid false positives in frontmatter
     {
       type: 'SWISS_ADDRESS',
       pattern:
-        /\b(?:CH[-\s]?)?[1-9]\d{3}\s+[A-ZÄÖÜ][a-zäöüé]+(?:[-\s][A-Za-zäöüé]+)*/g,
+        /\b(?:CH[-\s]?)?[1-9]\d{3}(?![-T])\s+[A-ZÄÖÜ][a-zäöüé]+(?:[-\s][A-Za-zäöüé]+)*/g,
       priority: 3,
     },
 
@@ -214,6 +220,21 @@ export function buildHighRecallPatterns(): PatternDef[] {
         /\b(?:CHF|EUR|€|Fr\.?)\s*\d{1,3}(?:['\s.,]\d{3})*(?:[.,]\d{2})?\b/gi,
       priority: 5,
     },
+
+    // === Priority 6: Person names (contextual patterns) ===
+    // These patterns look for names in common contexts to reduce false positives
+
+    // Names in "FirstName LastName" pattern (European names with accents)
+    // Must have at least 2 parts, each starting with uppercase
+    // Uses [ ]+ instead of \s+ to avoid matching across newlines
+    // Avoid matching common words and frontmatter content
+    {
+      type: 'PERSON_NAME',
+      pattern:
+        /\b([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})[ ]+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})(?:[ ]+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})?\b/g,
+      priority: 6,
+      validate: validatePersonName,
+    },
   ];
 }
 
@@ -233,3 +254,52 @@ export const DEFAULT_RULE_CONFIDENCE = 0.7;
  * Minimum match length to avoid false positives
  */
 export const MIN_MATCH_LENGTH = 3;
+
+/**
+ * Common words that should not be detected as person names
+ * (frontmatter keywords, common document terms, etc.)
+ */
+const PERSON_NAME_EXCLUSIONS = new Set([
+  // Frontmatter/YAML keys
+  'source', 'processed', 'anonymised', 'anonymized', 'format', 'model',
+  // Common document terms
+  'fondation', 'collective', 'case', 'postale', 'notre', 'votre',
+  'scanning', 'assurances', 'technologies', 'visiteurs', 'direct',
+  'contact', 'information', 'details', 'address', 'email', 'phone',
+  // Geographic terms
+  'zurich', 'zürich', 'geneve', 'geneva', 'bern', 'basel', 'lausanne',
+  'suisse', 'switzerland', 'schweiz',
+  // Address terms (German street suffixes that might appear after names)
+  'chemin', 'route', 'rue', 'avenue', 'strasse', 'street', 'place', 'platz',
+  'bahnhofstrasse', 'hauptstrasse', 'poststrasse', 'dorfstrasse', 'schulstrasse',
+  // Common titles/honorifics (should be followed by name, not be the name)
+  'mesdames', 'messieurs', 'madame', 'monsieur', 'herr', 'frau',
+  // Technical terms
+  'detection', 'browser', 'document', 'markdown', 'sample', 'test',
+]);
+
+/**
+ * Validate a potential person name match
+ * Returns true if the match looks like a real person name
+ */
+export function validatePersonName(name: string): boolean {
+  if (!name || name.length < 5) return false;
+
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return false;
+
+  for (const part of parts) {
+    const lowerPart = part.toLowerCase();
+
+    // Reject if any part is in exclusion list
+    if (PERSON_NAME_EXCLUSIONS.has(lowerPart)) return false;
+
+    // Reject if part is all uppercase (likely acronym) and > 2 chars
+    if (part === part.toUpperCase() && part.length > 2) return false;
+
+    // Each part should start with uppercase followed by lowercase
+    if (!/^[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+$/.test(part)) return false;
+  }
+
+  return true;
+}

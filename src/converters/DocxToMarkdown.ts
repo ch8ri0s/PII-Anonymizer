@@ -34,7 +34,7 @@ export class DocxToMarkdown extends MarkdownConverter {
       const buffer = await fs.readFile(filePath);
       const arrayBuffer = buffer.buffer.slice(
         buffer.byteOffset,
-        buffer.byteOffset + buffer.byteLength
+        buffer.byteOffset + buffer.byteLength,
       );
 
       const input: ConverterInput = {

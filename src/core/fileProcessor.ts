@@ -22,9 +22,6 @@ import { DocxToMarkdown } from '../converters/DocxToMarkdown.js';
 import { ExcelToMarkdown } from '../converters/ExcelToMarkdown.js';
 import { PdfToMarkdown } from '../converters/PdfToMarkdown.js';
 
-// Import Swiss/EU PII detector
-import { SwissEuDetector } from '../pii/SwissEuDetector.js';
-
 // Import new multi-pass detection pipeline (Epic 1)
 import { createPipeline } from '../pii/DetectionPipeline.js';
 import { createHighRecallPass } from '../pii/passes/HighRecallPass.js';
@@ -198,14 +195,12 @@ env.quantized = false;
 const MODEL_NAME = 'Xenova/distilbert-base-multilingual-cased-ner-hrl';
 
 // Pipeline reference (shared across sessions for performance)
+// Using Pipeline from transformers.js - we don't have complete type definitions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let nerPipeline: any = null;
 
-// Swiss/EU detector instance (shared, stateless) - kept for backward compatibility
-// @ts-expect-error Kept for backward compatibility, may be used in future
-const _swissEuDetector = new SwissEuDetector();
-
 // Multi-pass detection pipeline instance (shared)
+// Using internal pipeline type - we don't have complete type definitions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let detectionPipeline: any = null;
 
@@ -690,11 +685,9 @@ async function anonymizeText(text: string, session: FileProcessingSession): Prom
     if (!entityText) continue;
 
     // Skip if this entity's range overlaps with a grouped address (Story 2.4: AC-2.4.4)
-    if (typeof entity.start === 'number' && typeof entity.end === 'number') {
-      if (session.isRangeAnonymized(entity.start, entity.end)) {
-        mlLog.debug('Skipping entity (overlaps with grouped address)', { entityType });
-        continue;
-      }
+    if (typeof entity.start === 'number' && typeof entity.end === 'number' && session.isRangeAnonymized(entity.start, entity.end)) {
+      mlLog.debug('Skipping entity (overlaps with grouped address)', { entityType });
+      continue;
     }
 
     // CRITICAL FIX: Filter entity BEFORE adding to session mapping

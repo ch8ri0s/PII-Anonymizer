@@ -256,6 +256,7 @@ export interface ReviewResult {
  */
 export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
   PERSON: 'Person',
+  PERSON_NAME: 'Person Name',
   ORGANIZATION: 'Organization',
   LOCATION: 'Location',
   ADDRESS: 'Address',
@@ -288,6 +289,7 @@ export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
  */
 export const ENTITY_TYPE_COLORS: Record<EntityType, string> = {
   PERSON: 'badge-blue',
+  PERSON_NAME: 'badge-blue',
   ORGANIZATION: 'badge-purple',
   LOCATION: 'badge-green',
   ADDRESS: 'badge-green',

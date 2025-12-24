@@ -489,11 +489,11 @@ export function createValidatedHandler<TInput, TOutput>(
   return async (event: IpcMainInvokeEvent, data: unknown) => {
     const validation = validateIpcRequest(event, data, schema, options);
 
-    if (!validation.success) {
+    if (!validation.success || !validation.data) {
       return { success: false, error: validation.error || 'Validation failed' };
     }
 
-    return handler(validation.data!, event);
+    return handler(validation.data, event);
   };
 }
 
@@ -509,16 +509,16 @@ export function validateProcessFileInput(
   data: unknown,
 ): IpcValidationResult<ProcessFileInput> {
   const result = validateIpcRequest(event, data, ProcessFileInputSchema);
-  if (!result.success) return result;
+  if (!result.success || !result.data) return result;
 
   // Additional path validation for filePath
-  const pathResult = validatePath(result.data!.filePath, {
+  const pathResult = validatePath(result.data.filePath, {
     mustExist: true,
     allowedExtensions: SUPPORTED_DOCUMENT_EXTENSIONS,
     maxFileSize: DEFAULT_SIZE_LIMITS.maxFileSize,
   });
 
-  if (!pathResult.success) {
+  if (!pathResult.success || !pathResult.data) {
     return { success: false, error: pathResult.error };
   }
 
@@ -526,8 +526,8 @@ export function validateProcessFileInput(
   return {
     success: true,
     data: {
-      ...result.data!,
-      filePath: pathResult.data!,
+      ...result.data,
+      filePath: pathResult.data,
     },
   };
 }

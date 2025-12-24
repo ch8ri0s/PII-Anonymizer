@@ -34,6 +34,21 @@ const LABEL_KEYWORDS: Record<EntityType, string[]> = {
     'monsieur',
     'madame',
   ],
+  PERSON_NAME: [
+    'name',
+    'nom',
+    'vorname',
+    'nachname',
+    'herr',
+    'frau',
+    'mr',
+    'mrs',
+    'ms',
+    'dr',
+    'prof',
+    'monsieur',
+    'madame',
+  ],
   ORGANIZATION: [
     'firma',
     'company',
@@ -130,6 +145,7 @@ const LABEL_KEYWORDS: Record<EntityType, string[]> = {
  */
 const RELATED_TYPES: Record<EntityType, EntityType[]> = {
   PERSON: ['PHONE', 'EMAIL', 'ADDRESS', 'SWISS_ADDRESS', 'DATE'],
+  PERSON_NAME: ['PHONE', 'EMAIL', 'ADDRESS', 'SWISS_ADDRESS', 'DATE'],
   ORGANIZATION: ['PHONE', 'EMAIL', 'ADDRESS', 'VAT_NUMBER', 'IBAN'],
   LOCATION: ['ADDRESS', 'SWISS_ADDRESS', 'EU_ADDRESS'],
   ADDRESS: ['PERSON', 'ORGANIZATION', 'PHONE'],

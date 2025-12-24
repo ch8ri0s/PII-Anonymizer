@@ -470,8 +470,13 @@ export class EntityReviewUI {
       edited: 'entity-edited',
     };
 
-    const confidenceClass = entity.confidence >= 0.8 ? 'confidence-high' :
-      entity.confidence >= 0.6 ? 'confidence-medium' : 'confidence-low';
+    // Determine confidence class without nested ternary
+    let confidenceClass = 'confidence-low';
+    if (entity.confidence >= 0.8) {
+      confidenceClass = 'confidence-high';
+    } else if (entity.confidence >= 0.6) {
+      confidenceClass = 'confidence-medium';
+    }
 
     return `
       <div class="entity-item ${statusClasses[entity.status]} ${entity.flaggedForReview ? 'entity-flagged' : ''}" data-entity-id="${entity.id}">
@@ -553,91 +558,113 @@ export class EntityReviewUI {
     if (!this.container) return;
 
     // Delegate all clicks
-    this.container.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const actionEl = target.closest('[data-action]') as HTMLElement;
-
-      if (!actionEl) return;
-
-      const action = actionEl.dataset['action'];
-      const entityId = actionEl.dataset['entityId'];
-
-      switch (action) {
-        case 'approve':
-          if (entityId) this.handleApprove(entityId);
-          break;
-        case 'reject':
-          if (entityId) this.handleReject(entityId);
-          break;
-        case 'edit':
-          if (entityId) this.handleEdit(entityId);
-          break;
-        case 'scroll-to':
-          if (entityId) this.handleScrollTo(entityId);
-          break;
-        case 'toggle-group':
-          this.handleToggleGroup(actionEl.dataset['type'] as EntityType);
-          break;
-        case 'approve-all':
-          this.handleApproveAll();
-          break;
-        case 'reset-all':
-          this.handleResetAll();
-          break;
-        case 'complete-review':
-          this.handleCompleteReview();
-          break;
-        case 'select-all-types':
-          this.handleSelectAllTypes();
-          break;
-        case 'select-no-types':
-          this.handleSelectNoTypes();
-          break;
-      }
-    });
+    this.container.addEventListener('click', (e) => this.handleClickEvent(e));
 
     // Filter change listeners
-    this.container.addEventListener('change', (e) => {
-      const target = e.target as HTMLInputElement;
-
-      if (target.dataset['filter'] === 'flagged-only') {
-        this.filters.showFlaggedOnly = target.checked;
-        this.updateEntityList();
-      } else if (target.dataset['filter'] === 'type') {
-        const type = target.dataset['type'] as EntityType;
-        if (target.checked) {
-          if (this.filters.types.length > 0) {
-            this.filters.types.push(type);
-          }
-        } else {
-          if (this.filters.types.length === 0) {
-            // Initialize with all types except this one
-            const allTypes = Object.keys(this.session?.statistics.byType || {}) as EntityType[];
-            this.filters.types = allTypes.filter(t => t !== type);
-          } else {
-            this.filters.types = this.filters.types.filter(t => t !== type);
-          }
-        }
-        this.updateEntityList();
-      }
-    });
+    this.container.addEventListener('change', (e) => this.handleChangeEvent(e));
 
     // Range slider for confidence
-    this.container.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
+    this.container.addEventListener('input', (e) => this.handleInputEvent(e));
+  }
 
-      if (target.dataset['filter'] === 'confidence') {
-        this.filters.minConfidence = parseInt(target.value, 10) / 100;
-        const valueDisplay = target.parentElement?.querySelector('.confidence-value');
-        if (valueDisplay) {
-          valueDisplay.textContent = `${target.value}%`;
-        }
-        this.updateEntityList();
-      } else if (target.dataset['filter'] === 'search') {
-        this.filters.searchText = target.value;
-        this.updateEntityList();
+  /**
+   * Handle click events
+   */
+  private handleClickEvent(e: Event): void {
+    const target = e.target as HTMLElement;
+    const actionEl = target.closest('[data-action]') as HTMLElement;
+
+    if (!actionEl) return;
+
+    const action = actionEl.dataset['action'];
+    const entityId = actionEl.dataset['entityId'];
+
+    switch (action) {
+      case 'approve':
+        if (entityId) this.handleApprove(entityId);
+        break;
+      case 'reject':
+        if (entityId) this.handleReject(entityId);
+        break;
+      case 'edit':
+        if (entityId) this.handleEdit(entityId);
+        break;
+      case 'scroll-to':
+        if (entityId) this.handleScrollTo(entityId);
+        break;
+      case 'toggle-group':
+        this.handleToggleGroup(actionEl.dataset['type'] as EntityType);
+        break;
+      case 'approve-all':
+        this.handleApproveAll();
+        break;
+      case 'reset-all':
+        this.handleResetAll();
+        break;
+      case 'complete-review':
+        this.handleCompleteReview();
+        break;
+      case 'select-all-types':
+        this.handleSelectAllTypes();
+        break;
+      case 'select-no-types':
+        this.handleSelectNoTypes();
+        break;
+    }
+  }
+
+  /**
+   * Handle change events (checkboxes)
+   */
+  private handleChangeEvent(e: Event): void {
+    const target = e.target as HTMLInputElement;
+
+    if (target.dataset['filter'] === 'flagged-only') {
+      this.filters.showFlaggedOnly = target.checked;
+      this.updateEntityList();
+    } else if (target.dataset['filter'] === 'type') {
+      this.handleTypeFilterChange(target);
+    }
+  }
+
+  /**
+   * Handle type filter checkbox changes
+   */
+  private handleTypeFilterChange(target: HTMLInputElement): void {
+    const type = target.dataset['type'] as EntityType;
+    if (target.checked) {
+      if (this.filters.types.length > 0) {
+        this.filters.types.push(type);
       }
-    });
+    } else {
+      if (this.filters.types.length === 0) {
+        // Initialize with all types except this one
+        const allTypes = Object.keys(this.session?.statistics.byType || {}) as EntityType[];
+        this.filters.types = allTypes.filter(t => t !== type);
+      } else {
+        this.filters.types = this.filters.types.filter(t => t !== type);
+      }
+    }
+    this.updateEntityList();
+  }
+
+  /**
+   * Handle input events (sliders, text inputs)
+   */
+  private handleInputEvent(e: Event): void {
+    const target = e.target as HTMLInputElement;
+
+    if (target.dataset['filter'] === 'confidence') {
+      this.filters.minConfidence = parseInt(target.value, 10) / 100;
+      const valueDisplay = target.parentElement?.querySelector('.confidence-value');
+      if (valueDisplay) {
+        valueDisplay.textContent = `${target.value}%`;
+      }
+      this.updateEntityList();
+    } else if (target.dataset['filter'] === 'search') {
+      this.filters.searchText = target.value;
+      this.updateEntityList();
+    }
   }
 
   /**

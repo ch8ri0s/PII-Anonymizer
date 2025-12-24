@@ -15,6 +15,7 @@ export type EntitySource = 'ML' | 'RULE' | 'BOTH' | 'MANUAL';
  */
 export type EntityType =
   | 'PERSON'
+  | 'PERSON_NAME'
   | 'ORGANIZATION'
   | 'LOCATION'
   | 'ADDRESS'

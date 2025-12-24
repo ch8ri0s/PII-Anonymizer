@@ -166,18 +166,19 @@ export class FilePreviewUI {
   displayMetadata(metadata: FileMetadata): void {
     if (!this.metadataPanel) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('meta-filename')!.textContent = metadata.filename;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('meta-filesize')!.textContent = metadata.fileSizeFormatted;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('meta-modified')!.textContent = metadata.lastModifiedFormatted;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('meta-lines')!.textContent = metadata.lineCount.toString();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('meta-words')!.textContent = metadata.wordCount.toString();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('meta-chars')!.textContent = metadata.charCount.toString();
+    const filenameEl = document.getElementById('meta-filename');
+    const filesizeEl = document.getElementById('meta-filesize');
+    const modifiedEl = document.getElementById('meta-modified');
+    const linesEl = document.getElementById('meta-lines');
+    const wordsEl = document.getElementById('meta-words');
+    const charsEl = document.getElementById('meta-chars');
+
+    if (filenameEl) filenameEl.textContent = metadata.filename;
+    if (filesizeEl) filesizeEl.textContent = metadata.fileSizeFormatted;
+    if (modifiedEl) modifiedEl.textContent = metadata.lastModifiedFormatted;
+    if (linesEl) linesEl.textContent = metadata.lineCount.toString();
+    if (wordsEl) wordsEl.textContent = metadata.wordCount.toString();
+    if (charsEl) charsEl.textContent = metadata.charCount.toString();
 
     this.metadataPanel.classList.remove('hidden');
   }
