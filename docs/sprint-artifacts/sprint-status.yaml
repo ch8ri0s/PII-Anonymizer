@@ -106,7 +106,7 @@ development_status:
   7-6-pwa-deployment-readiness: done  # Code review APPROVED 2025-12-23 - 39 tests
   7-7-manual-pii-marking-ui: done  # Code review APPROVED 2025-12-23
   7-8-user-correction-feedback-logging: done  # Code Review APPROVED 2025-12-24 - 113 tests
-  epic-7-retrospective: optional
+  epic-7-retrospective: completed  # 2025-12-24 - All 8 stories done, ~1022 tests
 
   # Epic 8: PII Detection Quality Improvement - Presidio-inspired patterns
   epic-8: contexted  # Tech spec created 2025-12-23
@@ -117,3 +117,13 @@ development_status:
   8-5-country-specific-recognizer-architecture: drafted  # Extensible pattern modules
   8-6-integration-tests-quality-validation: drafted  # Precision >90%, Recall ≥90%
   epic-8-retrospective: optional
+
+  # Epic 9: UI Harmonization (Tailwind + shadcn)
+  epic-9: backlog  # Created 2025-12-24
+  9-1-shared-tailwind-configuration: backlog  # Design tokens, CSS variables
+  9-2-core-ui-component-library-setup: backlog  # CVA, clsx, tailwind-merge
+  9-3-primitive-components: backlog  # Button, Badge, Card, Input, Checkbox
+  9-4-composite-components: backlog  # Modal, Toast, Dropdown, Tooltip
+  9-5-entity-ui-components: backlog  # EntityBadge, EntityList, EntitySidebar
+  9-6-migration-integration-testing: backlog  # Full migration, visual regression
+  epic-9-retrospective: optional

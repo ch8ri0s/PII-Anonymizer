@@ -23,9 +23,11 @@ This document provides the epic and story breakdown for A5-PII-Anonymizer v3.0 e
 | Epic 4 | User Review Workflow | 4 | FR-3.5, FR-5.7, FR-5.8 |
 | Epic 5 | Confidence Scoring & Feedback | 3 | Quality improvement |
 | Epic 6 | Infrastructure & Developer Experience | 8 | DX-1-4, SEC-1-2, UX-1, BUG-1 |
-| Epic 7 | Browser Migration | 7 | FR-6.1-6.6, FR-5.8 (browser) |
+| Epic 7 | Browser Migration | 8 | FR-6.1-6.6, FR-5.8, FR-5.9 (browser) |
+| Epic 8 | PII Detection Quality Improvement | 6 | FR-2.12 (Presidio patterns) |
+| Epic 9 | UI Harmonization (Tailwind + shadcn) | 6 | DX-5, UX-2 |
 
-**Total:** 7 Epics, 35 Stories
+**Total:** 9 Epics, 48 Stories
 
 ---
 
@@ -1228,6 +1230,37 @@ So that **the system includes my corrections in the anonymization and I can conf
 
 ---
 
+### Story 7.8: User Correction Feedback Logging
+
+As a **product owner analyzing detection accuracy**,
+I want **user corrections (dismissed entities and manual additions) to be logged locally**,
+So that **I can analyze patterns in false positives/negatives and improve detection accuracy over time**.
+
+**Acceptance Criteria:**
+
+**Given** a user is reviewing detected entities in the browser app
+**When** user dismisses a detected entity or adds a manual entity
+**Then** correction is logged to IndexedDB with anonymized context
+
+**And** log entry includes: action type, entity type, anonymized context, document hash, timestamp
+**And** for dismissals: original detection source and confidence score are recorded
+**And** user can enable/disable feedback logging via settings
+**And** simple statistics are exposed (total corrections, by type, by action)
+**And** logs rotate monthly with configurable retention
+**And** no PII is ever stored in logs
+
+**Prerequisites:** Story 7.4 (entity review UI)
+
+**Technical Notes:**
+- Use IndexedDB for browser storage (replaces Node.js file system)
+- Port anonymization patterns from `src/services/feedbackLogger.ts`
+- Use Web Crypto API for document hash (SHA-256)
+- Store settings in localStorage
+- Default to enabled (opt-out model)
+- Test with fake-indexeddb in vitest
+
+---
+
 ## FR Coverage Matrix
 
 | FR ID | Description | Epic | Stories | Status |
@@ -1253,6 +1286,7 @@ So that **the system includes my corrections in the anonymization and I can conf
 | FR-6.5 | Browser file I/O | Epic 7 | 7.5 | Planned |
 | FR-6.6 | PWA support | Epic 7 | 7.6 | Planned |
 | FR-5.8 | Manual PII marking (browser) | Epic 7 | 7.7 | Planned |
+| FR-5.9 | User correction logging (browser) | Epic 7 | 7.8 | Planned |
 
 **Coverage Validation:** All planned FRs from PRD are covered by at least one story.
 
@@ -1301,3 +1335,290 @@ Epic 7 (Browser Migration) ──> Independent (can run in parallel with Epic 6)
 _For implementation: Use the `create-story` workflow to generate individual story implementation plans from this epic breakdown._
 
 _This document will be updated after Architecture workflow to incorporate technical decisions._
+
+---
+
+## Epic 9: UI Harmonization (Tailwind + shadcn)
+
+**Goal:** Unify the UI component architecture across Electron and browser apps using Tailwind CSS and shadcn/ui, creating a shared design system that reduces code duplication, improves consistency, and accelerates future UI development.
+
+**User Value:** Consistent, polished user experience across both platforms with modern, accessible components. Developers benefit from a shared component library that reduces maintenance burden.
+
+**FRs Covered:** DX-5 (Developer Experience), UX-2 (UI Consistency)
+
+**Current State Analysis:**
+- Browser-app: 20+ TypeScript components, custom CSS layer (~2500 lines), modular but app-specific
+- Electron-app: 2 UI managers, pure Tailwind utilities, minimal component abstraction
+- No shared component library
+- Different color systems (HSL-based vs Tailwind defaults)
+- Significant code duplication for buttons, badges, cards, modals
+
+---
+
+### Story 9.1: Shared Tailwind Configuration & Design Tokens
+
+As a **developer working on either app**,
+I want **a unified Tailwind configuration with shared design tokens**,
+So that **both apps use consistent colors, spacing, typography, and shadows**.
+
+**Acceptance Criteria:**
+
+**Given** both Electron and browser apps
+**When** I import the shared Tailwind config
+**Then**:
+1. Both apps use identical color palette (primary, secondary, success, warning, error, neutral)
+2. CSS variables are defined for theme tokens (--primary, --background, --foreground, etc.)
+3. Dark mode support is configured (class-based toggle)
+4. Custom spacing scale matches across apps
+5. Typography scale is consistent (font sizes, line heights, font weights)
+6. Border radius, shadows, and transitions are standardized
+
+**Prerequisites:** None (foundation story)
+
+**Technical Notes:**
+- Create `shared/tailwind-preset.js` as shared preset
+- Define CSS variables in `:root` and `.dark` for theming
+- Use shadcn/ui color convention (HSL-based with CSS variables)
+- Both apps extend this preset in their `tailwind.config.js`
+- Consider using `tailwindcss-animate` for transitions
+
+---
+
+### Story 9.2: Core UI Component Library Setup
+
+As a **developer building UI features**,
+I want **a shared component library based on shadcn/ui patterns**,
+So that **I can use pre-built, accessible, typed components in both apps**.
+
+**Acceptance Criteria:**
+
+**Given** the need for reusable UI components
+**When** I set up the component library
+**Then**:
+1. Component library created at `shared/ui-components/` (or `libs/ui/`)
+2. Build system configured (TypeScript, exports for ESM/CJS)
+3. Components use class-variance-authority (CVA) for variant handling
+4. Components use clsx + tailwind-merge for class composition
+5. All components are fully typed with TypeScript
+6. Components export both the component and its props type
+7. Storybook or similar documentation system set up
+
+**Prerequisites:** Story 9.1 (Shared Tailwind Config)
+
+**Technical Notes:**
+- Use shadcn/ui component patterns (not the CLI, just the patterns)
+- Install: `class-variance-authority`, `clsx`, `tailwind-merge`
+- Create `cn()` utility for class merging
+- Components should be framework-agnostic (vanilla TS, not React)
+- Consider using `@radix-ui/colors` for accessible color scales
+
+---
+
+### Story 9.3: Primitive Components (Button, Badge, Card, Input)
+
+As a **developer building UI features**,
+I want **a set of primitive UI components**,
+So that **I can compose higher-level interfaces with consistent styling**.
+
+**Acceptance Criteria:**
+
+**Given** the component library foundation
+**When** I implement primitive components
+**Then**:
+1. **Button** component with variants: primary, secondary, ghost, destructive, outline, link
+   - Sizes: sm, md, lg
+   - States: default, hover, active, disabled, loading
+   - Icon support (left/right)
+2. **Badge** component with variants: default, success, warning, error, info, outline
+   - Entity type badges: PERSON, ORG, ADDRESS, EMAIL, PHONE, DATE, etc.
+3. **Card** component with: header, content, footer slots
+   - Variants: default, outlined, elevated
+4. **Input** component with: label, error, helper text, icons
+   - Types: text, email, password, number, search
+5. **Checkbox** and **Toggle** components with label support
+6. All components have unit tests and documentation
+7. Components work in both Electron and browser environments
+
+**Prerequisites:** Story 9.2 (Component Library Setup)
+
+**Technical Notes:**
+- Port existing button styles from `browser-app/src/styles/components.css`
+- Badge colors should match entity type colors currently in EntitySidebar.ts
+- Use native HTML elements with progressive enhancement
+- Ensure keyboard accessibility (focus states, tab order)
+
+---
+
+### Story 9.4: Composite Components (Modal, Toast, Dropdown, Tooltip)
+
+As a **developer building interactive features**,
+I want **composite UI components for overlays and feedback**,
+So that **I can create consistent modal dialogs, notifications, and menus**.
+
+**Acceptance Criteria:**
+
+**Given** primitive components are available
+**When** I implement composite components
+**Then**:
+1. **Modal/Dialog** component with:
+   - Header, content, footer sections
+   - Close button and ESC key handling
+   - Focus trap for accessibility
+   - Backdrop click to close (optional)
+   - Sizes: sm, md, lg, full
+2. **Toast** component with:
+   - Variants: success, error, warning, info
+   - Auto-dismiss with configurable duration
+   - Action button support
+   - Stacking for multiple toasts
+   - Position: top-right, top-center, bottom-right, bottom-center
+3. **Dropdown/Menu** component with:
+   - Trigger element support
+   - Keyboard navigation (arrow keys, enter, escape)
+   - Grouped items with separators
+   - Icons and shortcuts display
+4. **Tooltip** component with:
+   - Positions: top, right, bottom, left
+   - Delay configuration
+   - Arrow pointer
+5. All components integrate with existing Toast.ts and ContextMenu.ts patterns
+6. Unit tests and documentation complete
+
+**Prerequisites:** Story 9.3 (Primitive Components)
+
+**Technical Notes:**
+- Refactor `browser-app/src/components/Toast.ts` to use shared component
+- Refactor `browser-app/src/components/ContextMenu.ts` to use Dropdown
+- Use `@floating-ui/dom` for positioning (lightweight, no framework dependency)
+- Implement focus management for accessibility
+
+---
+
+### Story 9.5: Entity UI Components (EntityBadge, EntityList, EntitySidebar)
+
+As a **developer building PII review features**,
+I want **specialized entity UI components**,
+So that **entity display is consistent across both apps**.
+
+**Acceptance Criteria:**
+
+**Given** primitive and composite components exist
+**When** I implement entity-specific components
+**Then**:
+1. **EntityBadge** component with:
+   - Entity type icon/color by type (PERSON, ORG, ADDRESS, etc.)
+   - Confidence indicator (high/medium/low)
+   - Source indicator (ML/RULE/BOTH/MANUAL)
+   - Compact and expanded variants
+2. **EntityListItem** component with:
+   - Checkbox for selection
+   - Entity text with truncation
+   - Metadata row (confidence, position)
+   - Click handler for navigation
+   - Selected/highlighted states
+3. **EntityGroup** component with:
+   - Collapsible header with type badge and count
+   - Filter checkbox
+   - Bulk selection controls
+4. **EntitySidebar** component with:
+   - Filter panel at top
+   - Scrollable entity groups
+   - Empty state display
+   - Responsive collapse for mobile
+5. Browser-app EntitySidebar.ts refactored to use shared components
+6. Electron EntityReviewUI.ts refactored to use shared components
+7. Visual parity achieved between both apps
+
+**Prerequisites:** Story 9.4 (Composite Components)
+
+**Technical Notes:**
+- Extract entity type config from `browser-app/src/components/sidebar/EntityTypeConfig.ts`
+- Centralize entity colors and icons in shared config
+- Maintain backward compatibility during migration
+- Use event delegation pattern established in browser-app
+
+---
+
+### Story 9.6: Migration & Integration Testing
+
+As a **developer completing the UI harmonization**,
+I want **both apps fully migrated to the shared component library**,
+So that **there is no duplicate styling code and both apps look identical**.
+
+**Acceptance Criteria:**
+
+**Given** all shared components are implemented
+**When** I complete the migration
+**Then**:
+1. Browser-app uses shared components for all UI elements
+2. Electron-app uses shared components for all UI elements
+3. Old component-specific CSS removed (components.css cleaned up)
+4. No duplicate button, badge, card, modal styles exist
+5. Visual regression tests pass for both apps
+6. Lighthouse accessibility score maintained (100 for browser-app)
+7. Bundle size impact documented (target: <50KB added)
+8. Dark mode works correctly in both apps
+9. All existing tests pass
+10. New component tests added (target: 50+ tests)
+
+**Prerequisites:** Story 9.5 (Entity Components)
+
+**Technical Notes:**
+- Create migration checklist per app
+- Use feature flags if needed for gradual rollout
+- Document breaking changes
+- Update CLAUDE.md with new component patterns
+- Add visual regression testing (e.g., Playwright screenshots)
+
+---
+
+### Epic 9 Dependencies
+
+```
+Story 9.1 (Tailwind Config)
+       │
+       v
+Story 9.2 (Library Setup)
+       │
+       v
+Story 9.3 (Primitives) ──> Story 9.4 (Composites)
+                                    │
+                                    v
+                           Story 9.5 (Entity Components)
+                                    │
+                                    v
+                           Story 9.6 (Migration)
+```
+
+### Technical Stack
+
+| Technology | Purpose | Notes |
+|------------|---------|-------|
+| Tailwind CSS 3.x | Utility-first styling | Already in use |
+| shadcn/ui patterns | Component architecture | Patterns only, not React |
+| class-variance-authority | Variant handling | Type-safe variants |
+| clsx + tailwind-merge | Class composition | Conflict resolution |
+| @floating-ui/dom | Positioning | Tooltips, dropdowns |
+| TypeScript | Type safety | Full typing for all components |
+
+### Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Code duplication reduction | >60% less CSS |
+| Component reuse | 100% shared across apps |
+| Bundle size impact | <50KB added |
+| Accessibility score | Maintain 100 |
+| Developer satisfaction | Faster feature development |
+| Visual consistency | Identical look across apps |
+
+### Risks & Mitigations
+
+| Risk | Mitigation |
+|------|------------|
+| Breaking existing UI | Feature flags, gradual migration |
+| Bundle size increase | Tree-shaking, code splitting |
+| Framework lock-in | Keep components vanilla TS |
+| Migration effort | Incremental stories, clear boundaries |
+
+---
