@@ -46,17 +46,17 @@ export type UpdateStateCallback = (state: PWAUpdateState) => void;
 
 // Module state
 let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
-let installState: PWAInstallState = {
+const installState: PWAInstallState = {
   isInstallable: false,
   isInstalled: false,
   platform: 'unknown',
 };
-let offlineState: PWAOfflineState = {
+const offlineState: PWAOfflineState = {
   isOnline: navigator.onLine,
   isOfflineReady: false,
   modelCached: false,
 };
-let updateState: PWAUpdateState = {
+const updateState: PWAUpdateState = {
   needsUpdate: false,
   updateReady: false,
 };
