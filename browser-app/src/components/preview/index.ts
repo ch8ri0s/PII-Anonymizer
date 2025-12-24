@@ -28,6 +28,8 @@ export {
   scrollToBodyEntity,
   getContentElement,
   isShowingAnonymized,
+  getOriginalContent,
+  getBodyEntities,
   destroyPreviewBody,
   type PreviewBodyConfig,
 } from './PreviewBody';

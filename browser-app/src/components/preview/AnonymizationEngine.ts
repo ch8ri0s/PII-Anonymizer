@@ -84,14 +84,15 @@ export function generateMappingMarkdown(
   if (selected.length === 0) {
     lines.push('No PII was anonymized in this document.');
   } else {
-    lines.push('| Original | Replacement | Type | Confidence |');
-    lines.push('| -------- | ----------- | ---- | ---------- |');
+    lines.push('| Original | Replacement | Type | Source | Confidence |');
+    lines.push('| -------- | ----------- | ---- | ------ | ---------- |');
 
     for (const entity of selected) {
       const escapedOriginal = entity.text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
       const replacement = getReplacementToken(entity.type);
-      const confidence = Math.round((entity.confidence || 0) * 100);
-      lines.push(`| ${escapedOriginal} | ${replacement} | ${entity.type} | ${confidence}% |`);
+      const source = entity.source || 'REGEX';
+      const confidence = entity.source === 'MANUAL' ? '100%' : `${Math.round((entity.confidence || 0) * 100)}%`;
+      lines.push(`| ${escapedOriginal} | ${replacement} | ${entity.type} | ${source} | ${confidence} |`);
     }
   }
 
@@ -113,6 +114,21 @@ export function generateMappingMarkdown(
     lines.push('### By Type');
     for (const [type, count] of Object.entries(byType).sort((a, b) => b[1] - a[1])) {
       lines.push(`- **${type}**: ${count}`);
+    }
+  }
+
+  // Count by source
+  const bySource: Record<string, number> = {};
+  for (const entity of selected) {
+    const source = entity.source || 'REGEX';
+    bySource[source] = (bySource[source] || 0) + 1;
+  }
+
+  if (Object.keys(bySource).length > 0) {
+    lines.push('');
+    lines.push('### By Source');
+    for (const [source, count] of Object.entries(bySource).sort((a, b) => b[1] - a[1])) {
+      lines.push(`- **${source}**: ${count}`);
     }
   }
 

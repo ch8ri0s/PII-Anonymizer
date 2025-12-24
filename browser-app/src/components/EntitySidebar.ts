@@ -422,6 +422,12 @@ export function addManualEntity(
 
   entities.push(newEntity);
 
+  // Re-sort by position and assign entityIndex for consistent numbering
+  entities.sort((a, b) => a.start - b.start);
+  entities.forEach((entity, index) => {
+    entity.entityIndex = index + 1;
+  });
+
   const normalizedType = normalizeType(type);
   if (!typeFilters.has(normalizedType)) {
     typeFilters.set(normalizedType, true);

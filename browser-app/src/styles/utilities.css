@@ -9,6 +9,13 @@
 .max-w-4xl { max-width: 56rem; }
 .min-h-screen { min-height: 100vh; }
 
+/* Positioning */
+.fixed { position: fixed; }
+.absolute { position: absolute; }
+.relative { position: relative; }
+.z-50 { z-index: 50; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+
 /* Spacing */
 .px-4 { padding-left: 1rem; padding-right: 1rem; }
 .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }

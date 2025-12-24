@@ -426,6 +426,20 @@ export function isShowingAnonymized(): boolean {
 }
 
 /**
+ * Get original document content
+ */
+export function getOriginalContent(): string {
+  return state.originalContent;
+}
+
+/**
+ * Get current entities for offset mapping
+ */
+export function getBodyEntities(): EntityWithSelection[] {
+  return [...state.entities];
+}
+
+/**
  * Destroy the preview body
  */
 export function destroyPreviewBody(): void {
