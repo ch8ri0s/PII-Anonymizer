@@ -40,19 +40,20 @@ export type OnMarkCallback = (
 ) => void;
 
 /**
- * CSS for selection highlight and tooltip
+ * CSS for selection highlight, tooltip, and context menu
+ * Uses shadcn/tailwind design tokens for consistency
  */
 const SELECTION_CSS = `
   .pii-selection-tooltip {
     position: absolute;
     z-index: 40;
-    padding: 0.25rem 0.5rem;
-    background: hsl(217.2 91.2% 59.8%);
-    color: white;
+    padding: 0.375rem 0.625rem;
+    background: hsl(222.2 47.4% 11.2%);
+    color: hsl(210 40% 98%);
     font-size: 0.75rem;
     font-weight: 500;
-    border-radius: 0.25rem;
-    box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     pointer-events: none;
     opacity: 0;
     transform: translateY(4px);
@@ -73,6 +74,96 @@ const SELECTION_CSS = `
   /* Style for native browser selection when in marking mode */
   .pii-marking-mode ::selection {
     background-color: hsla(217.2, 91.2%, 59.8%, 0.3);
+  }
+
+  /* Context menu - floating dropdown style */
+  .pii-context-menu {
+    position: fixed;
+    z-index: 50;
+    min-width: 12rem;
+    overflow: hidden;
+    background: hsl(0 0% 100%);
+    border-radius: 0.5rem;
+    border: 1px solid hsl(0 0% 89.8%);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    animation: context-menu-in 0.1s ease-out;
+  }
+
+  @keyframes context-menu-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .pii-context-menu.hidden {
+    display: none;
+  }
+
+  .pii-context-menu-header {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: hsl(0 0% 45.1%);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid hsl(0 0% 89.8%);
+    background: hsl(0 0% 98%);
+  }
+
+  .pii-context-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    gap: 0.625rem;
+    font-size: 0.8125rem;
+    color: hsl(0 0% 9%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    text-align: left;
+  }
+
+  .pii-context-menu-item:hover,
+  .pii-context-menu-item:focus {
+    background: hsl(0 0% 96.1%);
+    outline: none;
+  }
+
+  .pii-context-menu-item:active {
+    background: hsl(0 0% 93%);
+  }
+
+  .pii-context-menu-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+
+  .pii-context-menu-item-label {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .pii-context-menu-item-shortcut {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: hsl(0 0% 45.1%);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    text-transform: uppercase;
+    padding: 0.125rem 0.375rem;
+    background: hsl(0 0% 96.1%);
+    border-radius: 0.25rem;
   }
 `;
 
@@ -174,30 +265,28 @@ export function initContextMenu(callback: OnMarkCallback): void {
   // Create tooltip element
   tooltipElement = createTooltip();
 
-  // Create menu element
+  // Create menu element with shadcn-inspired styling
   menuElement = document.createElement('div');
   menuElement.id = 'pii-context-menu';
-  menuElement.className = 'fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-2 hidden';
+  menuElement.className = 'pii-context-menu hidden';
   menuElement.setAttribute('role', 'menu');
   menuElement.setAttribute('aria-label', 'Mark as PII');
 
   // Build menu content with keyboard hints
   menuElement.innerHTML = `
-    <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 mb-1">
-      Mark as PII
-    </div>
+    <div class="pii-context-menu-header">Mark as PII</div>
     ${ENTITY_TYPES.map(({ type, label, icon, key }, index) => `
       <button
-        class="context-menu-item w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none flex items-center gap-2"
+        class="pii-context-menu-item"
         data-type="${type}"
         data-key="${key}"
         data-index="${index}"
         role="menuitem"
         tabindex="-1"
       >
-        <span>${icon}</span>
-        <span class="text-sm text-gray-700 flex-1">${label}</span>
-        <span class="text-xs text-gray-400 font-mono uppercase">${key}</span>
+        <span class="pii-context-menu-item-icon">${icon}</span>
+        <span class="pii-context-menu-item-label">${label}</span>
+        <span class="pii-context-menu-item-shortcut">${key}</span>
       </button>
     `).join('')}
   `;
@@ -274,7 +363,7 @@ export function isContextMenuVisible(): boolean {
 function attachMenuEventListeners(): void {
   if (!menuElement) return;
 
-  menuElement.querySelectorAll('.context-menu-item').forEach(item => {
+  menuElement.querySelectorAll('.pii-context-menu-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -320,7 +409,7 @@ function handleKeyDown(e: KeyboardEvent): void {
   // Arrow key navigation
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault();
-    const items = menuElement?.querySelectorAll('.context-menu-item');
+    const items = menuElement?.querySelectorAll('.pii-context-menu-item');
     if (!items || items.length === 0) return;
 
     if (e.key === 'ArrowDown') {
@@ -336,7 +425,7 @@ function handleKeyDown(e: KeyboardEvent): void {
   // Enter selects focused item
   if (e.key === 'Enter' && focusedItemIndex >= 0) {
     e.preventDefault();
-    const items = menuElement?.querySelectorAll('.context-menu-item');
+    const items = menuElement?.querySelectorAll('.pii-context-menu-item');
     if (items && items[focusedItemIndex]) {
       (items[focusedItemIndex] as HTMLElement).click();
     }

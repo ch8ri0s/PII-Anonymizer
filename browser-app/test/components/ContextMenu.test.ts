@@ -74,7 +74,7 @@ describe('ContextMenu', () => {
       initContextMenu(callback);
 
       const menu = document.getElementById('pii-context-menu');
-      const buttons = menu?.querySelectorAll('.context-menu-item');
+      const buttons = menu?.querySelectorAll('.pii-context-menu-item');
 
       expect(buttons?.length).toBeGreaterThan(0);
     });

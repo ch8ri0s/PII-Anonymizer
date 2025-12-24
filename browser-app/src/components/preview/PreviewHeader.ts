@@ -10,6 +10,33 @@ import { copyToClipboard, generateMappingMarkdown, applyAnonymization } from './
 import type { EntityWithSelection } from '../EntitySidebar';
 
 /**
+ * Anonymize a filename for display while preserving recognizability.
+ * Shows first 2 chars + "..." + last 2 chars + original extension + ".md"
+ * Example: "invoice_2024.pdf" -> "in...24.pdf.md"
+ *
+ * @param fileName - Original filename
+ * @returns Anonymized display name
+ */
+function anonymizeFileName(fileName: string): string {
+  // Extract base name and extension
+  const lastDotIndex = fileName.lastIndexOf('.');
+  const hasExtension = lastDotIndex > 0;
+  const baseName = hasExtension ? fileName.slice(0, lastDotIndex) : fileName;
+  const extension = hasExtension ? fileName.slice(lastDotIndex) : '';
+
+  // Handle very short base names
+  if (baseName.length <= 4) {
+    return `${baseName}${extension}.md`;
+  }
+
+  // Get first 2 and last 2 characters
+  const first = baseName.slice(0, 2);
+  const last = baseName.slice(-2);
+
+  return `${first}...${last}${extension}.md`;
+}
+
+/**
  * Header configuration
  */
 export interface PreviewHeaderConfig {
@@ -203,7 +230,7 @@ export function initPreviewHeader(
   headerElement.className = 'preview-header';
   headerElement.innerHTML = `
     <div class="preview-header-title">
-      <span class="file-name">No file loaded</span>
+      <span class="file-name">document.md</span>
     </div>
     <div class="preview-header-actions">
       <button class="preview-header-btn" id="copy-btn" title="Copy anonymized content">
@@ -243,7 +270,11 @@ export function setHeaderFile(fileName: string, content: string): void {
   if (headerElement) {
     const fileNameEl = headerElement.querySelector('.file-name');
     if (fileNameEl) {
-      fileNameEl.textContent = fileName;
+      // Display anonymized filename to avoid showing PII in the filename
+      const displayName = anonymizeFileName(fileName);
+      fileNameEl.textContent = displayName;
+      // Store original name in title for reference on hover
+      (fileNameEl as HTMLElement).title = `Output from: ${fileName}`;
     }
   }
 }

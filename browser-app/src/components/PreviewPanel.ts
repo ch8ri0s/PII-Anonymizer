@@ -83,7 +83,8 @@ let state: PreviewPanelState = {
 let config: PreviewPanelConfig = {};
 let panelContainer: HTMLElement | null = null;
 let sidebarElement: HTMLElement | null = null;
-let collapseButton: HTMLElement | null = null;
+let panelRoot: HTMLElement | null = null;
+let expandButton: HTMLElement | null = null;
 
 /**
  * CSS for the preview panel layout
@@ -133,45 +134,53 @@ const PREVIEW_PANEL_CSS = `
     overflow: hidden;
   }
 
-  .preview-panel-toggle {
+  /* Expand sidebar button - shown when sidebar is collapsed */
+  .preview-panel-expand-btn {
     position: absolute;
-    bottom: 1rem;
-    right: 1rem;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
     z-index: 10;
-    display: flex;
+    display: none;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    background: hsl(0 0% 100%);
+    justify-content: center;
+    width: 1.5rem;
+    height: 3rem;
+    padding: 0;
+    background: hsl(0 0% 98%);
     border: 1px solid hsl(0 0% 89.8%);
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+    border-right: none;
+    border-radius: 0.375rem 0 0 0.375rem;
     color: hsl(0 0% 45.1%);
     cursor: pointer;
     transition: all 0.15s ease;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
 
-  .preview-panel.sidebar-left .preview-panel-toggle {
+  .preview-panel.sidebar-collapsed .preview-panel-expand-btn {
+    display: flex;
+  }
+
+  .preview-panel.sidebar-left .preview-panel-expand-btn {
     right: auto;
-    left: 1rem;
+    left: 0;
+    border-radius: 0 0.375rem 0.375rem 0;
+    border-right: 1px solid hsl(0 0% 89.8%);
+    border-left: none;
   }
 
-  .preview-panel-toggle:hover {
+  .preview-panel.sidebar-left .preview-panel-expand-btn svg {
+    transform: rotate(180deg);
+  }
+
+  .preview-panel-expand-btn:hover {
     background: hsl(0 0% 96.1%);
     color: hsl(0 0% 9%);
     border-color: hsl(0 0% 79.8%);
   }
 
-  .preview-panel-toggle svg {
-    width: 1rem;
-    height: 1rem;
-    transition: transform 0.2s ease;
-  }
-
-  .preview-panel-toggle.collapsed svg {
-    transform: rotate(180deg);
+  .preview-panel-expand-btn svg {
+    width: 0.875rem;
+    height: 0.875rem;
   }
 
   @media (max-width: 768px) {
@@ -195,9 +204,20 @@ const PREVIEW_PANEL_CSS = `
       border-bottom: 1px solid hsl(0 0% 89.8%);
     }
 
-    .preview-panel-toggle {
-      bottom: auto;
-      top: 0.5rem;
+    .preview-panel-expand-btn {
+      top: auto;
+      bottom: 0;
+      right: 50%;
+      transform: translateX(50%);
+      width: 3rem;
+      height: 1.5rem;
+      border-radius: 0.375rem 0.375rem 0 0;
+      border: 1px solid hsl(0 0% 89.8%);
+      border-bottom: none;
+    }
+
+    .preview-panel-expand-btn svg {
+      transform: rotate(90deg);
     }
   }
 `;
@@ -232,13 +252,12 @@ export function initPreviewPanel(
   // Create panel structure
   const sidebarPositionClass = config.sidebarPosition === 'left' ? 'sidebar-left' : '';
   container.innerHTML = `
-    <div class="preview-panel ${sidebarPositionClass}">
+    <div class="preview-panel ${sidebarPositionClass}" id="preview-panel-root">
       <div class="preview-panel-main" id="preview-main">
-        <button class="preview-panel-toggle" id="sidebar-toggle" title="Toggle sidebar">
+        <button class="preview-panel-expand-btn" id="sidebar-expand-btn" title="Show entities" aria-label="Show entities sidebar">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-          <span>Entities</span>
         </button>
       </div>
       <div class="preview-panel-sidebar" id="preview-sidebar">
@@ -249,8 +268,9 @@ export function initPreviewPanel(
 
   // Get references
   const mainElement = container.querySelector('#preview-main') as HTMLElement;
+  panelRoot = container.querySelector('#preview-panel-root');
   sidebarElement = container.querySelector('#preview-sidebar');
-  collapseButton = container.querySelector('#sidebar-toggle');
+  expandButton = container.querySelector('#sidebar-expand-btn');
   const sidebarMount = container.querySelector('#entity-sidebar-mount') as HTMLElement;
 
   // Initialize sub-components
@@ -269,6 +289,7 @@ export function initPreviewPanel(
     onSelectionChange: handleSelectionChange,
     onFilterChange: handleFilterChange,
     onManualMark: handleManualMark,
+    onCollapse: collapseSidebar,
   };
 
   initEntitySidebar(sidebarMount, sidebarCallbacks);
@@ -287,7 +308,7 @@ export function initPreviewPanel(
   initKeyboardShortcuts();
 
   // Setup event handlers
-  collapseButton?.addEventListener('click', toggleSidebar);
+  expandButton?.addEventListener('click', expandSidebar);
 
   state.initialized = true;
 }
@@ -404,17 +425,14 @@ function handleTextSelection(text: string, start: number, end: number): void {
 }
 
 /**
- * Toggle sidebar visibility
+ * Update sidebar visibility state in DOM
  */
-function toggleSidebar(): void {
-  state.sidebarCollapsed = !state.sidebarCollapsed;
-
+function updateSidebarState(): void {
   if (sidebarElement) {
     sidebarElement.classList.toggle('collapsed', state.sidebarCollapsed);
   }
-
-  if (collapseButton) {
-    collapseButton.classList.toggle('collapsed', state.sidebarCollapsed);
+  if (panelRoot) {
+    panelRoot.classList.toggle('sidebar-collapsed', state.sidebarCollapsed);
   }
 }
 
@@ -450,7 +468,8 @@ export function clearPreviewEntities(): void {
  */
 export function collapseSidebar(): void {
   if (!state.sidebarCollapsed) {
-    toggleSidebar();
+    state.sidebarCollapsed = true;
+    updateSidebarState();
   }
 }
 
@@ -459,7 +478,8 @@ export function collapseSidebar(): void {
  */
 export function expandSidebar(): void {
   if (state.sidebarCollapsed) {
-    toggleSidebar();
+    state.sidebarCollapsed = false;
+    updateSidebarState();
   }
 }
 
@@ -499,5 +519,6 @@ export function destroyPreviewPanel(): void {
   config = {};
   panelContainer = null;
   sidebarElement = null;
-  collapseButton = null;
+  panelRoot = null;
+  expandButton = null;
 }
