@@ -8,9 +8,9 @@
  * Story: Entity Review UI - Exact Match Synchronization
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { PIIAnonymizerPage } from './helpers/page-objects';
-import { createTextFile, createMarkdownFile } from './fixtures/test-files';
+import { createTextFile } from './fixtures/test-files';
 
 /**
  * Test content with repeated text patterns
@@ -178,52 +178,6 @@ class EntitySidebarHelper {
   }
 }
 
-/**
- * Helper to perform manual text selection and marking
- */
-async function markTextAsEntity(
-  page: Page,
-  textToSelect: string,
-  entityType: string,
-): Promise<void> {
-  const content = page.locator('.preview-body-content');
-
-  // Find and select the text
-  await page.evaluate((text) => {
-    const contentEl = document.querySelector('.preview-body-content');
-    if (!contentEl) return;
-
-    // Find text node containing the text
-    const walker = document.createTreeWalker(
-      contentEl,
-      NodeFilter.SHOW_TEXT,
-      null,
-    );
-
-    let node;
-    while ((node = walker.nextNode())) {
-      const index = node.textContent?.indexOf(text) ?? -1;
-      if (index !== -1) {
-        const range = document.createRange();
-        range.setStart(node, index);
-        range.setEnd(node, index + text.length);
-
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-        break;
-      }
-    }
-  }, textToSelect);
-
-  // Trigger context menu (right-click or keyboard shortcut)
-  await content.click({ button: 'right' });
-
-  // Wait for context menu and select entity type
-  await page.waitForSelector('.context-menu', { timeout: 5000 });
-  await page.locator('.context-menu-item', { hasText: entityType }).click();
-}
-
 test.describe('Exact Match Synchronization - Manual Marking', () => {
   test('should mark ALL occurrences when manually marking repeated text', async ({ page }) => {
     const app = new PIIAnonymizerPage(page);
@@ -243,7 +197,8 @@ test.describe('Exact Match Synchronization - Manual Marking', () => {
 
     // Get initial entity count
     await sidebar.waitForEntities();
-    const initialCount = await sidebar.getTotalEntityCount();
+    // Entity count available for debugging if needed
+    await sidebar.getTotalEntityCount();
 
     // The auto-detected entities should be there
     // Now if we manually mark one "John Smith", all 7 should be marked
@@ -263,7 +218,8 @@ test.describe('Exact Match Synchronization - Manual Marking', () => {
 
   test('should mark all exact matches of manually selected text', async ({ page }) => {
     const app = new PIIAnonymizerPage(page);
-    const sidebar = new EntitySidebarHelper(page);
+    // EntitySidebarHelper available if needed for manual marking assertions
+    new EntitySidebarHelper(page);
 
     await app.goto();
     await app.waitForModelReady();
@@ -394,8 +350,8 @@ test.describe('Exact Match Synchronization - Selection State', () => {
     await expect(app.reviewSection).toBeVisible();
     await sidebar.waitForEntities();
 
-    // Get initial counts
-    const initialSelected = await sidebar.getSelectedEntityCount();
+    // Get entity counts for multi-entity sync tests
+    await sidebar.getSelectedEntityCount();
     const marieDupontCount = await sidebar.getEntityCountByText('Marie Dupont');
     const jeanMartinCount = await sidebar.getEntityCountByText('Jean Martin');
 
@@ -488,7 +444,8 @@ test.describe('Exact Match Synchronization - Preview Rendering', () => {
 test.describe('Exact Match Synchronization - Edge Cases', () => {
   test('should handle entities with same text but different types', async ({ page }) => {
     const app = new PIIAnonymizerPage(page);
-    const sidebar = new EntitySidebarHelper(page);
+    // EntitySidebarHelper available for edge case assertions if needed
+    new EntitySidebarHelper(page);
 
     await app.goto();
     await app.waitForModelReady();

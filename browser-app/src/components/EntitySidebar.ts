@@ -17,7 +17,6 @@ import type { ExtendedPIIMatch } from '../processing/PIIDetector';
 import {
   EntityStateManager,
   type EntityWithSelection,
-  normalizeType,
   getTypeConfig,
   getConfidenceLevel,
   formatConfidence,
