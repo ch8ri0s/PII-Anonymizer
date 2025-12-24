@@ -87,3 +87,15 @@ dist/mac-arm64/Softcom PII Anonymiser.app/Contents/Frameworks/Electron Framework
 
 # Test files with real PII (not committed)
 test/.files/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Playwright MCP cache
+.playwright-mcp/
+
+# Browser app dev build output
+browser-app/dev-dist/
+
+# Story context files (generated)
+docs/sprint-artifacts/stories/*.context.xml
