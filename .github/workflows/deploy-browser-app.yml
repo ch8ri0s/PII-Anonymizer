@@ -29,9 +29,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: browser-app
 
     steps:
       - name: Checkout
@@ -44,16 +41,23 @@ jobs:
           cache: 'npm'
           cache-dependency-path: browser-app/package-lock.json
 
-      - name: Install dependencies
+      - name: Build shared module
+        run: npx tsc -p shared/tsconfig.json
+
+      - name: Install browser-app dependencies
+        working-directory: browser-app
         run: npm ci
 
       - name: Run type check
+        working-directory: browser-app
         run: npm run typecheck
 
       - name: Run tests
+        working-directory: browser-app
         run: npm test
 
       - name: Build for production
+        working-directory: browser-app
         run: npm run build
         env:
           # Use relative paths for GitHub Pages subdirectory deployment
