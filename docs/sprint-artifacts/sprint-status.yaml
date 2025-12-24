@@ -1,4 +1,4 @@
-# generated: 2025-12-05
+# generated: 2025-12-24
 # project: A5-PII-Anonymizer
 # project_key: a5-pii
 # tracking_system: file-system
@@ -9,6 +9,7 @@
 # Epic Status:
 #   - backlog: Epic exists in epic file but not contexted
 #   - contexted: Next epic tech context created by *epic-tech-context (required)
+#   - done: All stories in epic completed
 #
 # Story Status:
 #   - backlog: Story only exists in epic file
@@ -27,16 +28,8 @@
 # - Epics should be 'contexted' before stories can be 'drafted'
 # - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', dev reviews, then Dev moves to 'done'
-#
-# SPRINT 0 PREREQUISITES:
-# =======================
-# Before starting Epic 1, complete these Sprint 0 tasks:
-# - [ ] Create golden test dataset (100+ annotated documents)
-# - [ ] Configure E2E framework (Playwright)
-# - [ ] Add performance baselines
-# - [ ] Update epics.md documentation
 
-generated: 2025-12-05
+generated: 2025-12-24
 project: A5-PII-Anonymizer
 project_key: a5-pii
 tracking_system: file-system
@@ -61,31 +54,31 @@ development_status:
   2-4-address-anonymization-strategy: done
   epic-2-retrospective: optional
 
-  # Epic 3: Document-Type Detection
-  epic-3: backlog
+  # Epic 3: Document-Type Detection - COMPLETED
+  epic-3: done
   3-1-document-type-classifier: done
   3-2-invoice-specific-detection-rules: done
   3-3-letter-specific-detection-rules: done
   3-4-rule-engine-configuration: done
   epic-3-retrospective: completed
 
-  # Epic 4: User Review Workflow
-  epic-4: backlog
+  # Epic 4: User Review Workflow - COMPLETED
+  epic-4: done
   4-1-entity-sidebar-panel: done
   4-2-entity-type-filtering: done
   4-3-selective-anonymization: done
   4-4-manual-pii-marking: done
   epic-4-retrospective: completed
 
-  # Epic 5: Confidence Scoring & Feedback
-  epic-5: done  # All stories completed
+  # Epic 5: Confidence Scoring & Feedback - COMPLETED
+  epic-5: done
   5-1-confidence-score-display: done
   5-2-user-correction-logging: done
   5-3-accuracy-dashboard: done  # Completed 2025-12-13
   epic-5-retrospective: optional
 
-  # Epic 6: Infrastructure & Developer Experience (from CODE_REVIEW.md)
-  epic-6: backlog
+  # Epic 6: Infrastructure & Developer Experience - COMPLETED
+  epic-6: done
   6-1-factory-central-logger: done  # Approved 2025-12-14
   6-2-redos-vulnerability-fix: done  # Critical security fix - APPROVED 2025-12-15
   6-3-ipc-input-validation: done  # Security hardening - COMPLETED 2025-12-17
@@ -96,8 +89,8 @@ development_status:
   6-8-constants-magic-numbers: done  # Code quality - APPROVED 2025-12-18
   epic-6-retrospective: completed  # Completed 2025-12-18
 
-  # Epic 7: Browser Migration - Zero-install browser version
-  epic-7: backlog
+  # Epic 7: Browser Migration - COMPLETED (Zero-install browser version)
+  epic-7: done
   7-1-document-converter-testing-fixes: done  # Completed 2025-12-19 - 203 tests passing
   7-2-ml-model-browser-integration: done  # Completed 2025-12-19 - 246 tests passing
   7-3-pii-detection-pipeline-browser-port: done  # Code review APPROVED 2025-12-22
@@ -108,7 +101,7 @@ development_status:
   7-8-user-correction-feedback-logging: done  # Code Review APPROVED 2025-12-24 - 113 tests
   epic-7-retrospective: completed  # 2025-12-24 - All 8 stories done, ~1022 tests
 
-  # Epic 8: PII Detection Quality Improvement - Presidio-inspired patterns
+  # Epic 8: PII Detection Quality Improvement - IN PROGRESS (Presidio-inspired patterns)
   epic-8: contexted  # Tech spec created 2025-12-23
   8-1-denylist-system-implementation: drafted  # False positive filtering
   8-2-context-words-database: drafted  # Multilingual context words (EN/FR/DE)
@@ -116,10 +109,13 @@ development_status:
   8-4-pipeline-integration: drafted  # Wire into HighRecallPass & ContextScoringPass
   8-5-country-specific-recognizer-architecture: drafted  # Extensible pattern modules
   8-6-integration-tests-quality-validation: drafted  # Precision >90%, Recall ≥90%
+  8-7-lexical-normalization-and-obfuscation-handling: drafted  # Unicode normalization, obfuscation detection
+  8-8-entity-consolidation-and-span-repair: drafted  # Overlapping entity handling
+  8-9-user-feedback-learning-loop: drafted  # Learning from user corrections
   epic-8-retrospective: optional
 
-  # Epic 9: UI Harmonization (Tailwind + shadcn)
-  epic-9: backlog  # Created 2025-12-24
+  # Epic 9: UI Harmonization (Tailwind + shadcn) - PLANNED
+  epic-9: backlog
   9-1-shared-tailwind-configuration: backlog  # Design tokens, CSS variables
   9-2-core-ui-component-library-setup: backlog  # CVA, clsx, tailwind-merge
   9-3-primitive-components: backlog  # Button, Badge, Card, Input, Checkbox
