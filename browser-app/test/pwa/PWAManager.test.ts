@@ -12,12 +12,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock virtual:pwa-register before importing PWAManager
-vi.mock('virtual:pwa-register', () => ({
-  registerSW: vi.fn(() => vi.fn()),
-}));
-
-// Now import the module
+// virtual:pwa-register is mocked via alias in vitest.config.ts
 import {
   initPWAManager,
   destroyPWAManager,

@@ -25,6 +25,8 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, '../src/utils'),
       // Import shared test utilities
       '@shared-test': path.resolve(__dirname, '../shared/test'),
+      // Mock virtual PWA module for tests (Vite PWA plugin virtual module)
+      'virtual:pwa-register': path.resolve(__dirname, 'test/mocks/pwa-register.ts'),
     },
   },
 });

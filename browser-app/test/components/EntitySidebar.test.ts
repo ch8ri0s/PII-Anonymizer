@@ -21,6 +21,11 @@ import {
   destroyEntitySidebar,
   type EntityWithSelection,
 } from '../../src/components/EntitySidebar';
+import {
+  initPreviewBody,
+  setBodyContent,
+  destroyPreviewBody,
+} from '../../src/components/preview/PreviewBody';
 
 // Uses happy-dom from vitest.config.ts
 let container: HTMLElement;
@@ -109,6 +114,7 @@ describe('EntitySidebar', () => {
 
   afterEach(() => {
     destroyEntitySidebar();
+    destroyPreviewBody();
     vi.clearAllMocks();
   });
 
@@ -260,7 +266,18 @@ describe('EntitySidebar', () => {
   });
 
   describe('Manual Entity Addition', () => {
+    // Helper to setup PreviewBody with content for manual entity tests
+    function setupPreviewBodyWithContent(content: string): void {
+      // Create a container for the preview body
+      const previewContainer = document.createElement('div');
+      previewContainer.id = 'preview-body-container';
+      document.body.appendChild(previewContainer);
+      initPreviewBody(previewContainer);
+      setBodyContent(content);
+    }
+
     it('should add manual entity', () => {
+      setupPreviewBodyWithContent('New Entity is here in the document');
       initEntitySidebar(container, {});
       updateEntities([]);
 
@@ -271,6 +288,7 @@ describe('EntitySidebar', () => {
     });
 
     it('should mark manual entities with MANUAL source', () => {
+      setupPreviewBodyWithContent('Some Manual PII text here');
       initEntitySidebar(container, {});
       updateEntities([]);
 
@@ -281,6 +299,7 @@ describe('EntitySidebar', () => {
     });
 
     it('should set manual entities as selected by default', () => {
+      setupPreviewBodyWithContent('Test Entity is in the content');
       initEntitySidebar(container, {});
       updateEntities([]);
 
@@ -291,6 +310,7 @@ describe('EntitySidebar', () => {
     });
 
     it('should set high confidence for manual entities', () => {
+      setupPreviewBodyWithContent('Manually Marked entity in doc');
       initEntitySidebar(container, {});
       updateEntities([]);
 
@@ -301,6 +321,7 @@ describe('EntitySidebar', () => {
     });
 
     it('should generate unique ID for manual entities', () => {
+      setupPreviewBodyWithContent('First and Second entities in text');
       initEntitySidebar(container, {});
       updateEntities([]);
 
@@ -592,6 +613,13 @@ describe('EntitySidebar', () => {
     });
 
     it('should identify MANUAL source entities', () => {
+      // Setup PreviewBody with content for manual entity to be found
+      const previewContainer = document.createElement('div');
+      previewContainer.id = 'preview-body-container';
+      document.body.appendChild(previewContainer);
+      initPreviewBody(previewContainer);
+      setBodyContent('Manual Entry is in the content');
+
       initEntitySidebar(container, {});
       updateEntities([]);
 
