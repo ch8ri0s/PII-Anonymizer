@@ -22,3 +22,15 @@ export {
   renderEntity,
   groupByType,
 } from './EntityRenderer';
+
+export {
+  type EntityWithSelection,
+  type StateChangeCallback,
+  EntityStateManager,
+} from './EntityStateManager';
+
+export {
+  ENTITY_SIDEBAR_CSS,
+  SOURCE_CONFIG,
+  injectSidebarStyles,
+} from './EntitySidebarStyles';
