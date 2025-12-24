@@ -133,7 +133,7 @@ export async function startReview(
 
   // Load document for PII detection
   try {
-    await loadDocument(content);
+    await loadDocument(content, {}, fileName);
   } catch (error) {
     console.error('[ReviewUI] Error loading document:', error);
     updateDetectionStatus('error', (error as Error).message);

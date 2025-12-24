@@ -101,6 +101,7 @@ export function initEntityReviewController(
 export async function loadDocument(
   content: string,
   options: PipelineDetectionOptions = {},
+  fileName?: string,
 ): Promise<void> {
   if (!detector) {
     throw new Error('Controller not initialized');
@@ -111,7 +112,7 @@ export async function loadDocument(
   state.error = null;
 
   callbacks.onDetectionStart?.();
-  setPreviewContent(content);
+  setPreviewContent(content, fileName);
 
   try {
     // Initialize pipeline if not already
