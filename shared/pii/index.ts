@@ -43,3 +43,11 @@ export {
   isValidDocumentType,
   getConfidenceBoost,
 } from './RuleEngineConfig.js';
+
+export {
+  type PatternEntry,
+  type DenyListConfigFile,
+  type DenyListConfig,
+  DenyList,
+  parseDenyListConfigFile,
+} from './context/DenyList.js';

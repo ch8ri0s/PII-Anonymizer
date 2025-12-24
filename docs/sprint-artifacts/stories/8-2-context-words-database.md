@@ -12,7 +12,8 @@ So that **I can boost confidence when relevant context is found nearby**.
 |-------|-------|
 | **Story ID** | 8.2 |
 | **Epic** | 8 - PII Detection Quality Improvement |
-| **Status** | Backlog |
+| **Status** | ready-for-dev |
+| **Context Generated** | 2025-12-25 |
 | **Created** | 2025-12-23 |
 
 ## Acceptance Criteria
@@ -276,3 +277,9 @@ None (can run parallel with Story 8.1)
 - [ ] Negative context words included for common false positive patterns
 - [ ] TypeScript compiles without errors
 - [ ] Works in both Electron and Browser environments
+
+## Dev Agent Record
+
+### Context Reference
+
+- [Story Context XML](8-2-context-words-database.context.xml)
