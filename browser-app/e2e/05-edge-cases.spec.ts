@@ -101,7 +101,7 @@ test.describe('Special Characters and Encoding', () => {
     await app.goto();
     await app.waitForModelReady();
 
-    const text = `Email: "test@example.com" (main) | Phone: +41-79-123-45-67`;
+    const text = 'Email: "test@example.com" (main) | Phone: +41-79-123-45-67';
     const file = createTextFile(text, 'punctuation.txt');
     await app.uploadFiles([file]);
     await expect(app.fileList).toBeVisible();
