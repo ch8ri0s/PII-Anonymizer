@@ -233,8 +233,11 @@ describe('DocxConverter', () => {
 
       // ATX style uses # symbols, not underlines
       expect(markdown).toMatch(/^#+\s+/m);
-      expect(markdown).not.toMatch(/^=+$/m); // setext style
-      expect(markdown).not.toMatch(/^-+$/m); // setext style
+      expect(markdown).not.toMatch(/^=+$/m); // setext style (equals underline)
+      // Note: We can't check for ^-+$ because YAML frontmatter uses --- delimiter
+      // Instead, check that there are no long dash lines (4+ dashes) used as underlines
+      // Frontmatter uses exactly 3 dashes, setext uses many more
+      expect(markdown).not.toMatch(/^-{4,}$/m); // setext style (dash underline, 4+ chars)
     });
 
     it('should use dash for bullet lists', async () => {

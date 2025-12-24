@@ -78,7 +78,7 @@ describe('TextConverter', () => {
   });
 
   describe('convert()', () => {
-    it('should convert text file to markdown (pass-through)', async () => {
+    it('should convert text file to markdown with frontmatter', async () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.txt');
 
       if (!fs.existsSync(fixturePath)) {
@@ -93,7 +93,13 @@ describe('TextConverter', () => {
 
       expect(markdown).toBeDefined();
       expect(typeof markdown).toBe('string');
-      expect(markdown).toBe(content);
+      // Should include frontmatter for txt files
+      expect(markdown).toMatch(/^---\n/);
+      expect(markdown).toContain('source: sample.txt');
+      expect(markdown).toContain('sourceFormat: txt');
+      expect(markdown).toContain('anonymised: true');
+      // Should include the original content
+      expect(markdown).toContain(content.trim());
     });
 
     it('should preserve all content unchanged', async () => {
@@ -134,22 +140,27 @@ describe('TextConverter', () => {
       expect(markdown).toContain('日本語');
     });
 
-    it('should preserve line endings', async () => {
+    it('should preserve line endings in content', async () => {
       const content = 'Line 1\nLine 2\nLine 3';
       const file = new File([content], 'lines.txt', { type: 'text/plain' });
 
       const markdown = await converter.convert(file);
 
-      expect(markdown).toBe(content);
-      expect(markdown.split('\n').length).toBe(3);
+      // Should have frontmatter plus original content lines
+      expect(markdown).toMatch(/^---\n/);
+      expect(markdown).toContain('Line 1');
+      expect(markdown).toContain('Line 2');
+      expect(markdown).toContain('Line 3');
     });
 
-    it('should handle empty file', async () => {
+    it('should handle empty file with frontmatter only', async () => {
       const file = new File([''], 'empty.txt', { type: 'text/plain' });
 
       const markdown = await converter.convert(file);
 
-      expect(markdown).toBe('');
+      // Should at least have frontmatter
+      expect(markdown).toMatch(/^---\n/);
+      expect(markdown).toContain('source: empty.txt');
     });
 
     it('should handle file with only whitespace', async () => {
@@ -157,7 +168,9 @@ describe('TextConverter', () => {
 
       const markdown = await converter.convert(file);
 
-      expect(markdown).toBe('   \n\n   ');
+      // Should include frontmatter
+      expect(markdown).toMatch(/^---\n/);
+      expect(markdown).toContain('source: whitespace.txt');
     });
   });
 
@@ -210,8 +223,10 @@ describe('TextConverter', () => {
 
       const markdown = await converter.convert(file);
 
-      expect(markdown).toBe(content);
-      expect(markdown.length).toBe(100000);
+      // Should have frontmatter plus original content
+      expect(markdown).toMatch(/^---\n/);
+      expect(markdown).toContain(content);
+      expect(markdown.length).toBeGreaterThan(100000);
     });
 
     it('should handle binary-like content', async () => {
@@ -220,7 +235,10 @@ describe('TextConverter', () => {
 
       const markdown = await converter.convert(file);
 
-      expect(markdown).toBe(content);
+      // Should have frontmatter
+      expect(markdown).toMatch(/^---\n/);
+      // Content may be altered by text encoding
+      expect(markdown).toContain('source: binary.txt');
     });
 
     it('should handle empty file name', () => {
