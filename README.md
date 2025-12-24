@@ -2,10 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ch8ri0s/A5-PII-Anonymizer)
-[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey.svg)](https://github.com/ch8ri0s/A5-PII-Anonymizer)
+[![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20Browser%20PWA-lightgrey.svg)](https://github.com/ch8ri0s/A5-PII-Anonymizer)
 [![i18n](https://img.shields.io/badge/languages-EN%20|%20FR%20|%20DE-green.svg)](./I18N_GUIDE.md)
 
-**Open source desktop application for anonymising documents into LLM-ready Markdown with comprehensive PII detection and multilingual support.**
+> A companion **browser PWA** with the same core capabilities lives in `browser-app/` (see its README for browser-specific details).
+
+**Open source desktop and browser application for anonymising documents into LLM-ready Markdown with comprehensive PII detection and multilingual support.**
 
 ---
 
@@ -87,7 +89,7 @@ copies or substantial portions of the Software.
 2. Install and run
 3. On first launch, the PII detection model downloads automatically (~500MB)
 
-### Option 2: Build from Source
+### Option 2: Build Desktop App from Source
 
 ```bash
 # Clone repository
@@ -106,7 +108,25 @@ npm run build:win    # Windows
 npm run build:linux  # Linux
 ```
 
-### Basic Usage
+### Option 3: Run the Browser PWA (Experimental, same core pipeline)
+
+The project also includes a **browser-based PWA** in `browser-app/` which reuses the same converters, PII detection pipeline, and i18n layer, but runs fully in the browser (no install required).
+
+```bash
+cd browser-app
+npm install
+npm run dev         # Start Vite dev server (opens in browser)
+```
+
+Key characteristics:
+- **Same capabilities** as the desktop app for single/batch file anonymisation
+- **100% client-side processing** using Web Workers and `@xenova/transformers`
+- **Installable PWA** (Add to Home Screen) with offline model cache
+- Tested end‑to‑end across Chromium, Firefox, and WebKit (`browser-app/e2e`)
+
+> Note: Very large files or older devices may perform better with the desktop app due to Electron’s Node.js filesystem access and memory profile.
+
+### Basic Usage (Desktop & Browser)
 
 1. **Drop files** or click to browse
 2. **Preview** file content and metadata
@@ -114,6 +134,17 @@ npm run build:linux  # Linux
 4. **Download** results:
    - `filename-anon.md` - Anonymised Markdown
    - `filename-mapping.json` - Entity mapping
+
+### Desktop vs Browser PWA
+
+| Aspect | Desktop App (Electron) | Browser PWA (`browser-app/`) |
+|--------|------------------------|------------------------------|
+| Installation | DMG/EXE/AppImage | No install required (visit URL, optional “Add to Home Screen”) |
+| Processing | 100% local, Node.js filesystem access | 100% client-side, browser APIs + Web Workers |
+| Performance | Best for very large files and long runs | Excellent on modern browsers; constrained by browser memory limits |
+| Updates | Via installer / auto‑update | Deployed like any web app / static hosting |
+| Offline Model Cache | Local filesystem | IndexedDB / browser cache |
+| Feature Parity | Full | Matches core pipeline (converters, PII detection, batch, i18n) |
 
 ---
 
@@ -199,6 +230,19 @@ IBAN: IBAN_1
 | **Word** | `.docx` | ✅ Excellent (90%+) | Full structure |
 | **Excel** | `.xlsx`, `.xls` | ✅ Excellent | Multi-sheet |
 | **PDF** | `.pdf` | ⚠️ Good (70-80%) | Heuristic parsing |
+
+---
+
+## 🧱 Architecture Overview (Desktop & Browser)
+
+Both the Electron app and the browser PWA share the same **core architecture**:
+
+- **Shared core modules** (converters, PII detection pipeline, types, utilities) live in `src/` and `shared/`, and are reused by both runtimes.
+- **Desktop app** wires these into `main.js`, `fileProcessor.js`, and `renderer.js` with a secure `preload.cjs` bridge and IPC services in `src/services/`.
+- **Browser PWA** wires the same pipeline into `browser-app/src/` (`processing/`, `pii/`, `converters/`, `workers/`, `ui/`, `pwa/`) using Web Workers and `@xenova/transformers` in browser mode.
+- **i18n and UX** are kept consistent via shared JSON locale files (`/locales`, `browser-app/public/locales`) and parallel UI components, so behaviour and wording match across desktop and web.
+
+For more details, see `docs/architecture.md` and `specs/browser-migration/MIGRATION_PLAN.md`.
 
 ---
 
