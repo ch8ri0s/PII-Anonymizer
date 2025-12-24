@@ -19,9 +19,9 @@ import type { Entity, DetectionResult, PipelineConfig } from '../types/detection
 import { DetectionPipeline, createPipeline } from '@pii/DetectionPipeline';
 import { createFormatValidationPass } from '@pii/passes/FormatValidationPass';
 import { createContextScoringPass } from '@pii/passes/ContextScoringPass';
-import { createAddressRelationshipPass } from '@pii/passes/AddressRelationshipPass';
 import { createBrowserHighRecallPass } from '../pii/BrowserHighRecallPass';
 import { createBrowserDocumentTypePass } from '../pii/BrowserDocumentTypePass';
+import { createBrowserAddressRelationshipPass } from '../pii/BrowserAddressRelationshipPass';
 
 // Worker types
 import type { WorkerRequest, WorkerResponse, ProgressCallback } from '../workers/types';
@@ -111,7 +111,7 @@ export class PIIDetector {
     this.pipeline.registerPass(createBrowserHighRecallPass(0.3));
     this.pipeline.registerPass(createFormatValidationPass());
     this.pipeline.registerPass(createContextScoringPass());
-    this.pipeline.registerPass(createAddressRelationshipPass());
+    this.pipeline.registerPass(createBrowserAddressRelationshipPass());
     this.pipeline.registerPass(createBrowserDocumentTypePass());
   }
 

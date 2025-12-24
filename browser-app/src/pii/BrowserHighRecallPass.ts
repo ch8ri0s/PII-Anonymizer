@@ -53,6 +53,15 @@ export class BrowserHighRecallPass implements DetectionPass {
   ): Promise<Entity[]> {
     const results: Entity[] = [...entities];
 
+    // Detect frontmatter range to exclude from detection
+    const frontmatterEnd = this.getFrontmatterEndPosition(text);
+
+    // Store frontmatter end position in context metadata for other passes to use
+    if (!context.metadata) {
+      context.metadata = {};
+    }
+    context.metadata.frontmatterEnd = frontmatterEnd;
+
     // Run ML-based detection if model is ready
     if (isModelReady() && !isFallbackMode()) {
       const mlEntities = await this.runMLDetection(text);
@@ -63,8 +72,45 @@ export class BrowserHighRecallPass implements DetectionPass {
     const ruleEntities = this.runRuleDetection(text, context.language);
     results.push(...ruleEntities);
 
-    // Merge overlapping entities from ML and RULE sources
-    return this.mergeEntities(results, text);
+    // Merge overlapping entities from ML and RULE sources FIRST
+    const mergedResults = this.mergeEntities(results, text);
+
+    // Filter out entities that start within frontmatter AFTER merge
+    // This ensures merged entities that expanded into frontmatter are excluded
+    if (frontmatterEnd > 0) {
+      console.log('[BrowserHighRecallPass] Frontmatter end position:', frontmatterEnd);
+      console.log('[BrowserHighRecallPass] Merged entities:', mergedResults.length);
+
+      // Log all ADDRESS entities for debugging
+      const addressEntities = mergedResults.filter(e => e.type === 'SWISS_ADDRESS' || e.type === 'ADDRESS' || e.type === 'EU_ADDRESS');
+      console.log('[BrowserHighRecallPass] ADDRESS entities:', JSON.stringify(addressEntities.map(e => ({ type: e.type, text: e.text.substring(0, 50), start: e.start, end: e.end }))));
+
+      const entitiesInFrontmatter = mergedResults.filter(e => e.start < frontmatterEnd);
+      console.log('[BrowserHighRecallPass] Entities in frontmatter (will be removed):', entitiesInFrontmatter.map(e => ({ type: e.type, text: e.text.substring(0, 30), start: e.start })));
+    }
+    const filteredResults = mergedResults.filter(e => e.start >= frontmatterEnd);
+
+    return filteredResults;
+  }
+
+  /**
+   * Get the end position of YAML frontmatter (after closing ---)
+   * Returns 0 if no frontmatter is found
+   */
+  private getFrontmatterEndPosition(text: string): number {
+    // Check if document starts with frontmatter
+    if (!text.startsWith('---')) {
+      return 0;
+    }
+
+    // Find the closing ---
+    const closingIndex = text.indexOf('\n---', 3);
+    if (closingIndex === -1) {
+      return 0;
+    }
+
+    // Return position after the closing --- and newline
+    return closingIndex + 4 + (text[closingIndex + 4] === '\n' ? 1 : 0);
   }
 
   /**
@@ -131,6 +177,11 @@ export class BrowserHighRecallPass implements DetectionPass {
 
         // Skip very short matches (likely false positives)
         if (matchText.length < MIN_MATCH_LENGTH) continue;
+
+        // Run validation function if present
+        if (patternDef.validate && !patternDef.validate(matchText)) {
+          continue;
+        }
 
         entities.push({
           id: uuidv4(),
