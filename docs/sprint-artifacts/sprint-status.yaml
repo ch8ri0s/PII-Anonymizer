@@ -104,9 +104,9 @@ development_status:
   # Epic 8: PII Detection Quality Improvement - IN PROGRESS (Presidio-inspired patterns)
   epic-8: contexted  # Tech spec created 2025-12-23
   8-1-denylist-system-implementation: done  # Code review APPROVED 2025-12-25 - 50 tests
-  8-2-context-words-database: ready-for-dev  # Context generated 2025-12-25
-  8-3-context-enhancement-system: drafted  # Presidio-style confidence boosting
-  8-4-pipeline-integration: drafted  # Wire into HighRecallPass & ContextScoringPass
+  8-2-context-words-database: done  # Code review APPROVED 2025-12-25 - 49 tests
+  8-3-context-enhancement-system: done  # Code review APPROVED 2025-12-25 - 37 tests
+  8-4-pipeline-integration: done  # Code review APPROVED 2025-12-25 - 18 tests
   8-5-country-specific-recognizer-architecture: drafted  # Extensible pattern modules
   8-6-integration-tests-quality-validation: drafted  # Precision >90%, Recall ≥90%
   8-7-lexical-normalization-and-obfuscation-handling: drafted  # Unicode normalization, obfuscation detection

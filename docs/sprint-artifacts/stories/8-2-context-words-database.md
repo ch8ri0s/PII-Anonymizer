@@ -12,7 +12,7 @@ So that **I can boost confidence when relevant context is found nearby**.
 |-------|-------|
 | **Story ID** | 8.2 |
 | **Epic** | 8 - PII Detection Quality Improvement |
-| **Status** | ready-for-dev |
+| **Status** | done |
 | **Context Generated** | 2025-12-25 |
 | **Created** | 2025-12-23 |
 
@@ -269,16 +269,51 @@ None (can run parallel with Story 8.1)
 
 ## Definition of Done
 
-- [ ] `shared/pii/context/ContextWords.ts` created with weighted ContextWord interface
-- [ ] Metadata structure includes version, source, lastUpdated
-- [ ] Unit tests in `test/unit/pii/context/ContextWords.test.ts`
-- [ ] All entity types have EN, FR, DE words (with weights and polarity)
-- [ ] API functions work correctly (both weighted and string-based for compatibility)
-- [ ] Negative context words included for common false positive patterns
-- [ ] TypeScript compiles without errors
-- [ ] Works in both Electron and Browser environments
+- [x] `shared/pii/context/ContextWords.ts` created with weighted ContextWord interface
+- [x] Metadata structure includes version, source, lastUpdated
+- [x] Unit tests in `test/unit/pii/context/ContextWords.test.js` (49 tests)
+- [x] All entity types have EN, FR, DE words (with weights and polarity)
+- [x] API functions work correctly (both weighted and string-based for compatibility)
+- [x] Negative context words included for common false positive patterns
+- [x] TypeScript compiles without errors
+- [x] Works in both Electron and Browser environments
 
 ## Dev Agent Record
+
+### Debug Log
+
+**2025-12-25 - Implementation**
+- Created `shared/pii/context/ContextWords.ts` with full implementation
+- Implemented 9 entity types: PERSON_NAME, PHONE_NUMBER, EMAIL, ADDRESS, IBAN, SWISS_AVS, SWISS_POSTAL_CODE, DATE, ORGANIZATION
+- Each entity type has context words for EN, FR, DE languages
+- Added weighted context words with polarity support (positive/negative)
+- Implemented helper functions: pos() and neg() for cleaner data definition
+- Exported from `shared/pii/index.ts`
+- Created 49 unit tests covering all acceptance criteria
+
+### Completion Notes
+
+**Story 8.2 Complete**
+- Created comprehensive context words database with 9 entity types
+- All words have weights (0.0-1.0) and polarity (positive/negative)
+- Negative context words added for false positive filtering (example.com, test@, etc.)
+- Metadata includes version 1.0.0, source "Presidio v2.2.33 + Swiss/EU curated"
+- Additional utility functions: getPositiveContextWords(), getNegativeContextWords(), getSupportedEntityTypes(), getSupportedLanguages()
+- 49 tests all passing
+
+### File List
+
+- `shared/pii/context/ContextWords.ts` (created) - Main context words module
+- `shared/pii/index.ts` (modified) - Added ContextWords exports
+- `test/unit/pii/context/ContextWords.test.js` (created) - 49 unit tests
+
+### Change Log
+
+| Date | Change |
+|------|--------|
+| 2025-12-25 | Created ContextWords.ts with weighted context word database |
+| 2025-12-25 | Added 49 unit tests, all passing |
+| 2025-12-25 | Code review APPROVED - All AC verified with file:line evidence |
 
 ### Context Reference
 

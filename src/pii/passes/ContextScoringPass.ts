@@ -14,6 +14,11 @@ import type {
   ContextFactor,
   EntityType,
 } from '../../types/detection.js';
+import {
+  ContextEnhancer,
+  getContextWords,
+  type PositionedEntity,
+} from '../../../shared/dist/pii/index.js';
 
 /**
  * Label keywords that boost confidence for each entity type
@@ -178,6 +183,7 @@ const RELATED_TYPES: Record<EntityType, EntityType[]> = {
  * Context Scoring Pass
  *
  * Scores entities based on surrounding context to refine confidence.
+ * Epic 8: Now also applies ContextEnhancer for context-word-based boosting.
  */
 export class ContextScoringPass implements DetectionPass {
   readonly name = 'ContextScoringPass';
@@ -186,10 +192,12 @@ export class ContextScoringPass implements DetectionPass {
 
   private windowSize: number;
   private flagThreshold: number;
+  private contextEnhancer: ContextEnhancer;
 
   constructor(windowSize: number = 50, flagThreshold: number = 0.4) {
     this.windowSize = windowSize;
     this.flagThreshold = flagThreshold;
+    this.contextEnhancer = new ContextEnhancer();
   }
 
   /**
@@ -201,16 +209,51 @@ export class ContextScoringPass implements DetectionPass {
     context: PipelineContext,
   ): Promise<Entity[]> {
     const windowSize = context.config?.contextWindowSize || this.windowSize;
+    const enableEpic8 = context.config?.enableEpic8Features !== false;
+    const language = context.language || 'en';
 
-    return entities.map((entity) => {
+    // Track context boosted counts for metadata
+    const boostedCounts: Partial<Record<EntityType, number>> = {};
+
+    const scoredEntities = entities.map((entity) => {
       const factors = this.scoreEntity(entity, text, entities, windowSize);
       const contextScore = this.calculateContextScore(factors);
 
-      // Apply context multiplier to confidence
-      const newConfidence = Math.min(
+      // Apply context multiplier to confidence (existing logic)
+      let newConfidence = Math.min(
         1.0,
         entity.confidence * (0.7 + contextScore * 0.6),
       );
+
+      // Epic 8: Apply ContextEnhancer for additional context-word-based boosting
+      if (enableEpic8) {
+        const contextWords = getContextWords(entity.type, language);
+        if (contextWords.length > 0) {
+          // Convert Entity to PositionedEntity for ContextEnhancer
+          const positionedEntity: PositionedEntity = {
+            text: entity.text,
+            type: entity.type,
+            start: entity.start,
+            end: entity.end,
+            confidence: newConfidence,
+            source: entity.source,
+          };
+
+          const result = this.contextEnhancer.enhanceWithDetails(
+            positionedEntity,
+            text,
+            contextWords,
+          );
+
+          // Track if boosted
+          if (result.boostApplied > 0) {
+            boostedCounts[entity.type] =
+              (boostedCounts[entity.type] || 0) + 1;
+          }
+
+          newConfidence = result.entity.confidence;
+        }
+      }
 
       return {
         ...entity,
@@ -222,6 +265,16 @@ export class ContextScoringPass implements DetectionPass {
         flaggedForReview: newConfidence < this.flagThreshold,
       };
     });
+
+    // Store boosted counts in context metadata for pipeline result
+    if (enableEpic8) {
+      if (!context.metadata) {
+        context.metadata = {};
+      }
+      context.metadata.contextBoosted = boostedCounts;
+    }
+
+    return scoredEntities;
   }
 
   /**

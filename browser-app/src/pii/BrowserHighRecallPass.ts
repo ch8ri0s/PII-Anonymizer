@@ -22,6 +22,7 @@ import {
   DEFAULT_ML_THRESHOLD,
   DEFAULT_RULE_CONFIDENCE,
   MIN_MATCH_LENGTH,
+  DenyList,
 } from '../../../shared/dist/pii/index.js';
 
 /**
@@ -73,7 +74,7 @@ export class BrowserHighRecallPass implements DetectionPass {
     results.push(...ruleEntities);
 
     // Merge overlapping entities from ML and RULE sources FIRST
-    const mergedResults = this.mergeEntities(results, text);
+    let mergedResults = this.mergeEntities(results, text);
 
     // Filter out entities that start within frontmatter AFTER merge
     // This ensures merged entities that expanded into frontmatter are excluded
@@ -88,7 +89,37 @@ export class BrowserHighRecallPass implements DetectionPass {
       const entitiesInFrontmatter = mergedResults.filter(e => e.start < frontmatterEnd);
       console.log('[BrowserHighRecallPass] Entities in frontmatter (will be removed):', entitiesInFrontmatter.map(e => ({ type: e.type, text: e.text.substring(0, 30), start: e.start })));
     }
-    const filteredResults = mergedResults.filter(e => e.start >= frontmatterEnd);
+    let filteredResults = mergedResults.filter(e => e.start >= frontmatterEnd);
+
+    // Epic 8: Apply DenyList filtering if enabled (default: true)
+    const enableEpic8 = context.config?.enableEpic8Features !== false;
+    if (enableEpic8) {
+      const language = context.language || 'en';
+      const beforeCount = filteredResults.length;
+
+      // Track filtered counts by entity type
+      const filteredCounts: Partial<Record<EntityType, number>> = {};
+
+      filteredResults = filteredResults.filter((entity) => {
+        const isDenied = DenyList.isDenied(entity.text, entity.type, language);
+        if (isDenied) {
+          filteredCounts[entity.type] =
+            (filteredCounts[entity.type] || 0) + 1;
+        }
+        return !isDenied;
+      });
+
+      // Store filtered counts in context metadata for pipeline result
+      context.metadata.denyListFiltered = filteredCounts;
+
+      const afterCount = filteredResults.length;
+      if (beforeCount !== afterCount) {
+        const totalFiltered = beforeCount - afterCount;
+        console.log(
+          `[BrowserHighRecallPass] DenyList filtered ${totalFiltered} entities`,
+        );
+      }
+    }
 
     return filteredResults;
   }

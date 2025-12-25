@@ -51,3 +51,28 @@ export {
   DenyList,
   parseDenyListConfigFile,
 } from './context/DenyList.js';
+
+export {
+  type ContextWord,
+  type ContextWordsMetadata,
+  type ContextWordsConfig,
+  CONTEXT_WORDS,
+  CONTEXT_WORDS_METADATA,
+  getContextWords,
+  getContextWordStrings,
+  getAllContextWords,
+  getPositiveContextWords,
+  getNegativeContextWords,
+  getMetadata,
+  getSupportedEntityTypes,
+  getSupportedLanguages,
+} from './context/ContextWords.js';
+
+export {
+  type ContextEnhancerConfig,
+  type PositionedEntity,
+  type EnhancementResult,
+  ContextEnhancer,
+  createContextEnhancer,
+  DEFAULT_CONTEXT_ENHANCER_CONFIG,
+} from './context/ContextEnhancer.js';

@@ -290,6 +290,23 @@ export interface PipelineConfig {
 
   /** Enable debug logging */
   debug?: boolean;
+
+  /**
+   * Enable Epic 8 quality features (DenyList + ContextEnhancer)
+   * Default: true
+   * Set to false for A/B testing to compare detection quality
+   */
+  enableEpic8Features?: boolean;
+}
+
+/**
+ * Epic 8 metadata for quality tracking
+ */
+export interface Epic8Metadata {
+  /** Count of entities filtered by DenyList per entity type */
+  denyListFiltered: Partial<Record<EntityType, number>>;
+  /** Count of entities boosted by ContextEnhancer per entity type */
+  contextBoosted: Partial<Record<EntityType, number>>;
 }
 
 /**
@@ -308,6 +325,10 @@ export interface DetectionResult {
     passResults: PassResult[];
     entityCounts: Record<EntityType, number>;
     flaggedCount: number;
+    /** Epic 8 quality metrics (when enabled) */
+    epic8?: Epic8Metadata;
+    /** Per-pass timing in milliseconds */
+    passTimings?: Record<string, number>;
   };
 }
 

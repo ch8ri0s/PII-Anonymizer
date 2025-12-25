@@ -16,6 +16,7 @@ import type {
   DetectionResult,
   PipelineConfig,
   EntityType,
+  Epic8Metadata,
 } from '../types/detection.js';
 
 /**
@@ -32,6 +33,8 @@ const DEFAULT_CONFIG: PipelineConfig = {
     documentType: false, // Enabled in Epic 3
   },
   debug: false,
+  // Epic 8: Enable quality improvement features by default
+  enableEpic8Features: true,
 };
 
 /**
@@ -154,6 +157,31 @@ export class DetectionPipeline {
     entities = this.deduplicateEntities(entities);
     entities = this.flagForReview(entities);
 
+    // Build pass timings from passResults
+    const passTimings: Record<string, number> = {};
+    for (const pr of passResults) {
+      passTimings[pr.passName] = pr.durationMs;
+    }
+
+    // Build Epic 8 metadata from context if enabled
+    const enableEpic8 = this.config.enableEpic8Features !== false;
+    let epic8Metadata: Epic8Metadata | undefined;
+    if (enableEpic8 && context.metadata) {
+      const denyListFiltered = context.metadata.denyListFiltered as
+        | Partial<Record<EntityType, number>>
+        | undefined;
+      const contextBoosted = context.metadata.contextBoosted as
+        | Partial<Record<EntityType, number>>
+        | undefined;
+
+      if (denyListFiltered || contextBoosted) {
+        epic8Metadata = {
+          denyListFiltered: denyListFiltered || {},
+          contextBoosted: contextBoosted || {},
+        };
+      }
+    }
+
     // Build result
     const result: DetectionResult = {
       entities,
@@ -163,6 +191,8 @@ export class DetectionPipeline {
         passResults,
         entityCounts: this.countByType(entities),
         flaggedCount: entities.filter((e) => e.flaggedForReview).length,
+        passTimings,
+        epic8: epic8Metadata,
       },
     };
 

@@ -22,6 +22,7 @@ import {
   DEFAULT_ML_THRESHOLD,
   DEFAULT_RULE_CONFIDENCE,
   MIN_MATCH_LENGTH,
+  DenyList,
 } from '../../../shared/dist/pii/index.js';
 
 /**
@@ -85,7 +86,45 @@ export class HighRecallPass implements DetectionPass {
     results.push(...ruleEntities);
 
     // Merge overlapping entities from ML and RULE sources
-    return this.mergeEntities(results);
+    let merged = this.mergeEntities(results);
+
+    // Epic 8: Apply DenyList filtering if enabled (default: true)
+    const enableEpic8 = context.config?.enableEpic8Features !== false;
+    if (enableEpic8) {
+      const language = context.language || 'en';
+      const beforeCount = merged.length;
+
+      // Track filtered counts by entity type
+      const filteredCounts: Partial<Record<EntityType, number>> = {};
+
+      merged = merged.filter((entity) => {
+        const isDenied = DenyList.isDenied(entity.text, entity.type, language);
+        if (isDenied) {
+          filteredCounts[entity.type] =
+            (filteredCounts[entity.type] || 0) + 1;
+        }
+        return !isDenied;
+      });
+
+      // Store filtered counts in context metadata for pipeline result
+      if (!context.metadata) {
+        context.metadata = {};
+      }
+      context.metadata.denyListFiltered = filteredCounts;
+
+      const afterCount = merged.length;
+      if (beforeCount !== afterCount) {
+        // Log for debugging when entities are filtered
+        const totalFiltered = beforeCount - afterCount;
+        if (context.config?.debug) {
+          console.log(
+            `[HighRecallPass] DenyList filtered ${totalFiltered} entities`,
+          );
+        }
+      }
+    }
+
+    return merged;
   }
 
   /**

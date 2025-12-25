@@ -181,10 +181,12 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
       expect(p).to.not.equal(null, `File ${i} should have detected person`);
     });
 
-    // CRITICAL: Each concurrent file should have PERSON_1 (proves isolation)
+    // CRITICAL: Each concurrent file should have PERSON_1 or PERSON_NAME_1 (proves isolation)
     // If state was shared, they'd have PERSON_1, PERSON_2, PERSON_3, PERSON_4, PERSON_5
     personPseudonyms.forEach((p, i) => {
-      expect(p).to.equal('PERSON_1', `Concurrent file ${i} should have isolated PERSON_1`);
+      // Accept either PERSON_1 or PERSON_NAME_1 (ML model returns PERSON_NAME now)
+      const isValid = p === 'PERSON_1' || p === 'PERSON_NAME_1';
+      expect(isValid).to.equal(true, `Concurrent file ${i} should have isolated PERSON_1 or PERSON_NAME_1, got: ${p}`);
     });
   });
 
@@ -224,10 +226,13 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     console.log('After reset persons:', persons2);
 
     // resetMappings() is now a no-op since isolation is automatic
-    // Both files should independently start at PERSON_1
+    // Both files should independently start at PERSON_1 or PERSON_NAME_1
     if (persons1.length > 0 && persons2.length > 0) {
-      expect(persons1[0][1]).to.equal('PERSON_1', 'File 1 starts at PERSON_1');
-      expect(persons2[0][1]).to.equal('PERSON_1', 'File 2 restarts at PERSON_1 (isolation)');
+      // Accept either PERSON_1 or PERSON_NAME_1 (ML model returns PERSON_NAME now)
+      const isValid1 = persons1[0][1] === 'PERSON_1' || persons1[0][1] === 'PERSON_NAME_1';
+      const isValid2 = persons2[0][1] === 'PERSON_1' || persons2[0][1] === 'PERSON_NAME_1';
+      expect(isValid1).to.equal(true, `File 1 starts at PERSON_1 or PERSON_NAME_1, got: ${persons1[0][1]}`);
+      expect(isValid2).to.equal(true, `File 2 restarts at PERSON_1 or PERSON_NAME_1 (isolation), got: ${persons2[0][1]}`);
     }
   });
 
@@ -276,12 +281,15 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     console.log('Invoice 3 - Orgs:', invoice3Orgs);
 
     // CRITICAL: Each invoice should have independent counters starting at 1
-    // Invoice 1 and 3 have same content but should have isolated PERSON_1, ORGANIZATION_1
+    // Invoice 1 and 3 have same content but should have isolated PERSON_1/PERSON_NAME_1, ORGANIZATION_1
     if (invoice1Persons.length > 0) {
-      expect(invoice1Persons[0][1]).to.equal('PERSON_1', 'Invoice 1 PERSON starts at 1');
+      // Accept either PERSON_1 or PERSON_NAME_1 (ML model returns PERSON_NAME now)
+      const isValid = invoice1Persons[0][1] === 'PERSON_1' || invoice1Persons[0][1] === 'PERSON_NAME_1';
+      expect(isValid).to.equal(true, `Invoice 1 PERSON starts at 1, got: ${invoice1Persons[0][1]}`);
     }
     if (invoice3Persons.length > 0) {
-      expect(invoice3Persons[0][1]).to.equal('PERSON_1', 'Invoice 3 PERSON restarts at 1');
+      const isValid = invoice3Persons[0][1] === 'PERSON_1' || invoice3Persons[0][1] === 'PERSON_NAME_1';
+      expect(isValid).to.equal(true, `Invoice 3 PERSON restarts at 1, got: ${invoice3Persons[0][1]}`);
     }
     if (invoice1Orgs.length > 0) {
       expect(invoice1Orgs[0][1]).to.equal('ORGANIZATION_1', 'Invoice 1 ORGANIZATION starts at 1');
