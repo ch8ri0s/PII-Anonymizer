@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PII Detection Baseline Metrics",
+  "description": "Schema for baseline accuracy metrics used in regression testing",
+  "type": "object",
+  "required": ["version", "created", "platforms"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "created": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when baseline was captured"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this baseline"
+    },
+    "captureMethod": {
+      "type": "string",
+      "description": "How the baseline was captured"
+    },
+    "platforms": {
+      "type": "object",
+      "properties": {
+        "electron": {
+          "$ref": "#/definitions/platformMetrics"
+        },
+        "browser": {
+          "$ref": "#/definitions/platformMetrics"
+        }
+      },
+      "required": ["electron", "browser"]
+    },
+    "byDocumentType": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/documentTypeMetrics"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "definitions": {
+    "platformMetrics": {
+      "type": "object",
+      "properties": {
+        "overall": {
+          "$ref": "#/definitions/overallMetrics"
+        },
+        "perEntityType": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/entityTypeMetrics"
+          }
+        },
+        "targets": {
+          "type": "object",
+          "properties": {
+            "precision": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "recall": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": ["overall", "perEntityType"]
+    },
+    "overallMetrics": {
+      "type": "object",
+      "properties": {
+        "precision": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recall": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "f1": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "documentsEvaluated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalEntitiesExpected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalEntitiesDetected": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "entityTypeMetrics": {
+      "type": "object",
+      "properties": {
+        "precision": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recall": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "f1": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "precision": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "recall": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      }
+    },
+    "documentTypeMetrics": {
+      "type": "object",
+      "properties": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "electron": {
+          "type": "object",
+          "properties": {
+            "precision": {
+              "type": ["number", "null"]
+            },
+            "recall": {
+              "type": ["number", "null"]
+            }
+          }
+        },
+        "browser": {
+          "type": "object",
+          "properties": {
+            "precision": {
+              "type": ["number", "null"]
+            },
+            "recall": {
+              "type": ["number", "null"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -60,3 +60,22 @@ export {
   type ValidationResult,
   type ConsistencyResult,
 } from './expectedResults';
+
+export {
+  // Accuracy calculation utilities
+  type Entity,
+  type EntityMatch,
+  type AccuracyMetrics,
+  type EntityTypeMetrics,
+  type AccuracyOptions,
+  calculateOverlap,
+  textMatches,
+  typeMatches,
+  normalizeEntityType,
+  matchEntities,
+  calculatePrecisionRecall,
+  compareWithGoldenSnapshot,
+  formatMetrics,
+  meetsThresholds,
+  aggregateMetrics,
+} from './accuracy';

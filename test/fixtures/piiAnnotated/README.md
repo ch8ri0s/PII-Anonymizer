@@ -81,3 +81,45 @@ F1 = 2 * (Precision * Recall) / (Precision + Recall)
 ```
 
 Target: F1 >= 0.98 (98%)
+
+## Ground Truth Files
+
+### realistic-ground-truth.json
+
+Ground truth annotations for `test/fixtures/realistic/` documents, used by:
+- **Story 8.6** - Integration tests & quality validation
+- **Epic 8 ML stories** - Precision/recall regression testing
+
+Current coverage:
+- 12 fully annotated documents (invoices, letters, HR, support emails)
+- 6 pending annotation (contracts, bills)
+- 117 total annotated entities across 9 entity types
+
+### Using with Accuracy Utilities
+
+```javascript
+import { calculatePrecisionRecall, meetsThresholds } from '../../shared/test/accuracy.js';
+import groundTruth from './realistic-ground-truth.json';
+
+// Get ground truth for a document
+const doc = groundTruth.documents['invoice-fr.txt'];
+const expected = doc.entities;
+
+// Calculate metrics
+const detected = await detectPII(documentText);
+const metrics = calculatePrecisionRecall(detected, expected);
+
+// Check against targets
+const result = meetsThresholds(metrics, {
+  precision: 0.90,
+  recall: 0.90,
+  perEntityType: {
+    SWISS_AVS: { precision: 0.98 },
+    IBAN: { precision: 0.95 }
+  }
+});
+```
+
+### Baseline Metrics
+
+See `test/baselines/epic8-before.json` for pre-Epic 8 baseline metrics used in regression testing.

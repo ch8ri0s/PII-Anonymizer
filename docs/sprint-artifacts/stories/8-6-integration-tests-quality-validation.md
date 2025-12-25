@@ -431,31 +431,66 @@ function loadQualityFixtures() {
 
 - Stories 8.1-8.5 completed
 
-## Test Fixtures Required
+## Shared Test Infrastructure (Phase 1 Complete)
 
-Create `test/fixtures/quality/` with:
-- `invoice-fr.json` - French invoice with annotated PII
-- `invoice-de.json` - German invoice with annotated PII
-- `letter-en.json` - English letter with annotated PII
-- `hr-document-fr.json` - HR document (French)
-- `support-email-de.json` - Support email (German)
-- `contract-multi.json` - Multi-language contract
+### Shared Accuracy Utilities
 
-Create `test/fixtures/golden/` with:
-- `invoice-fr-golden.json` - Golden snapshot (frozen expected entities)
-- `invoice-de-golden.json` - Golden snapshot
-- `letter-en-golden.json` - Golden snapshot
+Located in `shared/test/accuracy.ts`, provides:
 
-**Golden snapshot format:**
-```json
-{
-  "text": "...",
-  "language": "fr",
-  "goldenEntities": [
-    { "text": "Jean Dupont", "type": "PERSON_NAME", "start": 50, "end": 61, "confidence": 0.85 }
-  ]
-}
+```typescript
+import {
+  calculatePrecisionRecall,
+  matchEntities,
+  compareWithGoldenSnapshot,
+  meetsThresholds,
+  aggregateMetrics,
+  formatMetrics,
+  normalizeEntityType,
+  type Entity,
+  type AccuracyMetrics,
+} from '@shared-test/accuracy';
 ```
+
+**Key Functions:**
+- `calculatePrecisionRecall(detected, expected)` - Core metrics calculation
+- `matchEntities(detected, expected, options)` - Entity matching with fuzzy support
+- `compareWithGoldenSnapshot(actual, golden)` - Golden snapshot comparison
+- `meetsThresholds(metrics, thresholds)` - Threshold validation for CI
+- `aggregateMetrics(metricsArray)` - Multi-document aggregation
+
+### Baseline Metrics
+
+Located in `test/baselines/epic8-before.json`:
+
+| Metric | Pre-Epic 8 (Rule-based) | Target (Post-Epic 8) |
+|--------|-------------------------|----------------------|
+| Overall Precision | 100% | >90% |
+| Overall Recall | 54.2% | ≥90% (Electron), ≥85% (Browser) |
+| SWISS_AVS | 100%/100% | >98% precision |
+| IBAN | 100%/100% | >95% precision |
+| PERSON_NAME | 0%/0% (ML needed) | >90% precision |
+| ADDRESS | 0%/0% (ML needed) | >85% precision |
+
+**Capture Script:** `node scripts/capture-baseline.mjs`
+
+### Ground Truth Annotations
+
+Located in `test/fixtures/piiAnnotated/realistic-ground-truth.json`:
+- 12 annotated documents (invoice, letter, HR, support-email × 3 languages)
+- 117 annotated entities across 9 entity types
+- Used by both Electron (Mocha) and Browser (Vitest) tests
+
+## Test Fixtures (Existing)
+
+Using `test/fixtures/piiAnnotated/realistic-ground-truth.json` instead of separate quality fixtures.
+
+**Document coverage:**
+- `invoice-{en,fr,de}.txt` - Invoices with IBAN, AVS, addresses
+- `letter-{en,fr,de}.txt` - Business letters with names, organizations
+- `hr-{en,fr,de}.txt` - HR documents with sensitive PII
+- `support-email-{en,fr,de}.txt` - Support emails with contact info
+
+**Golden snapshots** are embedded in ground truth with exact positions and confidence values.
 
 ## Definition of Done
 

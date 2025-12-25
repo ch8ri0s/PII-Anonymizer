@@ -1,0 +1,270 @@
+{
+  "$schema": "./baseline-schema.json",
+  "version": "1.0.0",
+  "created": "2025-12-24",
+  "description": "Baseline metrics captured before Epic 8 improvements. Used for regression testing.",
+  "captureMethod": "Automated capture from test/fixtures/realistic documents",
+  "platforms": {
+    "electron": {
+      "overall": {
+        "precision": 1,
+        "recall": 0.5416666666666666,
+        "f1": 0.7027027027027027,
+        "documentsEvaluated": 12,
+        "totalEntitiesExpected": 120,
+        "totalEntitiesDetected": 65
+      },
+      "perEntityType": {
+        "PERSON_NAME": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "target": {
+            "precision": 0.9,
+            "recall": 0.9
+          }
+        },
+        "IBAN": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.95,
+            "recall": 0.95
+          }
+        },
+        "SWISS_AVS": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.98,
+            "recall": 0.95
+          }
+        },
+        "PHONE_NUMBER": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.9,
+            "recall": 0.9
+          }
+        },
+        "EMAIL": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.92,
+            "recall": 0.92
+          }
+        },
+        "ORGANIZATION": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "target": {
+            "precision": 0.85,
+            "recall": 0.85
+          }
+        },
+        "ADDRESS": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "target": {
+            "precision": 0.85,
+            "recall": 0.85
+          }
+        },
+        "DATE": {
+          "precision": 1,
+          "recall": 0.9523809523809523,
+          "f1": 0.975609756097561,
+          "target": {
+            "precision": 0.9,
+            "recall": 0.9
+          }
+        }
+      },
+      "targets": {
+        "precision": 0.9,
+        "recall": 0.9,
+        "note": "Target after Epic 8 completion"
+      }
+    },
+    "browser": {
+      "overall": {
+        "precision": 1,
+        "recall": 0.5416666666666666,
+        "f1": 0.7027027027027027,
+        "documentsEvaluated": 12,
+        "totalEntitiesExpected": 120,
+        "totalEntitiesDetected": 65
+      },
+      "perEntityType": {
+        "PERSON_NAME": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "target": {
+            "precision": 0.9,
+            "recall": 0.85
+          }
+        },
+        "IBAN": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.95,
+            "recall": 0.95
+          }
+        },
+        "SWISS_AVS": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.98,
+            "recall": 0.95
+          }
+        },
+        "PHONE_NUMBER": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.9,
+            "recall": 0.85
+          }
+        },
+        "EMAIL": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "target": {
+            "precision": 0.92,
+            "recall": 0.92
+          }
+        },
+        "ORGANIZATION": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "target": {
+            "precision": 0.85,
+            "recall": 0.8
+          }
+        },
+        "ADDRESS": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "target": {
+            "precision": 0.85,
+            "recall": 0.8
+          }
+        },
+        "DATE": {
+          "precision": 1,
+          "recall": 0.9523809523809523,
+          "f1": 0.975609756097561,
+          "target": {
+            "precision": 0.9,
+            "recall": 0.85
+          }
+        }
+      },
+      "targets": {
+        "precision": 0.9,
+        "recall": 0.85,
+        "note": "Browser has lower recall target due to model limitations"
+      }
+    }
+  },
+  "byDocumentType": {
+    "invoice": {
+      "languages": [
+        "en",
+        "fr",
+        "de"
+      ],
+      "electron": {
+        "precision": 1,
+        "recall": 0.5
+      },
+      "browser": {
+        "precision": 1,
+        "recall": 0.5
+      }
+    },
+    "letter": {
+      "languages": [
+        "en",
+        "fr",
+        "de"
+      ],
+      "electron": {
+        "precision": 1,
+        "recall": 0.5
+      },
+      "browser": {
+        "precision": 1,
+        "recall": 0.5
+      }
+    },
+    "contract": {
+      "languages": [
+        "en",
+        "fr",
+        "de"
+      ],
+      "electron": {
+        "precision": null,
+        "recall": null
+      },
+      "browser": {
+        "precision": null,
+        "recall": null
+      }
+    },
+    "hr": {
+      "languages": [
+        "en",
+        "fr",
+        "de"
+      ],
+      "electron": {
+        "precision": 1,
+        "recall": 0.6060606060606061
+      },
+      "browser": {
+        "precision": 1,
+        "recall": 0.6060606060606061
+      }
+    },
+    "support-email": {
+      "languages": [
+        "en",
+        "fr",
+        "de"
+      ],
+      "electron": {
+        "precision": 1,
+        "recall": 0.5555555555555556
+      },
+      "browser": {
+        "precision": 1,
+        "recall": 0.5555555555555556
+      }
+    }
+  },
+  "notes": [
+    "Metrics are null until baseline capture script is run",
+    "Targets are based on Story 8.6 acceptance criteria",
+    "Browser targets are 5% lower for recall due to WebAssembly model constraints",
+    "Run 'npm run test:baseline:capture' to populate baseline values"
+  ]
+}
