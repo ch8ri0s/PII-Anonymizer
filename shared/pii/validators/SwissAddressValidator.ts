@@ -59,6 +59,7 @@ import type {
   ValidationResult,
   ValidationRule,
   ValidatorEntityType,
+  ValidationContext,
 } from './types.js';
 import { CONFIDENCE } from './confidence.js';
 
@@ -75,10 +76,19 @@ export interface AddressValidationResult {
  * Validate Swiss address (postal code + city) with full context analysis
  *
  * @param address - The matched address text (e.g., "1700 Fribourg")
- * @param fullText - Optional full document text for context analysis
+ * @param context - Optional validation context (fullText, position) or string for backward compatibility
  * @returns AddressValidationResult with isValid, confidence, and optional reason
  */
-export function validateSwissAddressFull(address: string, fullText = ''): AddressValidationResult {
+export function validateSwissAddressFull(
+  address: string,
+  context: ValidationContext | string = {}
+): AddressValidationResult {
+  // Backward compatibility: string parameter becomes { fullText: string }
+  const ctx: ValidationContext = typeof context === 'string'
+    ? { fullText: context }
+    : context;
+
+  const { fullText = '', position } = ctx;
   const postalCode = parseInt(address.substring(0, 4), 10);
 
   // Basic postal code range check
@@ -102,7 +112,7 @@ export function validateSwissAddressFull(address: string, fullText = ''): Addres
   // Year-like patterns (1900-2099) overlap with real Swiss postal codes
   // These require extra validation to filter false positives
   if (postalCode >= 1900 && postalCode <= 2099) {
-    const yearCheckResult = checkYearFalsePositive(address, city, fullText);
+    const yearCheckResult = checkYearFalsePositive(address, city, fullText, position);
     if (!yearCheckResult.isValid) {
       return yearCheckResult;
     }
@@ -131,12 +141,14 @@ export function validateSwissAddressFull(address: string, fullText = ''): Addres
  * @param address - The full matched text
  * @param city - The city portion (after postal code)
  * @param fullText - The full document text
+ * @param position - Optional position of address in fullText (avoids O(n) indexOf)
  * @returns AddressValidationResult indicating if this is a false positive
  */
 function checkYearFalsePositive(
   address: string,
   city: string,
-  fullText: string
+  fullText: string,
+  position?: number
 ): AddressValidationResult {
   const firstWord = city.split(/[\s\n]/)[0]?.toLowerCase() || '';
 
@@ -169,7 +181,8 @@ function checkYearFalsePositive(
 
   // 3. Check context BEFORE the match for date indicators
   if (fullText) {
-    const posInText = fullText.indexOf(address);
+    // Use provided position if available, otherwise fall back to indexOf (O(n))
+    const posInText = position ?? fullText.indexOf(address);
     if (posInText > 0) {
       // Look back up to 20 characters for context
       const before = fullText.substring(Math.max(0, posInText - 20), posInText);
@@ -194,13 +207,15 @@ function checkYearFalsePositive(
     }
 
     // 4. Check context AFTER - if year is at sentence end, likely not address
-    const posEnd = fullText.indexOf(address) + address.length;
+    // Use provided position if available for consistent behavior
+    const startPos = position ?? fullText.indexOf(address);
+    const posEnd = startPos >= 0 ? startPos + address.length : -1;
     if (posEnd > 0 && posEnd < fullText.length) {
       const after = fullText.substring(posEnd, Math.min(fullText.length, posEnd + 15));
       // If immediately followed by punctuation or line break with no more text
       if (/^[\s]*[.;,!?\n]/.test(after)) {
         // Check if the match is standalone (no street context)
-        const beforeContext = fullText.substring(Math.max(0, fullText.indexOf(address) - 50), fullText.indexOf(address));
+        const beforeContext = fullText.substring(Math.max(0, startPos - 50), startPos);
         const hasStreetContext = /(?:Rue|Route|Rte|Chemin|Strasse|Str\.|Via|Avenue|Av\.)/i.test(beforeContext);
         if (!hasStreetContext) {
           return {
@@ -244,7 +259,13 @@ export class SwissAddressValidator implements ValidationRule {
   entityType: ValidatorEntityType = 'SWISS_ADDRESS';
   name = 'SwissAddressValidator';
 
-  validate(entity: ValidatorEntity, context?: string): ValidationResult {
+  /**
+   * Validate a Swiss address entity
+   * @param entity - Entity to validate
+   * @param context - Optional validation context (fullText, position) or string for backward compatibility
+   * @returns Validation result with isValid, confidence, and optional reason
+   */
+  validate(entity: ValidatorEntity, context?: ValidationContext | string): ValidationResult {
     // SECURITY: Check length before processing to prevent ReDoS
     if (entity.text.length > SwissAddressValidator.MAX_LENGTH) {
       return {
@@ -254,7 +275,7 @@ export class SwissAddressValidator implements ValidationRule {
       };
     }
 
-    const result = validateSwissAddressFull(entity.text, context || '');
+    const result = validateSwissAddressFull(entity.text, context ?? {});
     return {
       isValid: result.isValid,
       confidence: result.confidence,
@@ -262,5 +283,9 @@ export class SwissAddressValidator implements ValidationRule {
     };
   }
 }
+
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new SwissAddressValidator());
 
 export default SwissAddressValidator;
