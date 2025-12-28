@@ -284,6 +284,41 @@ Mapping File → Download
 4. Create test cases with real-world examples
 5. Verify accuracy with `test-pii-accuracy.js`
 
+### Adding New Validator
+
+Validators use self-registration via `ValidatorRegistry`. To add a new validator:
+
+1. Create `shared/pii/validators/MyValidator.ts`:
+   ```typescript
+   import type { ValidatorEntity, ValidationResult, ValidationRule, ValidatorEntityType } from './types.js';
+   import { CONFIDENCE } from './confidence.js';
+   import { registerValidator } from './registry.js';
+
+   export class MyValidator implements ValidationRule {
+     entityType: ValidatorEntityType = 'MY_TYPE';
+     name = 'MyValidator';
+
+     validate(entity: ValidatorEntity): ValidationResult {
+       // Validation logic here
+       return { isValid: true, confidence: CONFIDENCE.STANDARD };
+     }
+   }
+
+   // Self-register on module import
+   registerValidator(new MyValidator());
+   ```
+
+2. Export from `shared/pii/validators/index.ts`:
+   ```typescript
+   export { MyValidator, validateMy } from './MyValidator.js';
+   ```
+
+3. Add entity type to `ValidatorEntityType` in `shared/pii/validators/types.ts`
+
+4. Add tests in `test/unit/pii/validators/MyValidator.test.js`
+
+**That's it!** Only 2 files needed (validator + index export). The validator self-registers when imported.
+
 ### PDF Table Detection
 
 The PDF converter automatically detects and converts tables to GitHub Flavored Markdown.
