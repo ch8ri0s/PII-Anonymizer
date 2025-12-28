@@ -15,6 +15,12 @@ import {
   reset,
   runInference,
   getModelDisplayName,
+  // Story 8.15: Worker-based inference
+  initWorker,
+  terminateWorker,
+  isWorkerReady,
+  setUseWorker,
+  getUseWorker,
 } from '../../src/model/ModelManager';
 import { MODEL_NAME, DEFAULT_MODEL_CONFIG } from '../../src/model/types';
 
@@ -251,5 +257,74 @@ describe('Model Types', () => {
     expect(DEFAULT_MODEL_CONFIG.useBrowserCache).toBe(true);
     expect(DEFAULT_MODEL_CONFIG.allowFallback).toBe(true);
     expect(DEFAULT_MODEL_CONFIG.loadTimeout).toBe(120_000);
+  });
+
+  // Story 8.15: useWorker config
+  it('should have useWorker default enabled', () => {
+    expect(DEFAULT_MODEL_CONFIG.useWorker).toBe(true);
+  });
+});
+
+// Story 8.15: Web Worker ML Inference Tests
+describe('Story 8.15: Worker-Based Inference', () => {
+  beforeEach(() => {
+    reset();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    reset();
+  });
+
+  describe('Worker Configuration', () => {
+    it('should have useWorker enabled by default', () => {
+      expect(getUseWorker()).toBe(true);
+    });
+
+    it('should allow disabling worker inference', () => {
+      setUseWorker(false);
+      expect(getUseWorker()).toBe(false);
+    });
+
+    it('should allow enabling worker inference', () => {
+      setUseWorker(false);
+      setUseWorker(true);
+      expect(getUseWorker()).toBe(true);
+    });
+  });
+
+  describe('Worker Lifecycle - Unit Tests', () => {
+    it('should start with worker not ready', () => {
+      expect(isWorkerReady()).toBe(false);
+    });
+
+    it('should have terminateWorker function', () => {
+      expect(typeof terminateWorker).toBe('function');
+    });
+
+    it('should have initWorker function', () => {
+      expect(typeof initWorker).toBe('function');
+    });
+
+    it('should handle terminateWorker when no worker exists', () => {
+      // Should not throw
+      expect(() => terminateWorker()).not.toThrow();
+    });
+  });
+
+  describe('reset() with Worker State', () => {
+    it('should reset worker state along with model state', () => {
+      // Set worker config
+      setUseWorker(false);
+
+      // Reset
+      reset();
+
+      // Model state should be reset
+      expect(isModelReady()).toBe(false);
+      expect(isFallbackMode()).toBe(false);
+
+      // Note: useWorker state persists (it's a config option, not runtime state)
+    });
   });
 });

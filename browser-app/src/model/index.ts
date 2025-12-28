@@ -30,4 +30,14 @@ export {
   reset,
   runInference,
   getModelDisplayName,
+  // Story 8.15: Worker-based inference
+  initWorker,
+  terminateWorker,
+  isWorkerReady,
+  setUseWorker,
+  getUseWorker,
+  runInferenceInWorker,
 } from './ModelManager';
+
+// Story 8.15: Re-export MLPrediction type
+export type { MLPrediction } from '../workers/types';

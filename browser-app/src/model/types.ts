@@ -61,6 +61,8 @@ export interface ModelManagerConfig {
   allowFallback: boolean;
   /** Timeout for model loading in milliseconds */
   loadTimeout: number;
+  /** Whether to use Web Worker for inference (Story 8.15, default: true) */
+  useWorker: boolean;
 }
 
 /**
@@ -85,4 +87,5 @@ export const DEFAULT_MODEL_CONFIG: ModelManagerConfig = {
   useBrowserCache: true,
   allowFallback: true,
   loadTimeout: 120_000, // 2 minutes
+  useWorker: true, // Story 8.15: Use Web Worker by default
 };

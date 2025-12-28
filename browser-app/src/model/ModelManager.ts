@@ -20,6 +20,8 @@ import {
   MODEL_NAME,
   DEFAULT_MODEL_CONFIG,
 } from './types';
+import type { WorkerRequest, WorkerResponse, MLPrediction } from '../workers/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Pipeline instance for inference
 let pipelineInstance: unknown = null;
@@ -33,6 +35,16 @@ let currentStatus: ModelStatus = {
   ready: false,
   fallbackMode: false,
 };
+
+// Story 8.15: Web Worker state
+let mlWorker: Worker | null = null;
+let workerReady = false;
+let useWorkerInference = DEFAULT_MODEL_CONFIG.useWorker;
+const pendingRequests = new Map<string, {
+  resolve: (value: MLPrediction[]) => void;
+  reject: (error: Error) => void;
+  onProgress?: (progress: number, stage: string) => void;
+}>();
 
 /**
  * Get the current model status
@@ -269,6 +281,146 @@ export function reset(): void {
     ready: false,
     fallbackMode: false,
   };
+  // Story 8.15: Also reset worker state
+  terminateWorker();
+}
+
+// ============================================================================
+// Story 8.15: Web Worker ML Inference
+// ============================================================================
+
+/**
+ * Initialize the ML inference Web Worker
+ * Worker is reused across multiple inference calls.
+ */
+export function initWorker(): Worker {
+  if (mlWorker) return mlWorker;
+
+  mlWorker = new Worker(
+    new URL('../workers/pii.worker.ts', import.meta.url),
+    { type: 'module' },
+  );
+
+  mlWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+    const { id, type, payload } = event.data;
+
+    // Handle progress updates
+    if (type === 'progress' && payload?.progress !== undefined) {
+      const pending = pendingRequests.get(id);
+      if (pending?.onProgress) {
+        pending.onProgress(payload.progress, payload.stage || '');
+      }
+      return;
+    }
+
+    // Handle ML inference results
+    if (type === 'ml_result' && payload?.predictions) {
+      const pending = pendingRequests.get(id);
+      if (pending) {
+        pending.resolve(payload.predictions);
+        pendingRequests.delete(id);
+      }
+      return;
+    }
+
+    // Handle errors
+    if (type === 'error') {
+      const pending = pendingRequests.get(id);
+      if (pending) {
+        pending.reject(new Error(payload?.error || 'Unknown worker error'));
+        pendingRequests.delete(id);
+      }
+      return;
+    }
+
+    // Handle ready signal
+    if (type === 'ready') {
+      workerReady = true;
+    }
+  };
+
+  mlWorker.onerror = (event) => {
+    console.error('[ModelManager] Worker error:', event.message);
+    // Reject all pending requests
+    for (const [id, pending] of pendingRequests) {
+      pending.reject(new Error(`Worker error: ${event.message}`));
+      pendingRequests.delete(id);
+    }
+  };
+
+  return mlWorker;
+}
+
+/**
+ * Terminate the ML inference worker
+ * Call this when the worker is no longer needed.
+ */
+export function terminateWorker(): void {
+  if (mlWorker) {
+    mlWorker.terminate();
+    mlWorker = null;
+    workerReady = false;
+    // Reject pending requests
+    for (const [id, pending] of pendingRequests) {
+      pending.reject(new Error('Worker terminated'));
+      pendingRequests.delete(id);
+    }
+  }
+}
+
+/**
+ * Check if the worker is ready
+ */
+export function isWorkerReady(): boolean {
+  return workerReady && mlWorker !== null;
+}
+
+/**
+ * Configure whether to use worker for inference
+ */
+export function setUseWorker(use: boolean): void {
+  useWorkerInference = use;
+}
+
+/**
+ * Get whether worker inference is enabled
+ */
+export function getUseWorker(): boolean {
+  return useWorkerInference;
+}
+
+/**
+ * Run ML inference using Web Worker
+ * Returns predictions from the NER model.
+ *
+ * @param text - Text to analyze
+ * @param onProgress - Optional progress callback
+ * @returns Promise resolving to ML predictions
+ */
+export async function runInferenceInWorker(
+  text: string,
+  onProgress?: (progress: number, stage: string) => void,
+): Promise<MLPrediction[]> {
+  // Initialize worker if needed
+  if (!mlWorker) {
+    initWorker();
+  }
+
+  const id = uuidv4();
+
+  const promise = new Promise<MLPrediction[]>((resolve, reject) => {
+    pendingRequests.set(id, { resolve, reject, onProgress });
+  });
+
+  const request: WorkerRequest = {
+    id,
+    type: 'ml_inference',
+    payload: { text },
+  };
+
+  mlWorker!.postMessage(request);
+
+  return promise;
 }
 
 /**

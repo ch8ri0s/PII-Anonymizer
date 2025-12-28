@@ -14,7 +14,14 @@ import type {
   EntityType,
 } from '../types/detection.js';
 import { v4 as uuidv4 } from 'uuid';
-import { isModelReady, isFallbackMode, runInference } from '../model';
+import {
+  isModelReady,
+  isFallbackMode,
+  runInference,
+  // Story 8.15: Worker-based inference
+  getUseWorker,
+  runInferenceInWorker,
+} from '../model';
 import {
   type PatternDef,
   buildHighRecallPatterns,
@@ -23,6 +30,20 @@ import {
   DEFAULT_RULE_CONFIDENCE,
   MIN_MATCH_LENGTH,
   DenyList,
+  // Story 8.10: Subword token merging
+  type MLToken,
+  mergeSubwordTokens,
+  // Story 8.11: Document chunking for large files
+  type ChunkPrediction,
+  chunkText,
+  mergeChunkPredictions,
+  // Story 8.12: ML input validation
+  validateMLInput,
+  // Story 8.13: ML error recovery with retry logic
+  withRetry,
+  // Story 8.14: ML performance monitoring
+  createInferenceMetrics,
+  recordMLMetrics,
 } from '../../../shared/dist/pii/index.js';
 
 /**
@@ -74,7 +95,7 @@ export class BrowserHighRecallPass implements DetectionPass {
     results.push(...ruleEntities);
 
     // Merge overlapping entities from ML and RULE sources FIRST
-    let mergedResults = this.mergeEntities(results, text);
+    const mergedResults = this.mergeEntities(results, text);
 
     // Filter out entities that start within frontmatter AFTER merge
     // This ensures merged entities that expanded into frontmatter are excluded
@@ -146,38 +167,155 @@ export class BrowserHighRecallPass implements DetectionPass {
 
   /**
    * Run ML model detection with lowered threshold
+   * Story 8.10: Merges consecutive B-XXX/I-XXX tokens into complete entities
+   * Story 8.11: Chunks large documents to handle >512 token documents
+   * Story 8.12: Validates input before ML inference
+   * Story 8.13: Retries on transient errors with exponential backoff
+   * Story 8.14: Records ML inference metrics for performance monitoring
+   * Story 8.15: Uses Web Worker for inference to keep UI responsive
    */
   private async runMLDetection(text: string): Promise<Entity[]> {
-    try {
-      const predictions = await runInference(text);
-      const entities: Entity[] = [];
+    // Story 8.14: Track inference start time
+    const startTime = Date.now();
 
-      for (const pred of predictions) {
-        if (pred.score < this.mlThreshold) continue;
-
-        const type = this.mapMLType(pred.entity);
-        if (type === 'UNKNOWN') continue;
-
-        entities.push({
-          id: uuidv4(),
-          type,
-          text: pred.word,
-          start: pred.start,
-          end: pred.end,
-          confidence: pred.score,
-          source: 'ML',
-          metadata: {
-            mlEntityGroup: pred.entity,
-            mlScore: pred.score,
-          },
-        });
-      }
-
-      return entities;
-    } catch (error) {
-      console.error('ML detection error:', error);
+    // Story 8.12: Validate input before ML inference
+    const validation = validateMLInput(text);
+    if (!validation.valid) {
+      // Log validation error without PII content
+      console.warn('[BrowserHighRecallPass] ML input validation failed:', {
+        error: validation.error,
+        textLength: text?.length ?? 0,
+      });
       return [];
     }
+
+    // Use validated/normalized text
+    const validatedText = validation.text!;
+
+    // Log warnings if any
+    if (validation.warnings?.length) {
+      validation.warnings.forEach((w) =>
+        console.warn('[BrowserHighRecallPass] ML input warning:', w),
+      );
+    }
+
+    // Story 8.11: Chunk large documents for ML processing
+    const chunks = chunkText(validatedText, { maxTokens: 512, overlapTokens: 50 });
+
+    // Story 8.15: Determine whether to use worker or main thread
+    const useWorker = getUseWorker();
+
+    // Story 8.13: Wrap ML inference with retry logic for transient errors
+    const retryResult = await withRetry(
+      async () => {
+        // Process all chunks (sequentially to avoid memory pressure in browser)
+        const chunkPredictions: ChunkPrediction[] = [];
+        for (const chunk of chunks) {
+          // Story 8.15: Use worker inference if enabled, otherwise main thread
+          const predictions = useWorker
+            ? await runInferenceInWorker(chunk.text)
+            : await runInference(chunk.text);
+          chunkPredictions.push({
+            chunkIndex: chunk.chunkIndex,
+            predictions: predictions as MLToken[],
+          });
+        }
+        return chunkPredictions;
+      },
+      {
+        maxRetries: 3,
+        initialDelayMs: 100,
+        maxDelayMs: 5000,
+      },
+    );
+
+    // Handle retry failure
+    if (!retryResult.success) {
+      console.error('[BrowserHighRecallPass] ML detection failed after retries:', {
+        attempts: retryResult.attempts,
+        totalDurationMs: retryResult.totalDurationMs,
+        error: retryResult.error?.message,
+        textLength: validatedText.length,
+      });
+
+      // Story 8.14: Record failed inference metrics
+      const endTime = Date.now();
+      recordMLMetrics(createInferenceMetrics({
+        startTime,
+        endTime,
+        textLength: validatedText.length,
+        entitiesDetected: 0,
+        platform: 'browser',
+        modelName: 'xenova/bert-ner',
+        chunked: chunks.length > 1,
+        chunkCount: chunks.length,
+        failed: true,
+        retryAttempts: retryResult.attempts,
+      }));
+
+      return [];
+    }
+
+    // Log retry info if multiple attempts were needed
+    if (retryResult.attempts > 1) {
+      console.warn('[BrowserHighRecallPass] ML detection succeeded after retry:', {
+        attempts: retryResult.attempts,
+        totalDurationMs: retryResult.totalDurationMs,
+      });
+    }
+
+    const chunkPredictions = retryResult.result!;
+
+    // Story 8.11: Merge predictions from all chunks with offset adjustment
+    const allPredictions = mergeChunkPredictions(chunkPredictions, chunks);
+
+    // Story 8.10: Merge consecutive subword tokens (B-XXX, I-XXX → single entity)
+    // This handles HuggingFace NER models that return fragmented tokens
+    const mergedTokens = mergeSubwordTokens(allPredictions, validatedText, {
+      minLength: MIN_MATCH_LENGTH,
+    });
+
+    const entities: Entity[] = [];
+
+    for (const merged of mergedTokens) {
+      // Apply ML threshold filter
+      if (merged.score < this.mlThreshold) continue;
+
+      const type = this.mapMLType(merged.entity);
+      if (type === 'UNKNOWN') continue;
+
+      entities.push({
+        id: uuidv4(),
+        type,
+        text: merged.word,
+        start: merged.start,
+        end: merged.end,
+        confidence: merged.score,
+        source: 'ML',
+        metadata: {
+          mlEntityGroup: merged.entity,
+          mlScore: merged.score,
+          tokenCount: merged.tokenCount,
+          chunkCount: chunks.length,
+        },
+      });
+    }
+
+    // Story 8.14: Record successful inference metrics
+    const endTime = Date.now();
+    recordMLMetrics(createInferenceMetrics({
+      startTime,
+      endTime,
+      textLength: validatedText.length,
+      entitiesDetected: entities.length,
+      platform: 'browser',
+      modelName: 'xenova/bert-ner',
+      chunked: chunks.length > 1,
+      chunkCount: chunks.length,
+      retryAttempts: retryResult.attempts > 1 ? retryResult.attempts : undefined,
+    }));
+
+    return entities;
   }
 
   /**

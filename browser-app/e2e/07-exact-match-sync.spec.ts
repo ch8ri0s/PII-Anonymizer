@@ -323,13 +323,13 @@ test.describe('Exact Match Synchronization - Selection State', () => {
       await sidebar.expandEntityGroup('Phone');
       await sidebar.clickEntityCheckbox(phoneText);
 
-      let allUnselected = await sidebar.areAllEntitiesWithTextInSameState(phoneText, false);
+      const allUnselected = await sidebar.areAllEntitiesWithTextInSameState(phoneText, false);
       expect(allUnselected).toBe(true);
 
       // Then re-select
       await sidebar.clickEntityCheckbox(phoneText);
 
-      let allSelected = await sidebar.areAllEntitiesWithTextInSameState(phoneText, true);
+      const allSelected = await sidebar.areAllEntitiesWithTextInSameState(phoneText, true);
       expect(allSelected).toBe(true);
     }
   });
@@ -421,7 +421,7 @@ test.describe('Exact Match Synchronization - Preview Rendering', () => {
       await sidebar.expandEntityGroup('Email');
 
       // Before unselecting, all contact@example.com should be selected
-      let allSelected = await sidebar.areAllEntitiesWithTextInSameState('contact@example.com', true);
+      const allSelected = await sidebar.areAllEntitiesWithTextInSameState('contact@example.com', true);
       expect(allSelected).toBe(true);
 
       // Unselect contact@example.com
@@ -608,7 +608,7 @@ test.describe('Exact Match Synchronization - Performance', () => {
     // Create content with many repetitions
     const repeatedEmail = 'test@example.com';
     const lines = Array.from({ length: 50 }, (_, i) =>
-      `Line ${i + 1}: Contact ${repeatedEmail} for assistance.`
+      `Line ${i + 1}: Contact ${repeatedEmail} for assistance.`,
     ).join('\n');
 
     const file = createTextFile(lines, 'many-repeats.txt');

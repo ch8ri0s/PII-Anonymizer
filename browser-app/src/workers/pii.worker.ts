@@ -1,20 +1,25 @@
 /**
- * PII Detection Web Worker (Story 7.3, Task 8)
+ * PII Detection Web Worker (Story 7.3, Task 8; Story 8.15)
  *
  * Runs the full PII detection pipeline in a background thread.
  * Communicates with main thread via postMessage.
+ *
+ * Story 8.15: Added ML inference capability using @huggingface/transformers v3.
+ * ML inference now runs in the worker to keep the UI thread responsive.
  */
 
-import type { WorkerRequest, WorkerResponse, WorkerStatus } from './types';
+import type { WorkerRequest, WorkerResponse, WorkerStatus, MLPrediction } from './types';
 import type { Entity, DetectionResult } from '../types/detection.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Import pipeline components
-// Note: We can't use the full pipeline with ML model in worker
-// because transformers.js needs to be initialized in main thread.
-// Worker handles regex-only detection for CPU-intensive operations.
-
 import { SwissEuDetector } from '@core/index';
+
+// Story 8.15: ML model pipeline (lazily loaded)
+let mlPipeline: ((text: string) => Promise<MLPrediction[]>) | null = null;
+let mlModelLoading = false;
+let mlModelReady = false;
+let mlModelError: string | null = null;
 
 /**
  * Worker state
@@ -215,6 +220,127 @@ function handleStatus(request: WorkerRequest): void {
 }
 
 /**
+ * Story 8.15: Load ML model in worker
+ * Uses @huggingface/transformers v3 which supports Web Workers.
+ */
+async function loadMLModel(): Promise<void> {
+  if (mlModelReady || mlModelLoading) return;
+
+  mlModelLoading = true;
+  mlModelError = null;
+
+  try {
+    console.log('[Worker] Loading @huggingface/transformers v3...');
+
+    // Dynamic import of transformers.js v3
+    const { pipeline, env } = await import('@huggingface/transformers');
+
+    // Configure for browser/worker environment
+    env.allowRemoteModels = true;
+    env.allowLocalModels = false;
+
+    console.log('[Worker] Creating token-classification pipeline...');
+
+    // Create the NER pipeline
+    const nerPipeline = await pipeline(
+      'token-classification',
+      'Xenova/distilbert-base-multilingual-cased-ner-hrl',
+    );
+
+    // Type-safe wrapper
+    mlPipeline = async (text: string): Promise<MLPrediction[]> => {
+      const results = await nerPipeline(text);
+      return results as MLPrediction[];
+    };
+
+    mlModelReady = true;
+    console.log('[Worker] ML model loaded successfully');
+  } catch (error) {
+    mlModelError = error instanceof Error ? error.message : String(error);
+    console.error('[Worker] Failed to load ML model:', mlModelError);
+  } finally {
+    mlModelLoading = false;
+  }
+}
+
+/**
+ * Story 8.15: Handle ML inference request
+ */
+async function handleMLInference(request: WorkerRequest): Promise<void> {
+  const { id, payload } = request;
+  const text = payload?.text || '';
+  const startTime = performance.now();
+
+  if (!text) {
+    sendResponse({
+      id,
+      type: 'error',
+      payload: { error: 'No text provided for ML inference' },
+    });
+    return;
+  }
+
+  isProcessing = true;
+  currentRequestId = id;
+
+  try {
+    // Load model if not ready
+    if (!mlModelReady && !mlModelLoading) {
+      sendProgress(id, 10, 'Loading ML model...');
+      await loadMLModel();
+    }
+
+    // Wait for model if still loading
+    while (mlModelLoading) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Check for model errors
+    if (mlModelError || !mlPipeline) {
+      sendResponse({
+        id,
+        type: 'error',
+        payload: { error: mlModelError || 'ML model not available' },
+      });
+      return;
+    }
+
+    sendProgress(id, 30, 'Running ML inference...');
+
+    // Run inference
+    const predictions = await mlPipeline(text);
+
+    sendProgress(id, 90, 'Processing results...');
+
+    const processingTime = performance.now() - startTime;
+    totalProcessingTime += processingTime;
+    requestsProcessed++;
+
+    sendProgress(id, 100, 'Complete');
+
+    // Send ML result
+    sendResponse({
+      id,
+      type: 'ml_result',
+      payload: { predictions },
+    });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+
+    sendResponse({
+      id,
+      type: 'error',
+      payload: { error: errorMessage, stack },
+    });
+  } finally {
+    isProcessing = false;
+    currentRequestId = null;
+  }
+}
+
+/**
  * Message handler
  */
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
@@ -227,6 +353,11 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 
     case 'detect':
       await processDetection(request);
+      break;
+
+    case 'ml_inference':
+      // Story 8.15: Handle ML inference in worker
+      await handleMLInference(request);
       break;
 
     case 'cancel':
