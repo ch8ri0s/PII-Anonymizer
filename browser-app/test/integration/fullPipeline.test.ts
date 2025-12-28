@@ -18,6 +18,7 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { testLogger } from '../helpers/testLogger';
 
 // Import browser-app converters
 import { PdfConverter } from '../../src/converters/PdfConverter';
@@ -69,10 +70,10 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
 
   beforeAll(() => {
     if (testFiles.length === 0) {
-      console.warn('⚠️  No test files found in test/.files/ - skipping integration tests');
-      console.warn('   Place anonymized test documents in test/.files/ to enable these tests');
+      testLogger.warn('No test files found in test/.files/ - skipping integration tests');
+      testLogger.warn('Place anonymized test documents in test/.files/ to enable these tests');
     } else {
-      console.log(`Found ${testFiles.length} test files: ${testFiles.join(', ')}`);
+      testLogger.info('Test files found', { count: testFiles.length, files: testFiles.join(', ') });
     }
   });
 
@@ -90,7 +91,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should convert DOCX files to Markdown', async () => {
       const docxFiles = testFiles.filter(f => f.endsWith('.docx'));
       if (docxFiles.length === 0) {
-        console.log('Skipping: No DOCX files found');
+        testLogger.debug('Skipping: No DOCX files found');
         return;
       }
 
@@ -110,14 +111,14 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         expect(result).not.toContain('<html>');
         expect(result).not.toContain('<?xml');
 
-        console.log(`  ✓ ${filename}: ${result.length} chars`);
+        testLogger.debug('DOCX converted', { filename, chars: result.length });
       }
     });
 
     it('should convert PDF files to Markdown', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf'));
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -133,14 +134,14 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         expect(result, `${filename} should produce markdown`).toBeTypeOf('string');
         expect(result.length, `${filename} should produce non-empty markdown`).toBeGreaterThan(0);
 
-        console.log(`  ✓ ${filename}: ${result.length} chars`);
+        testLogger.debug('PDF converted', { filename, chars: result.length });
       }
     });
 
     it('should convert Excel files to Markdown', async () => {
       const xlsxFiles = testFiles.filter(f => f.endsWith('.xlsx') || f.endsWith('.xls'));
       if (xlsxFiles.length === 0) {
-        console.log('Skipping: No Excel files found');
+        testLogger.debug('Skipping: No Excel files found');
         return;
       }
 
@@ -161,7 +162,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
           expect(result, `${filename} should contain table structure`).toContain('|');
         }
 
-        console.log(`  ✓ ${filename}: ${result.length} chars`);
+        testLogger.debug('Excel converted', { filename, chars: result.length });
       }
     });
   });
@@ -178,7 +179,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should detect Swiss/EU PII in converted documents', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf'));
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -193,15 +194,11 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         const matches = detector.detect(markdown);
         totalMatches += matches.length;
 
-        console.log(`  ${filename}: ${matches.length} PII matches found`);
-
-        if (matches.length > 0) {
-          const byType: Record<string, number> = {};
-          for (const match of matches) {
-            byType[match.type] = (byType[match.type] || 0) + 1;
-          }
-          console.log(`    Types: ${JSON.stringify(byType)}`);
+        const byType: Record<string, number> = {};
+        for (const match of matches) {
+          byType[match.type] = (byType[match.type] || 0) + 1;
         }
+        testLogger.debug('PII matches found', { filename, count: matches.length, types: byType });
       }
 
       expect(totalMatches, 'Should detect some PII across test files').toBeGreaterThan(0);
@@ -213,7 +210,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
       );
 
       if (invoiceFiles.length === 0) {
-        console.log('Skipping: No invoice files found');
+        testLogger.debug('Skipping: No invoice files found');
         return;
       }
 
@@ -229,7 +226,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         const invoiceTypes = ['AMOUNT', 'DATE', 'IBAN', 'VAT_NUMBER', 'INVOICE_NUMBER', 'PHONE', 'EMAIL'];
         const hasInvoiceType = invoiceTypes.some(t => types.has(t));
 
-        console.log(`  ${filename}: Types found: ${[...types].join(', ')}`);
+        testLogger.debug('Invoice PII types found', { filename, types: [...types] });
         expect(hasInvoiceType, `${filename} should contain invoice-related PII`).toBe(true);
       }
     });
@@ -245,7 +242,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should classify document types correctly', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf'));
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -259,9 +256,12 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
 
         const classification = classifier.classify(markdown);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Type: ${classification.type} (confidence: ${(classification.confidence * 100).toFixed(1)}%)`);
-        console.log(`    Language: ${classification.language || 'unknown'}`);
+        testLogger.debug('Document classified', {
+          filename,
+          type: classification.type,
+          confidence: (classification.confidence * 100).toFixed(1) + '%',
+          language: classification.language || 'unknown',
+        });
 
         expect([
           'INVOICE', 'LETTER', 'FORM', 'CONTRACT', 'REPORT', 'UNKNOWN',
@@ -291,7 +291,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should process documents through complete pipeline', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf')).slice(0, 3);
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -305,10 +305,12 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
 
         const result = await piiDetector.detectWithPipeline(markdown);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Document type: ${result.documentType}`);
-        console.log(`    Total entities: ${result.entities.length}`);
-        console.log(`    Duration: ${result.metadata.totalDurationMs}ms`);
+        testLogger.debug('Pipeline result', {
+          filename,
+          documentType: result.documentType,
+          entityCount: result.entities.length,
+          durationMs: result.metadata.totalDurationMs,
+        });
 
         expect(result).toHaveProperty('entities');
         expect(result.entities).toBeInstanceOf(Array);
@@ -338,7 +340,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
       );
 
       if (addressFiles.length === 0) {
-        console.log('Skipping: No address-containing files found');
+        testLogger.debug('Skipping: No address-containing files found');
         return;
       }
 
@@ -359,15 +361,15 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
           e.type === 'LOCATION',
         );
 
-        console.log(`  ${filename}: ${addressEntities.length} address-related entities`);
-
         const linkedEntities = result.entities.filter(e =>
           e.components && e.components.length > 0,
         );
 
-        if (linkedEntities.length > 0) {
-          console.log(`    Linked addresses: ${linkedEntities.length}`);
-        }
+        testLogger.debug('Address entities found', {
+          filename,
+          addressCount: addressEntities.length,
+          linkedCount: linkedEntities.length,
+        });
       }
     });
   });
@@ -384,7 +386,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should run passes in correct order', async () => {
       const pdfFile = testFiles.find(f => f.endsWith('.pdf'));
       if (!pdfFile) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -400,7 +402,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
       // Verify all passes executed
       const passNames = result.metadata.passResults.map((p: { passName: string }) => p.passName);
 
-      console.log('  Pass execution order:', passNames.join(' → '));
+      testLogger.debug('Pass execution order', { passOrder: passNames.join(' → ') });
 
       expect(passNames.length, 'All passes should execute').toBeGreaterThan(0);
     });
@@ -408,7 +410,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should accumulate entities across passes', async () => {
       const pdfFile = testFiles.find(f => f.includes('invoice') && f.endsWith('.pdf'));
       if (!pdfFile) {
-        console.log('Skipping: No invoice file found');
+        testLogger.debug('Skipping: No invoice file found');
         return;
       }
 
@@ -427,7 +429,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
       );
 
       if (highRecallResult) {
-        console.log(`  HighRecallPass: +${highRecallResult.entitiesAdded} entities`);
+        testLogger.debug('HighRecallPass result', { entitiesAdded: highRecallResult.entitiesAdded });
         expect(highRecallResult.entitiesAdded, 'HighRecallPass should add entities').toBeGreaterThanOrEqual(0);
       }
 
@@ -437,14 +439,14 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
       );
 
       if (validationResult) {
-        console.log(`  ValidationPass: ${validationResult.entitiesModified} modified`);
+        testLogger.debug('ValidationPass result', { entitiesModified: validationResult.entitiesModified });
       }
     });
 
     it('should not have overlapping entity spans after pipeline', async () => {
       const pdfFile = testFiles.find(f => f.endsWith('.pdf'));
       if (!pdfFile) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -468,7 +470,10 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
 
         if (current.end > next.start) {
           overlapCount++;
-          console.log(`  Overlap: "${current.text}" (${current.start}-${current.end}) with "${next.text}" (${next.start}-${next.end})`);
+          testLogger.debug('Entity overlap detected', {
+            entity1: { text: current.text, start: current.start, end: current.end },
+            entity2: { text: next.text, start: next.start, end: next.end },
+          });
         }
       }
 
@@ -489,7 +494,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should produce entities with valid confidence scores', async () => {
       const pdfFile = testFiles.find(f => f.endsWith('.pdf'));
       if (!pdfFile) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -517,10 +522,12 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         const highConfidence = result.entities.filter(e => e.confidence >= 0.8).length;
         const lowConfidence = result.entities.filter(e => e.confidence < 0.5).length;
 
-        console.log(`  ${pdfFile}:`);
-        console.log(`    Average confidence: ${(avgConfidence * 100).toFixed(1)}%`);
-        console.log(`    High confidence (≥80%): ${highConfidence}`);
-        console.log(`    Low confidence (<50%): ${lowConfidence}`);
+        testLogger.debug('Confidence score analysis', {
+          filename: pdfFile,
+          avgConfidence: (avgConfidence * 100).toFixed(1) + '%',
+          highConfidenceCount: highConfidence,
+          lowConfidenceCount: lowConfidence,
+        });
       }
     });
   });
@@ -537,11 +544,11 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should produce consistent PII detection across platforms', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf')).slice(0, 2);
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
-      console.log('\nCross-platform consistency check:');
+      testLogger.debug('Starting cross-platform consistency check');
 
       for (const filename of pdfFiles) {
         const filePath = path.join(TEST_FILES_DIR, filename);
@@ -558,9 +565,11 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
           byType[match.type] = (byType[match.type] || 0) + 1;
         }
 
-        console.log(`  ${filename}:`);
-        console.log(`    Total matches: ${matches.length}`);
-        console.log(`    By type: ${JSON.stringify(byType)}`);
+        testLogger.debug('Cross-platform PII detection', {
+          filename,
+          totalMatches: matches.length,
+          byType,
+        });
 
         // Verify specific entity types are detected consistently
         // These should match between Electron and browser-app
@@ -571,13 +580,13 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should classify documents consistently across platforms', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf')).slice(0, 2);
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
       const classifier = createDocumentClassifier();
 
-      console.log('\nDocument classification consistency:');
+      testLogger.debug('Starting document classification consistency check');
 
       for (const filename of pdfFiles) {
         const filePath = path.join(TEST_FILES_DIR, filename);
@@ -587,10 +596,12 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
 
         const classification = classifier.classify(markdown);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Type: ${classification.type}`);
-        console.log(`    Confidence: ${(classification.confidence * 100).toFixed(1)}%`);
-        console.log(`    Language: ${classification.language}`);
+        testLogger.debug('Document classification', {
+          filename,
+          type: classification.type,
+          confidence: (classification.confidence * 100).toFixed(1) + '%',
+          language: classification.language,
+        });
 
         // Document types should be consistent
         expect([
@@ -612,7 +623,7 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
     it('should process documents within acceptable time', async () => {
       const pdfFiles = testFiles.filter(f => f.endsWith('.pdf'));
       if (pdfFiles.length === 0) {
-        console.log('Skipping: No PDF files found');
+        testLogger.debug('Skipping: No PDF files found');
         return;
       }
 
@@ -634,10 +645,14 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         const fileSize = buffer.length / 1024;
         const totalTime = conversionTime + pipelineTime;
 
-        console.log(`  ${filename} (${fileSize.toFixed(1)}KB):`);
-        console.log(`    Conversion: ${conversionTime.toFixed(0)}ms`);
-        console.log(`    Pipeline: ${pipelineTime.toFixed(0)}ms (${result.entities.length} entities)`);
-        console.log(`    Total: ${totalTime.toFixed(0)}ms`);
+        testLogger.debug('Performance benchmark', {
+          filename,
+          fileSizeKB: fileSize.toFixed(1),
+          conversionMs: conversionTime.toFixed(0),
+          pipelineMs: pipelineTime.toFixed(0),
+          entityCount: result.entities.length,
+          totalMs: totalTime.toFixed(0),
+        });
 
         expect(totalTime, `${filename} should process in < 10s`).toBeLessThan(10000);
       }
@@ -669,14 +684,17 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         try {
           markdown = await pdfConverter.convert(file);
         } catch {
-          console.log(`  Skipping ${filename}: conversion failed`);
+          testLogger.debug('Skipping file - conversion failed', { filename });
           continue;
         }
 
         const matches = detector.detect(markdown);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Expected min: ${expected.minEntityCount}, Actual: ${matches.length}`);
+        testLogger.debug('Expected entity count check', {
+          filename,
+          expectedMin: expected.minEntityCount,
+          actual: matches.length,
+        });
 
         // Browser detection may vary due to PDF text extraction differences
         // Use a lower threshold (50% of expected) for browser tests
@@ -702,23 +720,20 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         try {
           markdown = await pdfConverter.convert(file);
         } catch {
-          console.log(`  Skipping ${filename}: conversion failed`);
+          testLogger.debug('Skipping file - conversion failed', { filename });
           continue;
         }
 
         const matches = detector.detect(markdown);
         const verification = verifyRequiredEntities(filename, matches);
 
-        console.log(`  ${filename}:`);
         if (verification.allFound) {
-          console.log('    All required entities found');
+          testLogger.debug('All required entities found', { filename });
         } else {
-          console.log(`    Missing entities: ${JSON.stringify(verification.missing)}`);
-        }
-
-        // Warn but don't fail - some entities may vary by run
-        if (!verification.allFound) {
-          console.warn(`    WARNING: Some expected entities not found in ${filename}`);
+          testLogger.warn('Missing expected entities', {
+            filename,
+            missing: verification.missing,
+          });
         }
       }
     });
@@ -739,15 +754,19 @@ describe('Full Pipeline Integration Tests (Browser)', () => {
         try {
           markdown = await pdfConverter.convert(file);
         } catch {
-          console.log(`  Skipping ${filename}: conversion failed`);
+          testLogger.debug('Skipping file - conversion failed', { filename });
           continue;
         }
 
         const classification = classifier.classify(markdown);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Expected: ${expected.expectedDocumentType}, Actual: ${classification.type}`);
-        console.log(`    Language: expected ${expected.language}, actual ${classification.language}`);
+        testLogger.debug('Document type classification', {
+          filename,
+          expectedType: expected.expectedDocumentType,
+          actualType: classification.type,
+          expectedLang: expected.language,
+          actualLang: classification.language,
+        });
 
         // Check document type matches expectation
         if (expected.expectedDocumentType !== 'UNKNOWN') {

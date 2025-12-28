@@ -26,6 +26,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('integration:pipeline');
+
 // Import converters
 import DocxToMarkdown from '../../dist/converters/DocxToMarkdown.js';
 import PdfToMarkdown from '../../dist/converters/PdfToMarkdown.js';
@@ -63,11 +67,11 @@ describe('Full Pipeline Integration Tests', function () {
 
   before(function () {
     if (testFiles.length === 0) {
-      console.warn('⚠️  No test files found in test/.files/ - skipping integration tests');
-      console.warn('   Place anonymized test documents in test/.files/ to enable these tests');
+      log.warn('No test files found in test/.files/ - skipping integration tests');
+      log.warn('Place anonymized test documents in test/.files/ to enable these tests');
       this.skip();
     }
-    console.log(`Found ${testFiles.length} test files: ${testFiles.join(', ')}`);
+    log.info('Test files found', { count: testFiles.length, files: testFiles.join(', ') });
   });
 
   describe('Document Conversion Pipeline', function () {
@@ -93,7 +97,7 @@ describe('Full Pipeline Integration Tests', function () {
         expect(result).to.not.include('<html>'); // Should not have raw HTML
         expect(result).to.not.include('<?xml'); // Should not have XML
 
-        console.log(`  ✓ ${filename}: ${result.length} chars`);
+        log.debug('DOCX converted', { filename, chars: result.length });
       }
     });
 
@@ -115,7 +119,7 @@ describe('Full Pipeline Integration Tests', function () {
         expect(result, `${filename} should produce markdown`).to.be.a('string');
         expect(result.length, `${filename} should produce non-empty markdown`).to.be.greaterThan(0);
 
-        console.log(`  ✓ ${filename}: ${result.length} chars`);
+        log.debug('PDF converted', { filename, chars: result.length });
       }
     });
 
@@ -142,7 +146,7 @@ describe('Full Pipeline Integration Tests', function () {
           expect(result, `${filename} should contain table structure`).to.include('|');
         }
 
-        console.log(`  ✓ ${filename}: ${result.length} chars`);
+        log.debug('Excel converted', { filename, chars: result.length });
       }
     });
   });
@@ -172,16 +176,12 @@ describe('Full Pipeline Integration Tests', function () {
         const matches = detector.detect(markdown);
         totalMatches += matches.length;
 
-        console.log(`  ${filename}: ${matches.length} PII matches found`);
-
-        if (matches.length > 0) {
-          // Group by type for reporting
-          const byType = {};
-          for (const match of matches) {
-            byType[match.type] = (byType[match.type] || 0) + 1;
-          }
-          console.log(`    Types: ${JSON.stringify(byType)}`);
+        // Group by type for reporting
+        const byType = {};
+        for (const match of matches) {
+          byType[match.type] = (byType[match.type] || 0) + 1;
         }
+        log.debug('PII matches found', { filename, count: matches.length, types: byType });
       }
 
       // At least some PII should be detected in real business documents
@@ -211,7 +211,7 @@ describe('Full Pipeline Integration Tests', function () {
         const invoiceTypes = ['AMOUNT', 'DATE', 'IBAN', 'VAT_NUMBER', 'INVOICE_NUMBER', 'PHONE', 'EMAIL'];
         const hasInvoiceType = invoiceTypes.some(t => types.has(t));
 
-        console.log(`  ${filename}: Types found: ${[...types].join(', ')}`);
+        log.debug('Invoice PII types', { filename, types: [...types] });
         expect(hasInvoiceType, `${filename} should contain invoice-related PII`).to.be.true;
       }
     });
@@ -239,9 +239,12 @@ describe('Full Pipeline Integration Tests', function () {
 
         const classification = classifier.classify(markdown);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Type: ${classification.type} (confidence: ${(classification.confidence * 100).toFixed(1)}%)`);
-        console.log(`    Language: ${classification.language || 'unknown'}`);
+        log.debug('Document classified', {
+          filename,
+          type: classification.type,
+          confidence: `${(classification.confidence * 100).toFixed(1)}%`,
+          language: classification.language || 'unknown',
+        });
 
         expect(classification.type).to.be.oneOf([
           'INVOICE', 'LETTER', 'FORM', 'CONTRACT', 'REPORT', 'UNKNOWN',
@@ -305,10 +308,12 @@ describe('Full Pipeline Integration Tests', function () {
         const documentId = `test-${Date.now()}`;
         const result = await pipeline.process(markdown, documentId, 'en');
 
-        console.log(`  ${filename}:`);
-        console.log(`    Document type: ${result.documentType}`);
-        console.log(`    Total entities: ${result.entities.length}`);
-        console.log(`    Duration: ${result.metadata.totalDurationMs}ms`);
+        log.debug('Pipeline processed', {
+          filename,
+          documentType: result.documentType,
+          entityCount: result.entities.length,
+          durationMs: result.metadata.totalDurationMs,
+        });
 
         expect(result).to.have.property('entities').that.is.an('array');
         expect(result).to.have.property('documentType');
@@ -359,16 +364,16 @@ describe('Full Pipeline Integration Tests', function () {
           e.type === 'LOCATION',
         );
 
-        console.log(`  ${filename}: ${addressEntities.length} address-related entities`);
-
         // Check for linked address components
         const linkedEntities = result.entities.filter(e =>
           e.components && e.components.length > 0,
         );
 
-        if (linkedEntities.length > 0) {
-          console.log(`    Linked addresses: ${linkedEntities.length}`);
-        }
+        log.debug('Address entities found', {
+          filename,
+          addressCount: addressEntities.length,
+          linkedCount: linkedEntities.length,
+        });
       }
     });
   });
@@ -408,7 +413,7 @@ describe('Full Pipeline Integration Tests', function () {
       // Verify all passes executed
       const passNames = result.metadata.passResults.map(p => p.passName);
 
-      console.log('  Pass execution order:', passNames.join(' → '));
+      log.debug('Pass execution order', { passes: passNames });
 
       expect(passNames.length, 'All passes should execute').to.be.greaterThan(0);
     });
@@ -445,7 +450,7 @@ describe('Full Pipeline Integration Tests', function () {
       );
 
       if (highRecallResult) {
-        console.log(`  HighRecallPass: +${highRecallResult.entitiesAdded} entities`);
+        log.debug('HighRecallPass results', { entitiesAdded: highRecallResult.entitiesAdded });
         expect(highRecallResult.entitiesAdded, 'HighRecallPass should add entities').to.be.at.least(0);
       }
 
@@ -455,7 +460,7 @@ describe('Full Pipeline Integration Tests', function () {
       );
 
       if (validationResult) {
-        console.log(`  ValidationPass: ${validationResult.entitiesModified} modified`);
+        log.debug('ValidationPass results', { entitiesModified: validationResult.entitiesModified });
       }
     });
   });
@@ -503,10 +508,12 @@ describe('Full Pipeline Integration Tests', function () {
         const highConfidence = result.entities.filter(e => e.confidence >= 0.8).length;
         const lowConfidence = result.entities.filter(e => e.confidence < 0.5).length;
 
-        console.log(`  ${pdfFile}:`);
-        console.log(`    Average confidence: ${(avgConfidence * 100).toFixed(1)}%`);
-        console.log(`    High confidence (≥80%): ${highConfidence}`);
-        console.log(`    Low confidence (<50%): ${lowConfidence}`);
+        log.debug('Confidence distribution', {
+          filename: pdfFile,
+          avgConfidence: `${(avgConfidence * 100).toFixed(1)}%`,
+          highConfidence,
+          lowConfidence,
+        });
       }
     });
 
@@ -545,7 +552,10 @@ describe('Full Pipeline Integration Tests', function () {
 
         if (current.end > next.start) {
           overlapCount++;
-          console.log(`  Overlap: "${current.text}" (${current.start}-${current.end}) with "${next.text}" (${next.start}-${next.end})`);
+          log.debug('Entity overlap detected', {
+            first: { text: current.text, start: current.start, end: current.end },
+            second: { text: next.text, start: next.start, end: next.end },
+          });
         }
       }
 
@@ -593,10 +603,14 @@ describe('Full Pipeline Integration Tests', function () {
 
         const totalTime = conversionTime + pipelineTime;
 
-        console.log(`  ${filename} (${fileSize.toFixed(1)}KB):`);
-        console.log(`    Conversion: ${conversionTime}ms`);
-        console.log(`    Pipeline: ${pipelineTime}ms (${result.entities.length} entities)`);
-        console.log(`    Total: ${totalTime}ms`);
+        log.debug('Performance metrics', {
+          filename,
+          fileSizeKB: fileSize.toFixed(1),
+          conversionMs: conversionTime,
+          pipelineMs: pipelineTime,
+          entityCount: result.entities.length,
+          totalMs: totalTime,
+        });
 
         // Expect reasonable performance (< 10s for any document)
         expect(totalTime, `${filename} should process in < 10s`).to.be.lessThan(10000);

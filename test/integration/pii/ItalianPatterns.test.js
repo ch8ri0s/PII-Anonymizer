@@ -13,6 +13,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../../helpers/testLogger.js';
+const log = createTestLogger('integration:italian');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -210,8 +214,10 @@ describe('Italian Address Pattern Detection (Story 8.19)', function () {
 
       const metrics = calculatePrecisionRecall(detected, italianInvoice.entities);
 
-      console.log(`  Italian Invoice Recall: ${(metrics.recall * 100).toFixed(1)}%`);
-      console.log(`  Italian Invoice Precision: ${(metrics.precision * 100).toFixed(1)}%`);
+      log.info('Italian Invoice metrics', {
+        recall: `${(metrics.recall * 100).toFixed(1)}%`,
+        precision: `${(metrics.precision * 100).toFixed(1)}%`,
+      });
 
       // Italian invoice should achieve at least 70% recall
       // (Current: 75%, targets will improve with ML model)

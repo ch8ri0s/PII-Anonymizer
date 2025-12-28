@@ -10,6 +10,10 @@ import { DocxConverter } from '../../src/converters/DocxConverter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('converter:docx');
+
 describe('DocxConverter', () => {
   let converter: DocxConverter;
 
@@ -59,7 +63,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.docx fixture not found');
+        log.debug('Skipping test: sample.docx fixture not found');
         return;
       }
 
@@ -79,7 +83,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.docx fixture not found');
+        log.debug('Skipping test: sample.docx fixture not found');
         return;
       }
 
@@ -98,7 +102,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.docx fixture not found');
+        log.debug('Skipping test: sample.docx fixture not found');
         return;
       }
 
@@ -119,7 +123,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.docx fixture not found');
+        log.debug('Skipping test: sample.docx fixture not found');
         return;
       }
 
@@ -139,7 +143,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/table.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: table.docx fixture not found');
+        log.debug('Skipping test: table.docx fixture not found');
         return;
       }
 
@@ -160,7 +164,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/list.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: list.docx fixture not found');
+        log.debug('Skipping test: list.docx fixture not found');
         return;
       }
 
@@ -180,7 +184,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.docx fixture not found');
+        log.debug('Skipping test: sample.docx fixture not found');
         return;
       }
 
@@ -220,7 +224,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.docx fixture not found');
+        log.debug('Skipping test: sample.docx fixture not found');
         return;
       }
 
@@ -244,7 +248,7 @@ describe('DocxConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/list.docx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: list.docx fixture not found');
+        log.debug('Skipping test: list.docx fixture not found');
         return;
       }
 

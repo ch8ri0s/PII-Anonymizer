@@ -10,6 +10,10 @@
 import { expect } from 'chai';
 import { TableDetector, TableToMarkdownConverter } from '../../dist/utils/pdfTableDetector.js';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('performance:table');
+
 describe('Table Detection Performance', () => {
   let detector;
   let converter;
@@ -91,10 +95,11 @@ describe('Table Detection Performance', () => {
       // Calculate overhead
       const overhead = ((detection.duration - baseline.duration) / baseline.duration) * 100;
 
-      console.log('Small table (10x5 = 50 items):');
-      console.log(`  Baseline: ${baseline.duration.toFixed(3)}ms`);
-      console.log(`  Detection: ${detection.duration.toFixed(3)}ms`);
-      console.log(`  Overhead: ${overhead.toFixed(1)}%`);
+      log.debug('Small table (10x5 = 50 items)', {
+        baselineMs: baseline.duration.toFixed(3),
+        detectionMs: detection.duration.toFixed(3),
+        overhead: `${overhead.toFixed(1)}%`,
+      });
 
       // For very small tables, absolute time is more meaningful than percentage
       // Detection should complete in under 10ms
@@ -116,9 +121,10 @@ describe('Table Detection Performance', () => {
         return detector.detectTables(items);
       });
 
-      console.log('Medium table (50x10 = 500 items):');
-      console.log(`  Baseline: ${baseline.duration.toFixed(3)}ms`);
-      console.log(`  Detection: ${detection.duration.toFixed(3)}ms`);
+      log.debug('Medium table (50x10 = 500 items)', {
+        baselineMs: baseline.duration.toFixed(3),
+        detectionMs: detection.duration.toFixed(3),
+      });
 
       // Detection should complete in under 50ms for medium tables
       expect(detection.duration).to.be.below(50, 'Detection should complete in under 50ms');
@@ -139,9 +145,10 @@ describe('Table Detection Performance', () => {
         return detector.detectTables(items);
       });
 
-      console.log('Large table (100x20 = 2000 items):');
-      console.log(`  Baseline: ${baseline.duration.toFixed(3)}ms`);
-      console.log(`  Detection: ${detection.duration.toFixed(3)}ms`);
+      log.debug('Large table (100x20 = 2000 items)', {
+        baselineMs: baseline.duration.toFixed(3),
+        detectionMs: detection.duration.toFixed(3),
+      });
 
       // Detection should complete in under 200ms for large tables
       expect(detection.duration).to.be.below(200, 'Detection should complete in under 200ms');
@@ -156,8 +163,9 @@ describe('Table Detection Performance', () => {
         return detector.detectTables(items);
       });
 
-      console.log('Very large table (500x10 = 5000 items):');
-      console.log(`  Detection: ${detection.duration.toFixed(3)}ms`);
+      log.debug('Very large table (500x10 = 5000 items)', {
+        detectionMs: detection.duration.toFixed(3),
+      });
 
       // Should complete within 1 second even for very large tables
       expect(detection.duration).to.be.below(1000, 'Very large table detection should complete in under 1s');
@@ -174,9 +182,10 @@ describe('Table Detection Performance', () => {
           return converter.convertTable(result.tables[0]);
         });
 
-        console.log('Markdown conversion (50x10 table):');
-        console.log(`  Duration: ${conversion.duration.toFixed(3)}ms`);
-        console.log(`  Output length: ${conversion.result.length} chars`);
+        log.debug('Markdown conversion (50x10 table)', {
+          durationMs: conversion.duration.toFixed(3),
+          outputLength: conversion.result.length,
+        });
 
         // Conversion should be very fast (under 10ms)
         expect(conversion.duration).to.be.below(10, 'Markdown conversion should be under 10ms');
@@ -206,8 +215,10 @@ describe('Table Detection Performance', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryGrowth = (endMemory - startMemory) / 1024 / 1024; // MB
 
-      console.log(`Memory usage after ${iterations} iterations:`);
-      console.log(`  Growth: ${memoryGrowth.toFixed(2)}MB`);
+      log.debug('Memory usage', {
+        iterations,
+        growthMB: memoryGrowth.toFixed(2),
+      });
 
       // Memory growth should be minimal (under 10MB for 100 iterations)
       expect(memoryGrowth).to.be.below(10, 'Memory growth should be under 10MB');
@@ -229,9 +240,11 @@ describe('Table Detection Performance', () => {
       const totalTime = performance.now() - start;
       const tablesPerSecond = (targetTables / totalTime) * 1000;
 
-      console.log('Throughput benchmark:');
-      console.log(`  ${targetTables} tables in ${totalTime.toFixed(1)}ms`);
-      console.log(`  Rate: ${tablesPerSecond.toFixed(1)} tables/second`);
+      log.debug('Throughput benchmark', {
+        tables: targetTables,
+        totalTimeMs: totalTime.toFixed(1),
+        rate: `${tablesPerSecond.toFixed(1)} tables/second`,
+      });
 
       // Should process at least 10 tables per second
       expect(tablesPerSecond).to.be.at.least(10, 'Should process at least 10 tables per second');
@@ -240,13 +253,15 @@ describe('Table Detection Performance', () => {
 
   describe('Performance Summary', () => {
     it('should output performance summary', () => {
-      console.log('\n=== Performance Test Summary ===');
-      console.log('SC-003: Processing overhead <20% - Measured via absolute time limits');
-      console.log('Small tables (50 items): <10ms');
-      console.log('Medium tables (500 items): <50ms');
-      console.log('Large tables (2000 items): <200ms');
-      console.log('Very large tables (5000 items): <1000ms');
-      console.log('================================\n');
+      log.info('Performance Test Summary', {
+        description: 'SC-003: Processing overhead <20% - Measured via absolute time limits',
+        limits: {
+          small: '<10ms (50 items)',
+          medium: '<50ms (500 items)',
+          large: '<200ms (2000 items)',
+          veryLarge: '<1000ms (5000 items)',
+        },
+      });
 
       expect(true).to.be.true;
     });

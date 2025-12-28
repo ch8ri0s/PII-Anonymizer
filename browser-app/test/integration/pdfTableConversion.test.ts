@@ -14,6 +14,10 @@ import * as path from 'path';
 import { PdfConverter } from '../../src/converters/PdfConverter';
 import { getMimeType, PERFORMANCE_THRESHOLDS } from '@shared-test/index';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('integration:pdf');
+
 // Test fixtures directory - using parent project fixtures
 const TEST_FIXTURES_DIR = path.join(__dirname, '../../../test/fixtures');
 const BROWSER_FIXTURES_DIR = path.join(__dirname, '../fixtures');
@@ -38,7 +42,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'simple-table.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: simple-table.pdf not found');
+        log.debug('Skipping: simple-table.pdf not found');
         return;
       }
 
@@ -52,7 +56,7 @@ describe('PDF Conversion Integration (Browser)', () => {
         // pdf-parse has known compatibility issues with some PDFs
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed (known compatibility issue)');
+          log.debug('Skipping: PDF parsing failed (known compatibility issue)');
           return;
         }
         throw error;
@@ -71,7 +75,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'multi-page-tables.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: multi-page-tables.pdf not found');
+        log.debug('Skipping: multi-page-tables.pdf not found');
         return;
       }
 
@@ -84,7 +88,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -98,7 +102,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'simple-table.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: simple-table.pdf not found');
+        log.debug('Skipping: simple-table.pdf not found');
         return;
       }
 
@@ -111,7 +115,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -151,7 +155,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -187,7 +191,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -216,7 +220,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'special-chars-table.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: special-chars-table.pdf not found');
+        log.debug('Skipping: special-chars-table.pdf not found');
         return;
       }
 
@@ -229,7 +233,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -245,7 +249,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'simple-table.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: simple-table.pdf not found');
+        log.debug('Skipping: simple-table.pdf not found');
         return;
       }
 
@@ -258,7 +262,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -291,7 +295,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'special-chars-table.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: special-chars-table.pdf not found');
+        log.debug('Skipping: special-chars-table.pdf not found');
         return;
       }
 
@@ -304,7 +308,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -329,7 +333,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const testPdfPath = path.join(TEST_FIXTURES_DIR, 'simple-table.pdf');
 
       if (!fs.existsSync(testPdfPath)) {
-        console.log('Skipping: simple-table.pdf not found');
+        log.debug('Skipping: simple-table.pdf not found');
         return;
       }
 
@@ -342,7 +346,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       } catch (error) {
         if ((error as Error).message.includes('bad XRef') ||
             (error as Error).message.includes('Illegal character')) {
-          console.log('Skipping: PDF parsing failed');
+          log.debug('Skipping: PDF parsing failed');
           return;
         }
         throw error;
@@ -350,7 +354,7 @@ describe('PDF Conversion Integration (Browser)', () => {
       const elapsed = performance.now() - start;
 
       expect(elapsed).toBeLessThan(PERFORMANCE_THRESHOLDS.maxProcessingTimeMs);
-      console.log(`  PDF conversion took ${elapsed.toFixed(0)}ms`);
+      log.debug('PDF conversion completed', { durationMs: elapsed.toFixed(0) });
     });
   });
 });
@@ -366,7 +370,7 @@ describe('Cross-Platform PDF Conversion Consistency', () => {
     const testPdfPath = path.join(TEST_FIXTURES_DIR, 'simple-table.pdf');
 
     if (!fs.existsSync(testPdfPath)) {
-      console.log('Skipping: simple-table.pdf not found');
+      log.debug('Skipping: simple-table.pdf not found');
       return;
     }
 
@@ -383,7 +387,7 @@ describe('Cross-Platform PDF Conversion Consistency', () => {
     } catch (error) {
       if ((error as Error).message.includes('bad XRef') ||
           (error as Error).message.includes('Illegal character')) {
-        console.log('Skipping: PDF parsing failed');
+        log.debug('Skipping: PDF parsing failed');
         return;
       }
       throw error;

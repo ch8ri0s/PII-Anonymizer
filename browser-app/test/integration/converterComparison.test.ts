@@ -14,6 +14,10 @@ import { TextConverter } from '../../src/converters/TextConverter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('integration:comparison');
+
 describe('Converter Comparison Tests', () => {
   // Initialize all converters
   let pdfConverter: PdfConverter;
@@ -44,7 +48,7 @@ describe('Converter Comparison Tests', () => {
         const fullPath = path.join(__dirname, '../fixtures', fixturePath);
 
         if (!fs.existsSync(fullPath)) {
-          console.warn(`Skipping ${name}: ${fixturePath} not found`);
+          log.debug('Skipping converter test', { converter: name, fixture: fixturePath });
           continue;
         }
 
@@ -126,7 +130,7 @@ describe('Converter Comparison Tests', () => {
       const fullPath = path.join(__dirname, '../fixtures/sample.docx');
 
       if (!fs.existsSync(fullPath)) {
-        console.warn('Skipping: sample.docx not found');
+        log.debug('Skipping: sample.docx not found');
         return;
       }
 

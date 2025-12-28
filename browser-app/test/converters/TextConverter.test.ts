@@ -10,6 +10,10 @@ import { TextConverter } from '../../src/converters/TextConverter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('converter:text');
+
 describe('TextConverter', () => {
   let converter: TextConverter;
 
@@ -82,7 +86,7 @@ describe('TextConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.txt');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.txt fixture not found');
+        log.debug('Skipping test: sample.txt fixture not found');
         return;
       }
 
@@ -115,7 +119,7 @@ describe('TextConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.txt');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.txt fixture not found');
+        log.debug('Skipping test: sample.txt fixture not found');
         return;
       }
 

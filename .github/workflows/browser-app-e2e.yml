@@ -1,3 +1,14 @@
+# Browser App E2E Tests
+#
+# Runs Playwright E2E tests across multiple browsers and mobile viewports.
+#
+# Story 10.9: CI/CD Log Level Configuration
+#
+# Log Level Configuration:
+# - Default: LOG_LEVEL=error (minimal output for clean CI logs)
+# - Debug: Manually trigger workflow and select 'debug' from log_level dropdown
+# - Levels: error (minimal) | warn (warnings) | info (verbose) | debug (full)
+
 name: Browser App E2E Tests
 
 on:
@@ -10,6 +21,18 @@ on:
     branches: [main]
     paths:
       - 'browser-app/**'
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level for debugging (error=minimal, debug=verbose)'
+        required: false
+        default: 'error'
+        type: choice
+        options:
+          - error
+          - warn
+          - info
+          - debug
 
 jobs:
   e2e-tests:
@@ -46,6 +69,7 @@ jobs:
         run: npm run test:e2e -- --project=${{ matrix.browser }}
         env:
           CI: true
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'error' }}  # Minimal output by default
 
       - name: Upload test results
         if: always()
@@ -92,6 +116,7 @@ jobs:
         run: npm run test:e2e -- --project=mobile-chrome --project=mobile-safari
         env:
           CI: true
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'error' }}  # Minimal output by default
 
       - name: Upload mobile test results
         if: always()

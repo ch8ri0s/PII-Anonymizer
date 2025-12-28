@@ -15,6 +15,10 @@ import * as _fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../../helpers/testLogger.js';
+const log = createTestLogger('integration:presidio');
+
 // ES Module path handling
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,8 +125,10 @@ describe('Presidio Compatibility Tests (Story 8.6)', function () {
       const minRate = 0.80; // At least 80% of supported IBANs should be detected
 
       if (failed.length > 0) {
-        console.log(`Failed to detect ${failed.length} supported IBANs:`);
-        failed.forEach(f => console.log(`  - ${f.country}: ${f.iban}`));
+        log.debug('Failed to detect supported IBANs', {
+          count: failed.length,
+          failed: failed.map(f => ({ country: f.country, iban: f.iban })),
+        });
       }
 
       expect(
@@ -152,11 +158,16 @@ describe('Presidio Compatibility Tests (Story 8.6)', function () {
 
       const rejectionRate = rejected / ibanTestCases.invalid_ibans.length;
 
-      console.log(`  Invalid IBAN rejection: ${rejected}/${ibanTestCases.invalid_ibans.length} (${(rejectionRate * 100).toFixed(1)}%)`);
+      log.debug('Invalid IBAN rejection', {
+        rejected,
+        total: ibanTestCases.invalid_ibans.length,
+        rate: `${(rejectionRate * 100).toFixed(1)}%`,
+      });
 
       if (falsePositives.length > 0) {
-        console.log('  False positives detected (validation needed):');
-        falsePositives.forEach(f => console.log(`    - ${f.iban}: ${f.reason}`));
+        log.debug('False positives detected (validation needed)', {
+          falsePositives: falsePositives.map(f => ({ iban: f.iban, reason: f.reason })),
+        });
       }
 
       // Our current IBAN detector may not have full checksum validation
@@ -271,10 +282,18 @@ describe('Presidio Compatibility Tests (Story 8.6)', function () {
         }
       }
 
-      console.log('\n=== Presidio Compatibility Summary ===');
-      console.log(`Valid IBAN detection: ${validDetected}/${ibanTestCases.valid_ibans.length} (${((validDetected / ibanTestCases.valid_ibans.length) * 100).toFixed(1)}%)`);
-      console.log(`Invalid IBAN rejection: ${invalidRejected}/${ibanTestCases.invalid_ibans.length} (${((invalidRejected / ibanTestCases.invalid_ibans.length) * 100).toFixed(1)}%)`);
-      console.log('======================================\n');
+      log.info('Presidio Compatibility Summary', {
+        validDetection: {
+          detected: validDetected,
+          total: ibanTestCases.valid_ibans.length,
+          rate: `${((validDetected / ibanTestCases.valid_ibans.length) * 100).toFixed(1)}%`,
+        },
+        invalidRejection: {
+          rejected: invalidRejected,
+          total: ibanTestCases.invalid_ibans.length,
+          rate: `${((invalidRejected / ibanTestCases.invalid_ibans.length) * 100).toFixed(1)}%`,
+        },
+      });
 
       expect(true).to.be.true; // Summary test always passes
     });

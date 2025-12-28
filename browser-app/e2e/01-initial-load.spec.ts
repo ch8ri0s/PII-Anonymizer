@@ -184,7 +184,7 @@ test.describe('Browser Compatibility', () => {
     expect(apis.promises).toBe(true);
     expect(apis.arrayBuffer).toBe(true);
     expect(apis.blob).toBe(true);
-    // DataTransfer may not be available in all contexts, so just log it
-    console.log('DataTransfer support:', apis.dataTransfer);
+    // DataTransfer may not be available in all contexts - just verify it returns a boolean
+    expect(typeof apis.dataTransfer).toBe('boolean');
   });
 });

@@ -12,6 +12,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('integration:converter');
+
 // Import converters
 import PdfToMarkdown from '../../dist/converters/PdfToMarkdown.js';
 import DocxToMarkdown from '../../dist/converters/DocxToMarkdown.js';
@@ -58,7 +62,7 @@ describe('Converter Comparison Tests (Electron)', function () {
     _textConverter = new TextToMarkdown();
 
     if (testFiles.length === 0) {
-      console.warn('⚠️  No test files found in test/.files/ - some tests will be skipped');
+      log.warn('No test files found in test/.files/ - some tests will be skipped');
     }
   });
 
@@ -72,7 +76,7 @@ describe('Converter Comparison Tests (Electron)', function () {
 
       for (const { file, converter, name } of fixtures) {
         if (!file) {
-          console.log(`  Skipping ${name}: No test file found`);
+          log.debug('Skipping converter - no test file found', { converter: name });
           continue;
         }
 
@@ -82,7 +86,7 @@ describe('Converter Comparison Tests (Electron)', function () {
         expect(markdown, `${name} should produce output`).to.be.a('string');
         expect(markdown.length, `${name} should produce non-empty output`).to.be.greaterThan(0);
 
-        console.log(`  ✓ ${name} (${file}): ${markdown.length} chars`);
+        log.debug('Converter produced output', { converter: name, file, chars: markdown.length });
       }
     });
 
@@ -136,7 +140,7 @@ describe('Converter Comparison Tests (Electron)', function () {
         expect(allSamePipes, 'Table should have consistent columns').to.be.true;
       }
 
-      console.log(`  ✓ ${xlsxFile}: Valid table structure`);
+      log.debug('Valid table structure', { file: xlsxFile });
     });
 
     it('should produce valid markdown from DOCX', async function () {
@@ -153,7 +157,7 @@ describe('Converter Comparison Tests (Electron)', function () {
       expect(markdown).to.not.include('<html>');
       expect(markdown).to.not.include('<?xml');
 
-      console.log(`  ✓ ${docxFile}: Valid markdown (no raw HTML/XML)`);
+      log.debug('Valid markdown (no raw HTML/XML)', { file: docxFile });
     });
   });
 
@@ -172,7 +176,7 @@ describe('Converter Comparison Tests (Electron)', function () {
       const hasAddress = /\d{4}\s+[A-Za-zÀ-ÿ]+/.test(markdown); // Swiss postal code pattern
       expect(hasAddress, `${pdfFile} should preserve address patterns`).to.be.true;
 
-      console.log(`  ✓ ${pdfFile}: Addresses preserved`);
+      log.debug('Addresses preserved', { file: pdfFile });
     });
 
     it('should preserve phone numbers in documents', async function () {
@@ -189,7 +193,7 @@ describe('Converter Comparison Tests (Electron)', function () {
       const hasPhone = /\+41\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}/.test(markdown);
       if (markdown.includes('+41')) {
         expect(hasPhone, `${pdfFile} should preserve phone numbers`).to.be.true;
-        console.log(`  ✓ ${pdfFile}: Phone numbers preserved`);
+        log.debug('Phone numbers preserved', { file: pdfFile });
       }
     });
 
@@ -207,7 +211,7 @@ describe('Converter Comparison Tests (Electron)', function () {
       const hasDate = /\d{2}[./-]\d{2}[./-]\d{4}/.test(markdown);
       expect(hasDate, `${pdfFile} should preserve dates`).to.be.true;
 
-      console.log(`  ✓ ${pdfFile}: Dates preserved`);
+      log.debug('Dates preserved', { file: pdfFile });
     });
   });
 
@@ -229,7 +233,7 @@ describe('Converter Comparison Tests (Electron)', function () {
 
         const fileSize = fs.statSync(filePath).size / 1024;
 
-        console.log(`  ${name} (${file}, ${fileSize.toFixed(1)}KB): ${elapsed}ms`);
+        log.debug('Converter performance', { converter: name, file, sizeKB: fileSize.toFixed(1), elapsedMs: elapsed });
 
         expect(elapsed, `${name} should convert in < 10s`).to.be.lessThan(
           PERFORMANCE_THRESHOLDS.maxProcessingTimeMs,
@@ -277,10 +281,12 @@ describe('Converter Comparison Tests (Electron)', function () {
 
         const markdown = await converter.convert(filePath);
 
-        console.log(`  ${filename}:`);
-        console.log(`    Language: ${expected.language}`);
-        console.log(`    Category: ${expected.category}`);
-        console.log(`    Markdown length: ${markdown.length} chars`);
+        log.debug('Document characteristics', {
+          filename,
+          language: expected.language,
+          category: expected.category,
+          markdownLength: markdown.length,
+        });
 
         expect(markdown.length, `${filename} should produce substantial markdown`).to.be.greaterThan(100);
       }

@@ -10,6 +10,10 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
+// Test logger for consistent output
+import { createTestLogger } from '../../helpers/testLogger.js';
+const log = createTestLogger('unit:performance');
+
 // Import detection pipeline
 import { createPipeline } from '../../../dist/pii/DetectionPipeline.js';
 import { HighRecallPass } from '../../../dist/pii/passes/HighRecallPass.js';
@@ -99,10 +103,11 @@ describe('Epic 8 Performance Benchmark', function () {
 
     const overhead = ((epic8Avg - baselineAvg) / baselineAvg) * 100;
 
-    console.log('\nPerformance Benchmark Results:');
-    console.log(`  Baseline (Epic 8 OFF): ${baselineAvg.toFixed(2)}ms avg`);
-    console.log(`  Epic 8 (Epic 8 ON):    ${epic8Avg.toFixed(2)}ms avg`);
-    console.log(`  Overhead:              ${overhead.toFixed(2)}%`);
+    log.info('Performance Benchmark Results', {
+      baselineMs: baselineAvg.toFixed(2),
+      epic8Ms: epic8Avg.toFixed(2),
+      overhead: `${overhead.toFixed(2)}%`,
+    });
 
     // Performance assertion relaxed - too flaky in parallel test runs
     // When run in isolation, overhead is typically <5%
@@ -112,9 +117,9 @@ describe('Epic 8 Performance Benchmark', function () {
       // Only fail for severe regressions (>500% overhead = 6x slower)
       expect.fail(`Epic 8 overhead (${overhead.toFixed(2)}%) is severely degraded (>500%)`);
     } else if (overhead > 100) {
-      console.log(`  Warning: Epic 8 overhead is high (${overhead.toFixed(2)}%) - likely test suite pollution`);
+      log.warn('Epic 8 overhead is high - likely test suite pollution', { overhead: `${overhead.toFixed(2)}%` });
     } else if (overhead > 50) {
-      console.log(`  Note: Epic 8 overhead is moderate (${overhead.toFixed(2)}%)`);
+      log.debug('Epic 8 overhead is moderate', { overhead: `${overhead.toFixed(2)}%` });
     }
   });
 
@@ -142,10 +147,11 @@ describe('Epic 8 Performance Benchmark', function () {
     const totalCalls = iterations * testEntities.length;
     const avgTimePerCall = (end - start) / totalCalls;
 
-    console.log('\nDenyList Performance:');
-    console.log(`  Total calls: ${totalCalls}`);
-    console.log(`  Total time: ${(end - start).toFixed(2)}ms`);
-    console.log(`  Avg per call: ${avgTimePerCall.toFixed(4)}ms`);
+    log.info('DenyList Performance', {
+      totalCalls,
+      totalTimeMs: (end - start).toFixed(2),
+      avgPerCallMs: avgTimePerCall.toFixed(4),
+    });
 
     // Each DenyList check should be <1ms
     expect(avgTimePerCall).to.be.lessThan(
@@ -182,10 +188,11 @@ describe('Epic 8 Performance Benchmark', function () {
     const totalCalls = iterations * testEntities.length;
     const avgTimePerCall = (end - start) / totalCalls;
 
-    console.log('\nContextEnhancer Performance:');
-    console.log(`  Total calls: ${totalCalls}`);
-    console.log(`  Total time: ${(end - start).toFixed(2)}ms`);
-    console.log(`  Avg per call: ${avgTimePerCall.toFixed(4)}ms`);
+    log.info('ContextEnhancer Performance', {
+      totalCalls,
+      totalTimeMs: (end - start).toFixed(2),
+      avgPerCallMs: avgTimePerCall.toFixed(4),
+    });
 
     // Each ContextEnhancer call should be <5ms
     expect(avgTimePerCall).to.be.lessThan(

@@ -11,6 +11,10 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 
+// Test logger for consistent output
+import { createTestLogger } from '../../helpers/testLogger.js';
+const log = createTestLogger('integration:context');
+
 // Dynamic imports
 let createPipeline;
 let createHighRecallPass, createFormatValidationPass, createContextScoringPass;
@@ -328,9 +332,11 @@ Address: Bahnhofstrasse 10, 8001 Zürich`;
       const overhead = timeWith - timeWithout;
 
       // Log for debugging
-      console.log(`Without context: ${timeWithout.toFixed(2)}ms`);
-      console.log(`With context: ${timeWith.toFixed(2)}ms`);
-      console.log(`Overhead: ${overhead.toFixed(2)}ms`);
+      log.debug('Context performance', {
+        withoutContextMs: timeWithout.toFixed(2),
+        withContextMs: timeWith.toFixed(2),
+        overheadMs: overhead.toFixed(2),
+      });
 
       // Overhead should be less than 5ms
       expect(overhead, 'Context overhead should be < 5ms').to.be.lessThan(5);

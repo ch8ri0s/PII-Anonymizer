@@ -19,6 +19,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../../helpers/testLogger.js';
+const log = createTestLogger('integration:quality');
+
 // ES Module path handling
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -165,11 +169,15 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
       const targetPercent = (OVERALL_THRESHOLDS.precision * 100).toFixed(1);
       const meetsTarget = aggregatedResults.precision >= OVERALL_THRESHOLDS.precision;
 
-      console.log(`  Precision: ${precisionPercent}% (target: >${targetPercent}%) - ${meetsTarget ? 'PASS' : 'BELOW TARGET'}`);
+      log.info('Precision metric', {
+        precision: `${precisionPercent}%`,
+        target: `>${targetPercent}%`,
+        result: meetsTarget ? 'PASS' : 'BELOW TARGET',
+      });
 
       // Track whether target is met for visibility
       if (!meetsTarget) {
-        console.log('  Note: Precision target will be met after ML model improvements (Stories 8.7-8.9)');
+        log.debug('Precision target will be met after ML model improvements (Stories 8.7-8.9)');
       }
 
       // This test validates the metric is calculable, not that the target is met
@@ -185,10 +193,14 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
       const targetPercent = (OVERALL_THRESHOLDS.recall * 100).toFixed(1);
       const meetsTarget = aggregatedResults.recall >= OVERALL_THRESHOLDS.recall;
 
-      console.log(`  Recall: ${recallPercent}% (target: ≥${targetPercent}%) - ${meetsTarget ? 'PASS' : 'BELOW TARGET'}`);
+      log.info('Recall metric', {
+        recall: `${recallPercent}%`,
+        target: `≥${targetPercent}%`,
+        result: meetsTarget ? 'PASS' : 'BELOW TARGET',
+      });
 
       if (!meetsTarget) {
-        console.log('  Note: Recall target will be met after ML model improvements (Stories 8.7-8.9)');
+        log.debug('Recall target will be met after ML model improvements (Stories 8.7-8.9)');
       }
 
       // This test validates the metric is calculable, not that the target is met
@@ -230,10 +242,14 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
         const targetPercent = (PER_ENTITY_TYPE_THRESHOLDS.PERSON_NAME.precision * 100).toFixed(1);
         const meetsTarget = metrics.precision >= PER_ENTITY_TYPE_THRESHOLDS.PERSON_NAME.precision;
 
-        console.log(`  PERSON_NAME: ${precisionPercent}% (target: >${targetPercent}%) - ${meetsTarget ? 'PASS' : 'BELOW TARGET'}`);
+        log.info('PERSON_NAME metric', {
+          precision: `${precisionPercent}%`,
+          target: `>${targetPercent}%`,
+          result: meetsTarget ? 'PASS' : 'BELOW TARGET',
+        });
 
         if (!meetsTarget) {
-          console.log('  Note: PERSON_NAME detection requires ML model (Story 8.7+)');
+          log.debug('PERSON_NAME detection requires ML model (Story 8.7+)');
         }
 
         // Validate metric is calculable
@@ -293,12 +309,12 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
         perEntityType: PER_ENTITY_TYPE_THRESHOLDS,
       });
 
-      console.log('\n  Full Threshold Validation:');
       if (fullThresholdResult.passes) {
-        console.log('  All targets met!');
+        log.info('Full threshold validation: All targets met!');
       } else {
-        console.log('  Targets not yet met (expected before ML improvements):');
-        fullThresholdResult.failures.forEach(f => console.log(`    - ${f}`));
+        log.info('Full threshold validation: Targets not yet met (expected before ML improvements)', {
+          failures: fullThresholdResult.failures,
+        });
       }
     });
   });
@@ -450,7 +466,7 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
       // If golden snapshot doesn't exist, create it (first run)
       if (!fs.existsSync(goldenPath)) {
         fs.writeFileSync(goldenPath, JSON.stringify(detected, null, 2));
-        console.log(`  Created golden snapshot: ${goldenPath}`);
+        log.info('Created golden snapshot', { path: goldenPath });
         this.skip(); // Skip comparison on first run
         return;
       }
@@ -462,8 +478,9 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
       });
 
       if (!comparison.matches) {
-        console.log('Golden snapshot differences:');
-        comparison.differences.forEach(d => console.log(`  - ${d.reason}`));
+        log.warn('Golden snapshot differences', {
+          differences: comparison.differences.map(d => d.reason),
+        });
       }
 
       expect(comparison.matches, 'Detection should match golden snapshot').to.be.true;
@@ -489,7 +506,7 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
 
       if (!fs.existsSync(goldenPath)) {
         fs.writeFileSync(goldenPath, JSON.stringify(detected, null, 2));
-        console.log(`  Created golden snapshot: ${goldenPath}`);
+        log.info('Created golden snapshot', { path: goldenPath });
         this.skip();
         return;
       }
@@ -500,8 +517,9 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
       });
 
       if (!comparison.matches) {
-        console.log('Golden snapshot differences:');
-        comparison.differences.forEach(d => console.log(`  - ${d.reason}`));
+        log.warn('Golden snapshot differences', {
+          differences: comparison.differences.map(d => d.reason),
+        });
       }
 
       expect(comparison.matches, 'Detection should match golden snapshot').to.be.true;
@@ -591,10 +609,10 @@ describe('PII Detection Quality Validation (Story 8.6)', function () {
     });
 
     it('should log quality summary after tests', function () {
-      console.log('\n=== Quality Validation Summary ===');
-      console.log(formatMetrics(aggregatedResults));
-      console.log(`Documents evaluated: ${annotatedDocuments.length}`);
-      console.log('===================================\n');
+      log.info('Quality Validation Summary', {
+        metrics: formatMetrics(aggregatedResults),
+        documentsEvaluated: annotatedDocuments.length,
+      });
     });
   });
 });

@@ -10,6 +10,10 @@ import { dirname, join } from 'path';
 import { access } from 'fs/promises';
 import { constants } from 'fs';
 
+// Test logger for consistent output
+import { createTestLogger } from './helpers/testLogger.js';
+const log = createTestLogger('converters');
+
 // Import converters (from dist/ - TypeScript compiled output)
 import { PdfToMarkdown } from '../dist/converters/PdfToMarkdown.js';
 import { DocxToMarkdown } from '../dist/converters/DocxToMarkdown.js';
@@ -314,7 +318,7 @@ describe('File Format Converters', () => {
 
       } catch (error) {
         if (error.code === 'ENOENT') {
-          console.log('      ℹ DOCX test file not found - create sample.docx to enable this test');
+          log.debug('DOCX test file not found - create sample.docx to enable this test');
           this.skip();
         } else {
           throw error;

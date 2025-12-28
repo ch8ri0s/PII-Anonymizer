@@ -36,6 +36,7 @@ async function globalTeardown(_config: FullConfig) {
     }
   }
 
+  // eslint-disable-next-line no-console -- Playwright teardown output
   console.log('\n✓ Test cleanup completed');
 }
 

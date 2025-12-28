@@ -13,6 +13,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('fixtures:pdf');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -32,7 +36,7 @@ async function generateSimpleTablePdf() {
     const stream = fs.createWriteStream(outputPath);
 
     stream.on('finish', () => {
-      console.log(`Created: ${outputPath}`);
+      log.info('Created test PDF', { path: outputPath });
       resolve();
     });
     stream.on('error', reject);
@@ -105,7 +109,7 @@ async function generateTextOnlyPdf() {
     const stream = fs.createWriteStream(outputPath);
 
     stream.on('finish', () => {
-      console.log(`Created: ${outputPath}`);
+      log.info('Created test PDF', { path: outputPath });
       resolve();
     });
     stream.on('error', reject);
@@ -143,7 +147,7 @@ async function generateMultiPageTablePdf() {
     const stream = fs.createWriteStream(outputPath);
 
     stream.on('finish', () => {
-      console.log(`Created: ${outputPath}`);
+      log.info('Created test PDF', { path: outputPath });
       resolve();
     });
     stream.on('error', reject);
@@ -192,7 +196,7 @@ async function generateSpecialCharsPdf() {
     const stream = fs.createWriteStream(outputPath);
 
     stream.on('finish', () => {
-      console.log(`Created: ${outputPath}`);
+      log.info('Created test PDF', { path: outputPath });
       resolve();
     });
     stream.on('error', reject);
@@ -248,15 +252,15 @@ function drawTable(doc, data, left, top, colWidth, rowHeight) {
 
 // Generate all test PDFs
 async function main() {
-  console.log('Generating test PDF fixtures...');
+  log.info('Generating test PDF fixtures');
   await generateSimpleTablePdf();
   await generateTextOnlyPdf();
   await generateMultiPageTablePdf();
   await generateSpecialCharsPdf();
-  console.log('Done!');
+  log.info('PDF fixture generation complete');
 }
 
 main().catch(err => {
-  console.error('Error generating PDFs:', err);
+  log.error('Error generating PDFs', { error: err.message });
   process.exit(1);
 });

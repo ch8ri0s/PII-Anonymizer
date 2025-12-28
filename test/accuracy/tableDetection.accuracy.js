@@ -12,6 +12,10 @@
 import { expect } from 'chai';
 import { TableDetector, TableToMarkdownConverter } from '../../dist/utils/pdfTableDetector.js';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('accuracy:table');
+
 describe('Table Detection Accuracy Validation', () => {
   let detector;
   let _converter;
@@ -133,7 +137,7 @@ describe('Table Detection Accuracy Validation', () => {
       }
 
       const accuracy = (successCount / totalCases) * 100;
-      console.log(`Bordered table accuracy: ${accuracy.toFixed(1)}% (${successCount}/${totalCases})`);
+      log.info('Bordered table accuracy', { accuracy: `${accuracy.toFixed(1)}%`, success: successCount, total: totalCases });
 
       // SC-001: 95%+ accuracy required
       expect(accuracy).to.be.at.least(95, `Expected 95%+ accuracy, got ${accuracy.toFixed(1)}%`);
@@ -250,7 +254,7 @@ describe('Table Detection Accuracy Validation', () => {
       }
 
       const accuracy = (successCount / totalCases) * 100;
-      console.log(`Borderless table accuracy: ${accuracy.toFixed(1)}% (${successCount}/${totalCases})`);
+      log.info('Borderless table accuracy', { accuracy: `${accuracy.toFixed(1)}%`, success: successCount, total: totalCases });
 
       // SC-005: 80%+ accuracy required
       expect(accuracy).to.be.at.least(80, `Expected 80%+ accuracy, got ${accuracy.toFixed(1)}%`);
@@ -376,7 +380,7 @@ describe('Table Detection Accuracy Validation', () => {
       }
 
       const accuracy = totalAlignments > 0 ? (correctAlignments / totalAlignments) * 100 : 0;
-      console.log(`Column alignment accuracy: ${accuracy.toFixed(1)}% (${correctAlignments}/${totalAlignments})`);
+      log.info('Column alignment accuracy', { accuracy: `${accuracy.toFixed(1)}%`, correct: correctAlignments, total: totalAlignments });
 
       // SC-007: 90%+ accuracy required
       expect(accuracy).to.be.at.least(90, `Expected 90%+ accuracy, got ${accuracy.toFixed(1)}%`);
@@ -385,11 +389,13 @@ describe('Table Detection Accuracy Validation', () => {
 
   describe('Overall Detection Summary', () => {
     it('should summarize all accuracy metrics', () => {
-      console.log('\n=== Table Detection Accuracy Summary ===');
-      console.log('SC-001: Simple bordered tables - Target: 95%+');
-      console.log('SC-005: Borderless tables - Target: 80%+');
-      console.log('SC-007: Column alignment - Target: 90%+');
-      console.log('=========================================\n');
+      log.info('Table Detection Accuracy Summary', {
+        targets: {
+          'SC-001': 'Simple bordered tables - 95%+',
+          'SC-005': 'Borderless tables - 80%+',
+          'SC-007': 'Column alignment - 90%+',
+        },
+      });
 
       // This test always passes - it's just for the summary output
       expect(true).to.be.true;

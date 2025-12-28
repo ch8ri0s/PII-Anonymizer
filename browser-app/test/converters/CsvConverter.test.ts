@@ -10,6 +10,10 @@ import { CsvConverter } from '../../src/converters/CsvConverter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('converter:csv');
+
 describe('CsvConverter', () => {
   let converter: CsvConverter;
 
@@ -56,7 +60,7 @@ describe('CsvConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.csv');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.csv fixture not found');
+        log.debug('Skipping test: sample.csv fixture not found');
         return;
       }
 
@@ -98,7 +102,7 @@ describe('CsvConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.csv');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.csv fixture not found');
+        log.debug('Skipping test: sample.csv fixture not found');
         return;
       }
 
@@ -115,7 +119,7 @@ describe('CsvConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.csv');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.csv fixture not found');
+        log.debug('Skipping test: sample.csv fixture not found');
         return;
       }
 

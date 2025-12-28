@@ -1,6 +1,6 @@
 {
   "version": "4.0",
-  "timestamp": "2025-12-28T12:28:35.563Z",
+  "timestamp": "2025-12-28T20:41:46.026Z",
   "model": "Xenova/distilbert-base-multilingual-cased-ner-hrl",
   "documentType": "UNKNOWN",
   "detectionMethods": [
@@ -13,7 +13,7 @@
     "Pass 5: Consolidation & Entity Linking (Epic 8)"
   ],
   "entities": {
-    "2025-12-28T12:28:35.433Z\nanonymised: true\npiiModel": "[ADDRESS_1]",
+    "2025-12-28T20:41:45.995Z\nanonymised: true\npiiModel": "[ADDRESS_1]",
     "XYZ Ltd": "ORGANIZATION_1",
     "Jane Doe": "PERSON_NAME_1"
   },
@@ -22,7 +22,7 @@
     {
       "placeholder": "[ADDRESS_1]",
       "type": "ADDRESS",
-      "originalText": "2025-12-28T12:28:35.433Z\nanonymised: true\npiiModel",
+      "originalText": "2025-12-28T20:41:45.995Z\nanonymised: true\npiiModel",
       "logicalId": null,
       "components": {
         "street": "rue\npiiModel",

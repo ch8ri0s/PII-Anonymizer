@@ -21,6 +21,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('unit:redos');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -57,7 +61,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
 
     const duration = Date.now() - startTime;
-    console.log(`Processing time: ${duration}ms`);
+    log.debug('Processing time', { durationMs: duration });
 
     // Should complete in reasonable time (< 10 seconds including ML model cold start)
     // Actual regex processing should be <100ms; bulk of time is model loading
@@ -81,7 +85,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
     const duration = Date.now() - startTime;
 
-    console.log(`Alternating pattern processing time: ${duration}ms`);
+    log.debug('Alternating pattern processing time', { durationMs: duration });
 
     expect(duration).to.be.lessThan(2000,
       'CRITICAL BUG: Alternating patterns cause exponential backtracking');
@@ -103,7 +107,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
     const duration = Date.now() - startTime;
 
-    console.log(`Long entity processing time: ${duration}ms`);
+    log.debug('Long entity processing time', { durationMs: duration });
 
     // Should handle legitimately long names quickly
     expect(duration).to.be.lessThan(3000);
@@ -128,7 +132,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
     const duration = Date.now() - startTime;
 
-    console.log(`Multiple entities processing time: ${duration}ms`);
+    log.debug('Multiple entities processing time', { durationMs: duration });
 
     // Processing 20 entities should be roughly linear, not exponential
     // With ReDoS, this could take minutes; without, should be < 8 seconds (includes ML model loading)
@@ -152,7 +156,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
     const duration = Date.now() - startTime;
 
-    console.log(`Special chars + repetition processing time: ${duration}ms`);
+    log.debug('Special chars + repetition processing time', { durationMs: duration });
 
     expect(duration).to.be.lessThan(2000,
       'CRITICAL BUG: Special characters with repetition cause catastrophic backtracking');
@@ -179,7 +183,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
 
     const duration = Date.now() - startTime;
-    console.log(`Extreme case processing time: ${duration}ms`);
+    log.debug('Extreme case processing time', { durationMs: duration });
 
     expect(duration).to.be.lessThan(3000,
       'CRITICAL BUG: No timeout protection on regex operations');
@@ -206,7 +210,7 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
     await FileProcessor.processFile(filePath, outputPath);
     const duration = Date.now() - startTime;
 
-    console.log(`Mixed content processing time: ${duration}ms`);
+    log.debug('Mixed content processing time', { durationMs: duration });
 
     // Should complete by skipping problematic patterns
     expect(duration).to.be.lessThan(3000);
@@ -244,14 +248,14 @@ describe('FileProcessor ReDoS Protection (CRITICAL)', () => {
       const duration = Date.now() - startTime;
 
       times.push(duration);
-      console.log(`Size ${size}: ${duration}ms`);
+      log.debug('Linear test size', { size, durationMs: duration });
     }
 
     // Calculate ratios
     const ratio1 = times[1] / times[0]; // 20/10
     const ratio2 = times[2] / times[1]; // 30/20
 
-    console.log(`Time ratios: ${ratio1.toFixed(2)}x, ${ratio2.toFixed(2)}x`);
+    log.debug('Time ratios', { ratio1: ratio1.toFixed(2), ratio2: ratio2.toFixed(2) });
 
     // Linear: ratios should be close to 2.0 and 1.5
     // Exponential: ratios would be much higher (4x, 9x, etc.)

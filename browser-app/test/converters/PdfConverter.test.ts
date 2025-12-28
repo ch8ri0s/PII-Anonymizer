@@ -10,6 +10,10 @@ import { PdfConverter } from '../../src/converters/PdfConverter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('converter:pdf');
+
 describe('PdfConverter', () => {
   let converter: PdfConverter;
 
@@ -49,7 +53,7 @@ describe('PdfConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/text-only.pdf');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: text-only.pdf fixture not found');
+        log.debug('Skipping test: text-only.pdf fixture not found');
         return;
       }
 
@@ -67,7 +71,7 @@ describe('PdfConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/simple-table.pdf');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: simple-table.pdf fixture not found');
+        log.debug('Skipping test: simple-table.pdf fixture not found');
         return;
       }
 
@@ -85,7 +89,7 @@ describe('PdfConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/text-only.pdf');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: text-only.pdf fixture not found');
+        log.debug('Skipping test: text-only.pdf fixture not found');
         return;
       }
 
@@ -113,7 +117,7 @@ describe('PdfConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/text-only.pdf');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: text-only.pdf fixture not found');
+        log.debug('Skipping test: text-only.pdf fixture not found');
         return;
       }
 
@@ -133,7 +137,7 @@ describe('PdfConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/text-only.pdf');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: fixture not found');
+        log.debug('Skipping test: fixture not found');
         return;
       }
 

@@ -9,6 +9,10 @@ import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../../helpers/testLogger.js';
+const log = createTestLogger('unit:i18n');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -79,7 +83,7 @@ describe('Translation Coverage', () => {
       frData = await loadTranslations('fr');
       deData = await loadTranslations('de');
     } catch (error) {
-      console.error('Error loading translation files:', error);
+      log.error('Error loading translation files', { error: error.message });
       throw error;
     }
   });

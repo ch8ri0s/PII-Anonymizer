@@ -19,6 +19,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('unit:session');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -75,8 +79,7 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const entities1 = Object.entries(mapping1.entities).filter(([_k, v]) => v.startsWith('PERSON'));
     const entities2 = Object.entries(mapping2.entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
-    console.log('File 1 entities:', entities1);
-    console.log('File 2 entities:', entities2);
+    log.debug('File entities', { file1: entities1, file2: entities2 });
 
     // Both files should have detected entities
     expect(entities1.length).to.be.greaterThan(0, 'File 1 should have detected entities');
@@ -87,8 +90,7 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const pseudonym1 = entities1[0][1];
     const pseudonym2 = entities2[0][1];
 
-    console.log('File 1 first person pseudonym:', pseudonym1);
-    console.log('File 2 first person pseudonym:', pseudonym2);
+    log.debug('Person pseudonyms', { file1: pseudonym1, file2: pseudonym2 });
 
     // Each file's counter should restart at 1 (proves isolation)
     // Accept either PERSON_1 or PERSON_NAME_1 (ML model returns PERSON_NAME now)
@@ -131,9 +133,7 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const file2Persons = Object.entries(results[1].entities).filter(([_k, v]) => v.startsWith('PERSON'));
     const file3Persons = Object.entries(results[2].entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
-    console.log('File 1 persons:', file1Persons);
-    console.log('File 2 persons:', file2Persons);
-    console.log('File 3 persons:', file3Persons);
+    log.debug('Batch file persons', { file1: file1Persons, file2: file2Persons, file3: file3Persons });
 
     // All should have detected persons
     expect(file1Persons.length).to.be.greaterThan(0);
@@ -181,7 +181,7 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
       return persons.length > 0 ? persons[0][1] : null;
     });
 
-    console.log('Person pseudonyms from concurrent processing:', personPseudonyms);
+    log.debug('Person pseudonyms from concurrent processing', { pseudonyms: personPseudonyms });
 
     // All should have detected persons
     personPseudonyms.forEach((p, i) => {
@@ -229,8 +229,7 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const persons1 = Object.entries(mapping1.entities).filter(([_k, v]) => v.startsWith('PERSON'));
     const persons2 = Object.entries(mapping2.entities).filter(([_k, v]) => v.startsWith('PERSON'));
 
-    console.log('Before reset persons:', persons1);
-    console.log('After reset persons:', persons2);
+    log.debug('Reset test persons', { beforeReset: persons1, afterReset: persons2 });
 
     // resetMappings() is now a no-op since isolation is automatic
     // Both files should independently start at PERSON_1 or PERSON_NAME_1
@@ -280,12 +279,10 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     const invoice2Orgs = Object.entries(results[1].mapping.entities).filter(([_k, v]) => v.startsWith('ORGANIZATION'));
     const invoice3Orgs = Object.entries(results[2].mapping.entities).filter(([_k, v]) => v.startsWith('ORGANIZATION'));
 
-    console.log('Invoice 1 - Persons:', invoice1Persons);
-    console.log('Invoice 2 - Persons:', invoice2Persons);
-    console.log('Invoice 3 - Persons:', invoice3Persons);
-    console.log('Invoice 1 - Orgs:', invoice1Orgs);
-    console.log('Invoice 2 - Orgs:', invoice2Orgs);
-    console.log('Invoice 3 - Orgs:', invoice3Orgs);
+    log.debug('Invoice entities', {
+      persons: { invoice1: invoice1Persons, invoice2: invoice2Persons, invoice3: invoice3Persons },
+      orgs: { invoice1: invoice1Orgs, invoice2: invoice2Orgs, invoice3: invoice3Orgs },
+    });
 
     // CRITICAL: Each invoice should have independent counters starting at 1
     // Invoice 1 and 3 have same content but should have isolated PERSON_1/PERSON_NAME_1, ORGANIZATION_1

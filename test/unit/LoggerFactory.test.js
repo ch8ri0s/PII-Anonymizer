@@ -7,7 +7,12 @@
  * - Console fallback behavior
  * - Scope-based logging
  * - Log level filtering
+ *
+ * NOTE: This test file intentionally uses console methods to test LoggerFactory.
+ * The console overrides below are necessary to capture and verify logger output.
  */
+
+/* eslint-disable no-console */
 
 import { expect } from 'chai';
 import {

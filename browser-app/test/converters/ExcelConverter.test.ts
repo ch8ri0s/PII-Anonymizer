@@ -10,6 +10,10 @@ import { ExcelConverter } from '../../src/converters/ExcelConverter';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger';
+const log = createTestLogger('converter:excel');
+
 describe('ExcelConverter', () => {
   let converter: ExcelConverter;
 
@@ -68,7 +72,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.xlsx fixture not found');
+        log.debug('Skipping test: sample.xlsx fixture not found');
         return;
       }
 
@@ -88,7 +92,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.xlsx fixture not found');
+        log.debug('Skipping test: sample.xlsx fixture not found');
         return;
       }
 
@@ -108,7 +112,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.xlsx fixture not found');
+        log.debug('Skipping test: sample.xlsx fixture not found');
         return;
       }
 
@@ -128,7 +132,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.xlsx fixture not found');
+        log.debug('Skipping test: sample.xlsx fixture not found');
         return;
       }
 
@@ -149,7 +153,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/multi-sheet.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: multi-sheet.xlsx fixture not found');
+        log.debug('Skipping test: multi-sheet.xlsx fixture not found');
         return;
       }
 
@@ -172,7 +176,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/formulas.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: formulas.xlsx fixture not found');
+        log.debug('Skipping test: formulas.xlsx fixture not found');
         return;
       }
 
@@ -192,7 +196,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/special-chars.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: special-chars.xlsx fixture not found');
+        log.debug('Skipping test: special-chars.xlsx fixture not found');
         return;
       }
 
@@ -211,7 +215,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/special-chars.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: special-chars.xlsx fixture not found');
+        log.debug('Skipping test: special-chars.xlsx fixture not found');
         return;
       }
 
@@ -266,7 +270,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.xlsx fixture not found');
+        log.debug('Skipping test: sample.xlsx fixture not found');
         return;
       }
 
@@ -288,7 +292,7 @@ describe('ExcelConverter', () => {
       const fixturePath = path.join(__dirname, '../fixtures/sample.xlsx');
 
       if (!fs.existsSync(fixturePath)) {
-        console.warn('Skipping test: sample.xlsx fixture not found');
+        log.debug('Skipping test: sample.xlsx fixture not found');
         return;
       }
 

@@ -18,6 +18,10 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 
+// Test logger for consistent output
+import { createTestLogger } from '../helpers/testLogger.js';
+const log = createTestLogger('unit:fuzzyregex');
+
 // We need to extract buildFuzzyRegex for direct testing
 // For now, we'll test through the anonymization pipeline with known entities
 
@@ -42,7 +46,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
       const _result = regex.test(attackString);
 
       const duration = Date.now() - startTime;
-      console.log(`Regex test completed in ${duration}ms`);
+      log.debug('Regex test completed', { durationMs: duration });
 
       // If we get here without timeout, pattern is either:
       // 1. Not vulnerable (good)
@@ -51,7 +55,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
         done(new Error(`CRITICAL: Regex took ${duration}ms - ReDoS vulnerability confirmed`));
       } else {
         // This shouldn't happen with vulnerable pattern
-        console.log('Pattern completed quickly - either fixed or not vulnerable yet');
+        log.debug('Pattern completed quickly - either fixed or not vulnerable yet');
         done();
       }
     } catch (error) {
@@ -74,13 +78,13 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
     try {
       const regex = new RegExp(vulnerablePattern, 'ig');
 
-      console.log('Testing regex with 15-char pattern...');
+      log.debug('Testing regex with 15-char pattern');
 
       // THIS WILL DEFINITELY TIMEOUT with vulnerable pattern
       const _result = regex.test(attackString);
 
       const duration = Date.now() - startTime;
-      console.log(`Regex completed in ${duration}ms`);
+      log.debug('Regex completed', { durationMs: duration });
 
       // If duration > 1 second, it's exponential
       if (duration > 1000) {
@@ -119,7 +123,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
         const duration = Date.now() - startTime;
 
         times.push(duration);
-        console.log(`Length ${len}: ${duration}ms`);
+        log.debug('Length test', { length: len, durationMs: duration });
 
         // If any iteration takes > 2 seconds, abort and fail
         if (duration > 2000) {
@@ -134,13 +138,13 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
         times[2] / (times[1] || 1),
       );
 
-      console.log(`Max growth factor: ${maxGrowth.toFixed(2)}x`);
+      log.debug('Max growth factor', { maxGrowth: maxGrowth.toFixed(2) });
 
       // With fix, growth should be linear (< 3x) not exponential (> 5x)
       if (maxGrowth > 5) {
         done(new Error(`Exponential growth still detected: ${maxGrowth.toFixed(2)}x`));
       } else {
-        console.log('✓ Growth is linear/sublinear - ReDoS protection working');
+        log.debug('Growth is linear/sublinear - ReDoS protection working');
         done();
       }
     } catch (error) {
@@ -167,7 +171,7 @@ describe('buildFuzzyRegex Direct ReDoS Test (CRITICAL)', () => {
     const _result = regex.test(testText);
 
     const duration = Date.now() - startTime;
-    console.log(`Complex pattern matching: ${duration}ms`);
+    log.debug('Complex pattern matching', { durationMs: duration });
 
     // THIS WILL FAIL if vulnerable - timeout or >1000ms
     expect(duration).to.be.lessThan(1000,
