@@ -5,5 +5,5 @@ processed: [ADDRESS_1]: Xenova/distilbert-base-multilingual-cased-ner-hrl
 ---
 # invoice3
 
-Client: ORGANIZATION_1 Corp
-Contact: John Smith
+Client: ORGANIZATION_1
+Contact: PERSON_NAME_1

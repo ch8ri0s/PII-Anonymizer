@@ -5,5 +5,5 @@ processed: [ADDRESS_1]: Xenova/distilbert-base-multilingual-cased-ner-hrl
 ---
 # invoice2
 
-Client: XYZ Ltd
-Contact: Jane Doe
+Client: ORGANIZATION_1
+Contact: PERSON_NAME_1

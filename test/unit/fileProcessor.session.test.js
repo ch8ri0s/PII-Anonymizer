@@ -91,8 +91,11 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     console.log('File 2 first person pseudonym:', pseudonym2);
 
     // Each file's counter should restart at 1 (proves isolation)
-    expect(pseudonym1).to.equal('PERSON_1', 'File 1 should start counter at 1');
-    expect(pseudonym2).to.equal('PERSON_1', 'File 2 should restart counter at 1 (isolated session)');
+    // Accept either PERSON_1 or PERSON_NAME_1 (ML model returns PERSON_NAME now)
+    const isValid1 = pseudonym1 === 'PERSON_1' || pseudonym1 === 'PERSON_NAME_1';
+    const isValid2 = pseudonym2 === 'PERSON_1' || pseudonym2 === 'PERSON_NAME_1';
+    expect(isValid1).to.equal(true, `File 1 should start counter at 1, got: ${pseudonym1}`);
+    expect(isValid2).to.equal(true, `File 2 should restart counter at 1 (isolated session), got: ${pseudonym2}`);
   });
 
   it('should not leak pseudonyms between sequential file processing', async function() {
@@ -137,10 +140,14 @@ describe('FileProcessor Session Isolation (CRITICAL)', () => {
     expect(file2Persons.length).to.be.greaterThan(0);
     expect(file3Persons.length).to.be.greaterThan(0);
 
-    // CRITICAL: Each file should have PERSON_1 (counter restarts - proves isolation)
-    expect(file1Persons[0][1]).to.equal('PERSON_1', 'File 1 starts at PERSON_1');
-    expect(file2Persons[0][1]).to.equal('PERSON_1', 'File 2 restarts at PERSON_1');
-    expect(file3Persons[0][1]).to.equal('PERSON_1', 'File 3 restarts at PERSON_1');
+    // CRITICAL: Each file should have PERSON_1 or PERSON_NAME_1 (counter restarts - proves isolation)
+    // Accept either PERSON_1 or PERSON_NAME_1 (ML model returns PERSON_NAME now)
+    const isValidF1 = file1Persons[0][1] === 'PERSON_1' || file1Persons[0][1] === 'PERSON_NAME_1';
+    const isValidF2 = file2Persons[0][1] === 'PERSON_1' || file2Persons[0][1] === 'PERSON_NAME_1';
+    const isValidF3 = file3Persons[0][1] === 'PERSON_1' || file3Persons[0][1] === 'PERSON_NAME_1';
+    expect(isValidF1).to.equal(true, `File 1 starts at PERSON_1 or PERSON_NAME_1, got: ${file1Persons[0][1]}`);
+    expect(isValidF2).to.equal(true, `File 2 restarts at PERSON_1 or PERSON_NAME_1, got: ${file2Persons[0][1]}`);
+    expect(isValidF3).to.equal(true, `File 3 restarts at PERSON_1 or PERSON_NAME_1, got: ${file3Persons[0][1]}`);
   });
 
   it('should allow concurrent file processing without state collision', async function() {

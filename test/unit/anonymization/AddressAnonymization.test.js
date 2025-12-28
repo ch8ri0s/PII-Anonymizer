@@ -414,19 +414,21 @@ Numéro AVS: 756.1234.5678.90
       const mappingPath = path.join(outputDir, 'schema-version-anon-mapping.json');
       const mapping = JSON.parse(await fs.readFile(mappingPath, 'utf8'));
 
-      // Check schema version is 3.2 (Story 3.1 format with documentType)
-      expect(mapping.version).to.equal('3.2');
+      // Check schema version is 4.0 (Story 8.8 format with entity linking)
+      expect(mapping.version).to.equal('4.0');
 
       // Story 3.1: Check documentType is present
       expect(mapping).to.have.property('documentType');
 
-      // Check detection methods include Pass 0 and Pass 4
+      // Check detection methods include Pass 0, Pass 4, and Pass 5 (Consolidation)
       expect(mapping.detectionMethods).to.include('Pass 0: Document Type Detection (Epic 3)');
       expect(mapping.detectionMethods).to.include('Pass 4: Address Relationship (Epic 2)');
+      expect(mapping.detectionMethods).to.include('Pass 5: Consolidation & Entity Linking (Epic 8)');
 
-      // Check structure has both entities and addresses
+      // Check structure has entities, addresses, and entityLinks
       expect(mapping).to.have.property('entities');
       expect(mapping).to.have.property('addresses');
+      expect(mapping).to.have.property('entityLinks');  // Story 8.8
     });
   });
 });

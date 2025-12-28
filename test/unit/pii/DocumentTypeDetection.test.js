@@ -350,30 +350,46 @@ describe('Epic 3: Document-Type Detection', function () {
     });
 
     describe('Amount Detection', function () {
-      it('should detect CHF amounts', function () {
+      // Story 8.18: AMOUNT detection is disabled by default (not PII)
+      // These tests require explicit enablement of extractAmounts
+      let invoiceRulesWithAmounts;
+
+      before(function () {
+        invoiceRulesWithAmounts = createInvoiceRules({ extractAmounts: true });
+      });
+
+      it('should detect CHF amounts when enabled', function () {
         const text = 'Total: CHF 1\'234.56';
-        const entities = invoiceRules.applyRules(text);
+        const entities = invoiceRulesWithAmounts.applyRules(text);
 
         const amount = entities.find(e => e.type === 'AMOUNT');
         expect(amount).to.exist;
         expect(amount.metadata.currency).to.equal('CHF');
       });
 
-      it('should detect EUR amounts', function () {
+      it('should detect EUR amounts when enabled', function () {
         const text = 'Montant: EUR 1.234,56';
-        const entities = invoiceRules.applyRules(text);
+        const entities = invoiceRulesWithAmounts.applyRules(text);
 
         const amount = entities.find(e => e.type === 'AMOUNT');
         expect(amount).to.exist;
         expect(amount.metadata.currency).to.equal('EUR');
       });
 
-      it('should detect amounts with currency symbol', function () {
+      it('should detect amounts with currency symbol when enabled', function () {
         const text = 'Total: €1,234.56';
-        const entities = invoiceRules.applyRules(text);
+        const entities = invoiceRulesWithAmounts.applyRules(text);
 
         const amount = entities.find(e => e.type === 'AMOUNT');
         expect(amount).to.exist;
+      });
+
+      it('should NOT detect amounts by default (Story 8.18)', function () {
+        const text = 'Total: CHF 1\'234.56';
+        const entities = invoiceRules.applyRules(text);
+
+        const amount = entities.find(e => e.type === 'AMOUNT');
+        expect(amount).to.not.exist;
       });
     });
 
@@ -607,7 +623,8 @@ describe('Epic 3: Document-Type Detection', function () {
 
     describe('Rule Application', function () {
       it('should apply invoice rules to invoice classification', function () {
-        const text = 'Invoice No: INV-2024-001\nTotal: CHF 500.00';
+        // Story 8.18: Use invoice number instead of amount since amounts are disabled
+        const text = 'Invoice No: INV-2024-001\nVAT: CHE-123.456.789 MWST';
         const classification = {
           type: 'INVOICE',
           confidence: 0.8,
