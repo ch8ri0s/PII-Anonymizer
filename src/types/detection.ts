@@ -178,6 +178,13 @@ export interface Entity {
 
   /** Metadata from detection pass */
   metadata?: Record<string, unknown>;
+
+  /**
+   * Logical entity ID for entity linking (Story 8.8)
+   * Groups repeated occurrences of the same entity across a document.
+   * Format: TYPE_N (e.g., 'PERSON_1', 'ADDRESS_2')
+   */
+  logicalId?: string;
 }
 
 /**
@@ -218,6 +225,16 @@ export interface DetectionPass {
 }
 
 /**
+ * Normalization result for offset mapping (Story 8.7)
+ */
+export interface NormalizationContext {
+  /** Normalized text */
+  normalizedText: string;
+  /** Index map from normalized to original positions */
+  indexMap: number[];
+}
+
+/**
  * Pipeline context passed between detection passes
  */
 export interface PipelineContext {
@@ -241,6 +258,12 @@ export interface PipelineContext {
 
   /** Extensible metadata for passes to share data */
   metadata?: Record<string, unknown>;
+
+  /** Story 8.7: Normalization result for offset mapping */
+  normalization?: NormalizationContext;
+
+  /** Story 8.7: Original text before normalization */
+  originalText?: string;
 }
 
 /**
@@ -265,6 +288,83 @@ export type DocumentType =
   | 'CONTRACT'
   | 'REPORT'
   | 'UNKNOWN';
+
+/**
+ * Text normalizer options (Story 8.7)
+ */
+export interface TextNormalizerConfig {
+  /** Enable/disable email de-obfuscation (default: true) */
+  handleEmails?: boolean;
+  /** Enable/disable phone de-obfuscation (default: true) */
+  handlePhones?: boolean;
+  /** Enable/disable Unicode normalization (default: true) */
+  normalizeUnicode?: boolean;
+  /** Enable/disable whitespace normalization (default: true) */
+  normalizeWhitespace?: boolean;
+  /** Target Unicode normalization form (default: 'NFKC') */
+  normalizationForm?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD';
+  /** Supported locales for obfuscation patterns (default: ['en', 'fr', 'de']) */
+  supportedLocales?: string[];
+}
+
+/**
+ * Runtime context injection for analysis-time hints (Story 8.16)
+ * Follows Presidio pattern of passing context at analyze() time.
+ */
+export interface RuntimeContext {
+  /** Additional context words to merge with recognizer defaults */
+  contextWords?: string[];
+
+  /** Column headers for structured data (CSV, Excel) */
+  columnHeaders?: ColumnContext[];
+
+  /** Document-level hints */
+  documentHints?: DocumentHints;
+
+  /** User-provided region hints for specific areas */
+  regionHints?: RegionHint[];
+}
+
+/**
+ * Column context for structured data (Story 8.16)
+ * Boosts confidence for entities in columns with known types.
+ */
+export interface ColumnContext {
+  /** Column index (0-based) or name */
+  column: string | number;
+  /** Entity type this column likely contains */
+  entityType: EntityType | string;
+  /** Confidence boost for entities in this column (0.0-0.5, default: 0.2) */
+  confidenceBoost?: number;
+}
+
+/**
+ * Document-level hints (Story 8.16)
+ * External information about the document that aids detection.
+ */
+export interface DocumentHints {
+  /** Suggested document type (overrides auto-detection) */
+  documentType?: DocumentType;
+  /** Languages present in document */
+  languages?: ('en' | 'fr' | 'de')[];
+  /** OCR confidence score (0.0-1.0, affects overall entity confidence) */
+  ocrConfidence?: number;
+}
+
+/**
+ * Region hint for specific document areas (Story 8.16)
+ * Allows callers to hint about expected content in document regions.
+ */
+export interface RegionHint {
+  /** Start position in text (character offset) */
+  start: number;
+  /** End position in text (character offset) */
+  end: number;
+  /** Entity type expected in this region */
+  expectedEntityType?: EntityType | string;
+  /** Context words specific to this region */
+  contextWords?: string[];
+}
 
 /**
  * Pipeline configuration options
@@ -297,6 +397,24 @@ export interface PipelineConfig {
    * Set to false for A/B testing to compare detection quality
    */
   enableEpic8Features?: boolean;
+
+  /**
+   * Enable text normalization pre-pass (Story 8.7)
+   * Default: true
+   * Normalizes Unicode, removes zero-width chars, de-obfuscates emails/phones
+   */
+  enableNormalization?: boolean;
+
+  /**
+   * Text normalizer configuration options (Story 8.7)
+   */
+  normalizerOptions?: TextNormalizerConfig;
+
+  /**
+   * Runtime context injection (Story 8.16 - Presidio pattern)
+   * Pass additional context at analysis time to boost detection accuracy.
+   */
+  context?: RuntimeContext;
 }
 
 /**

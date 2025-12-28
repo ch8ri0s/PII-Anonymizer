@@ -106,6 +106,22 @@ export const CONTEXT_WORDS: ContextWordsConfig = {
       neg('lorem', 0.7),
       neg('ipsum', 0.7),
       neg('placeholder', 0.8),
+      // Story 8.20: Company suffixes (high negative weight - likely organization not person)
+      neg('ltd', 1.0),
+      neg('inc', 1.0),
+      neg('corp', 1.0),
+      neg('llc', 1.0),
+      neg('plc', 1.0),
+      neg('group', 0.9),
+      neg('holding', 0.9),
+      neg('technologies', 0.9),
+      neg('services', 0.8),
+      neg('solutions', 0.8),
+      // Story 8.20: Street types (likely address not person)
+      neg('street', 0.9),
+      neg('road', 0.9),
+      neg('avenue', 0.9),
+      neg('lane', 0.9),
     ],
     fr: [
       // Salutations
@@ -142,6 +158,26 @@ export const CONTEXT_WORDS: ContextWordsConfig = {
       // Negative context
       neg('exemple.com', 0.9),
       neg('test@', 0.8),
+      // Story 8.20: Company suffixes (French)
+      neg('sa', 1.0),
+      neg('sàrl', 1.0),
+      neg('sarl', 1.0),
+      neg('cie', 0.9),
+      neg('groupe', 0.9),
+      neg('holding', 0.9),
+      neg('technologies', 0.9),
+      neg('services', 0.8),
+      // Story 8.20: Street types (French)
+      neg('rue', 0.9),
+      neg('avenue', 0.9),
+      neg('boulevard', 0.9),
+      neg('chemin', 0.9),
+      neg('route', 0.9),
+      neg('place', 0.9),
+      // Story 8.20: Italian street types (common in Swiss French docs)
+      neg('via', 0.9),
+      neg('viale', 0.9),
+      neg('piazza', 0.9),
     ],
     de: [
       // Salutations
@@ -178,6 +214,23 @@ export const CONTEXT_WORDS: ContextWordsConfig = {
       // Negative context
       neg('beispiel.com', 0.9),
       neg('test@', 0.8),
+      // Story 8.20: Company suffixes (German)
+      neg('ag', 1.0),
+      neg('gmbh', 1.0),
+      neg('kg', 0.9),
+      neg('ohg', 0.9),
+      neg('se', 0.9),
+      neg('gruppe', 0.9),
+      neg('holding', 0.9),
+      neg('technologien', 0.9),
+      neg('dienstleistungen', 0.8),
+      // Story 8.20: Street types (German)
+      neg('strasse', 0.9),
+      neg('straße', 0.9),
+      neg('gasse', 0.9),
+      neg('weg', 0.9),
+      neg('platz', 0.9),
+      neg('allee', 0.9),
     ],
   },
 

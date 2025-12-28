@@ -13,6 +13,8 @@ import type {
   PipelineContext,
   ContextFactor,
   EntityType,
+  ColumnContext,
+  RegionHint,
 } from '../../types/detection.js';
 import {
   ContextEnhancer,
@@ -180,10 +182,29 @@ const RELATED_TYPES: Record<EntityType, EntityType[]> = {
 };
 
 /**
+ * Weight for runtime context words (slightly lower than predefined)
+ * Per Story 8.16: runtime context words get weight 0.8
+ */
+const RUNTIME_CONTEXT_WEIGHT = 0.8;
+
+/**
+ * Default region hint boost when entity type matches expected type
+ * Per Story 8.16: region hints add +0.2 boost
+ */
+const REGION_HINT_BOOST = 0.2;
+
+/**
+ * Default column context boost when no explicit boost provided
+ * Per Story 8.16: column boost capped at 0.0-0.5
+ */
+const DEFAULT_COLUMN_BOOST = 0.2;
+
+/**
  * Context Scoring Pass
  *
  * Scores entities based on surrounding context to refine confidence.
  * Epic 8: Now also applies ContextEnhancer for context-word-based boosting.
+ * Story 8.16: Supports runtime context injection (Presidio pattern).
  */
 export class ContextScoringPass implements DetectionPass {
   readonly name = 'ContextScoringPass';
@@ -212,8 +233,13 @@ export class ContextScoringPass implements DetectionPass {
     const enableEpic8 = context.config?.enableEpic8Features !== false;
     const language = context.language || 'en';
 
+    // Story 8.16: Extract runtime context from config
+    const runtimeContext = context.config?.context;
+
     // Track context boosted counts for metadata
     const boostedCounts: Partial<Record<EntityType, number>> = {};
+    // Story 8.16: Track runtime context boosts separately
+    const runtimeBoostedCounts: Partial<Record<EntityType, number>> = {};
 
     const scoredEntities = entities.map((entity) => {
       const factors = this.scoreEntity(entity, text, entities, windowSize);
@@ -225,9 +251,67 @@ export class ContextScoringPass implements DetectionPass {
         entity.confidence * (0.7 + contextScore * 0.6),
       );
 
+      // Story 8.16: Apply runtime context boosts BEFORE ContextEnhancer
+      let runtimeBoostApplied = 0;
+
+      // Story 8.16: Apply column context boost
+      if (runtimeContext?.columnHeaders) {
+        const columnBoost = this.getColumnBoost(entity, runtimeContext.columnHeaders);
+        if (columnBoost > 0) {
+          newConfidence = Math.min(1.0, newConfidence + columnBoost);
+          runtimeBoostApplied += columnBoost;
+        }
+      }
+
+      // Story 8.16: Apply region hint boost
+      if (runtimeContext?.regionHints) {
+        const regionBoost = this.getRegionBoost(entity, runtimeContext.regionHints);
+        if (regionBoost > 0) {
+          newConfidence = Math.min(1.0, newConfidence + regionBoost);
+          runtimeBoostApplied += regionBoost;
+        }
+      }
+
+      // Track runtime boost
+      if (runtimeBoostApplied > 0) {
+        runtimeBoostedCounts[entity.type] =
+          (runtimeBoostedCounts[entity.type] || 0) + 1;
+      }
+
       // Epic 8: Apply ContextEnhancer for additional context-word-based boosting
       if (enableEpic8) {
-        const contextWords = getContextWords(entity.type, language);
+        // Get base context words for entity type
+        let contextWords = getContextWords(entity.type, language);
+
+        // Story 8.16: Merge runtime context words with recognizer defaults
+        if (runtimeContext?.contextWords && runtimeContext.contextWords.length > 0) {
+          const runtimeWords = runtimeContext.contextWords.map((word) => ({
+            word: word.toLowerCase(),
+            weight: RUNTIME_CONTEXT_WEIGHT,
+            polarity: 'positive' as const,
+          }));
+          contextWords = [...contextWords, ...runtimeWords];
+        }
+
+        // Story 8.16: Merge region-specific context words
+        if (runtimeContext?.regionHints) {
+          for (const region of runtimeContext.regionHints) {
+            if (
+              entity.start >= region.start &&
+              entity.end <= region.end &&
+              region.contextWords &&
+              region.contextWords.length > 0
+            ) {
+              const regionWords = region.contextWords.map((word) => ({
+                word: word.toLowerCase(),
+                weight: RUNTIME_CONTEXT_WEIGHT,
+                polarity: 'positive' as const,
+              }));
+              contextWords = [...contextWords, ...regionWords];
+            }
+          }
+        }
+
         if (contextWords.length > 0) {
           // Convert Entity to PositionedEntity for ContextEnhancer
           const positionedEntity: PositionedEntity = {
@@ -274,7 +358,83 @@ export class ContextScoringPass implements DetectionPass {
       context.metadata.contextBoosted = boostedCounts;
     }
 
+    // Story 8.16: Store runtime context boost counts
+    if (runtimeContext) {
+      if (!context.metadata) {
+        context.metadata = {};
+      }
+      context.metadata.runtimeContextBoosted = runtimeBoostedCounts;
+    }
+
     return scoredEntities;
+  }
+
+  /**
+   * Get confidence boost based on column context (Story 8.16)
+   *
+   * @param entity - Entity to check
+   * @param columns - Column context configurations
+   * @returns Confidence boost (0.0-0.5)
+   */
+  private getColumnBoost(entity: Entity, columns: ColumnContext[]): number {
+    // Check if entity metadata contains column information
+    const entityColumn = entity.metadata?.column as string | number | undefined;
+
+    if (entityColumn === undefined) {
+      return 0;
+    }
+
+    for (const col of columns) {
+      // Match by column index or name
+      const columnMatches =
+        col.column === entityColumn ||
+        (typeof col.column === 'string' &&
+          typeof entityColumn === 'string' &&
+          col.column.toLowerCase() === entityColumn.toLowerCase());
+
+      if (columnMatches) {
+        // Check if entity type matches expected type
+        const typeMatches =
+          col.entityType === entity.type ||
+          (typeof col.entityType === 'string' && col.entityType.toUpperCase() === entity.type);
+
+        if (typeMatches) {
+          // Return configured boost or default, capped at 0.5
+          const boost = col.confidenceBoost ?? DEFAULT_COLUMN_BOOST;
+          return Math.min(0.5, Math.max(0, boost));
+        }
+      }
+    }
+
+    return 0;
+  }
+
+  /**
+   * Get confidence boost based on region hints (Story 8.16)
+   *
+   * @param entity - Entity to check
+   * @param regions - Region hint configurations
+   * @returns Confidence boost (0.0-0.2)
+   */
+  private getRegionBoost(entity: Entity, regions: RegionHint[]): number {
+    for (const region of regions) {
+      // Check if entity is within the region
+      if (entity.start >= region.start && entity.end <= region.end) {
+        // If expected type matches, apply boost
+        if (region.expectedEntityType) {
+          const typeMatches =
+            region.expectedEntityType === entity.type ||
+            (typeof region.expectedEntityType === 'string' &&
+              region.expectedEntityType.toUpperCase() === entity.type);
+
+          if (typeMatches) {
+            return REGION_HINT_BOOST;
+          }
+        }
+      }
+    }
+
+    return 0;
   }
 
   /**

@@ -96,10 +96,12 @@ export function buildHighRecallPatterns(): PatternDef[] {
       priority: 1,
     },
 
-    // IBAN (CH, DE, FR, AT, IT, etc.)
+    // IBAN (CH, DE, FR, AT, IT, GB, etc.) - supports both compact and formatted with spaces
+    // Handles alphanumeric BBAN sections (needed for FR, GB, and other countries)
+    // Uses [ ]? instead of \s? to avoid matching newlines at the end
     {
       type: 'IBAN',
-      pattern: /\b[A-Z]{2}\d{2}[\s]?(?:\d{4}[\s]?){4,7}\d{0,2}\b/g,
+      pattern: /\b[A-Z]{2}\d{2}[ ]?(?:[A-Z0-9]{1,4}[ ]?){3,8}[A-Z0-9]{0,4}\b/g,
       priority: 1,
     },
 
@@ -146,26 +148,29 @@ export function buildHighRecallPatterns(): PatternDef[] {
     // Swiss postal codes with city
     // Note: Swiss postal codes are 1000-9999, but we exclude patterns that look like
     // ISO timestamps (year followed by T or -) to avoid false positives in frontmatter
+    // Story 8.22: Require minimum 3-character city name to reduce false positives
     {
       type: 'SWISS_ADDRESS',
       pattern:
-        /\b(?:CH[-\s]?)?[1-9]\d{3}(?![-T])\s+[A-ZÄÖÜ][a-zäöüé]+(?:[-\s][A-Za-zäöüé]+)*/g,
+        /\b(?:CH[-\s]?)?[1-9]\d{3}(?![-T])\s+[A-ZÄÖÜ][a-zäöüé]{2,}(?:[-\s][A-Za-zäöüé]+)*/g,
       priority: 3,
     },
 
     // German/Austrian postal codes with city
+    // Story 8.22: Require minimum 3-character city name
     {
       type: 'EU_ADDRESS',
       pattern:
-        /\b(?:D[-\s]?|A[-\s]?)?\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+(?:[-\s][A-Za-zäöüß]+)*/g,
+        /\b(?:D[-\s]?|A[-\s]?)?\d{5}\s+[A-ZÄÖÜ][a-zäöüß]{2,}(?:[-\s][A-Za-zäöüß]+)*/g,
       priority: 3,
     },
 
     // French postal codes with city
+    // Story 8.22: Require minimum 3-character city name
     {
       type: 'EU_ADDRESS',
       pattern:
-        /\b(?:F[-\s]?)?\d{5}\s+[A-ZÀÂÆÉÈÊËÏÎÔŒÙÛÜ][a-zàâæéèêëïîôœùûüÿç]+(?:[-\s][A-Za-zàâæéèêëïîôœùûüÿç]+)*/g,
+        /\b(?:F[-\s]?)?\d{5}\s+[A-ZÀÂÆÉÈÊËÏÎÔŒÙÛÜ][a-zàâæéèêëïîôœùûüÿç]{2,}(?:[-\s][A-Za-zàâæéèêëïîôœùûüÿç]+)*/g,
       priority: 3,
     },
 
@@ -182,6 +187,25 @@ export function buildHighRecallPatterns(): PatternDef[] {
       type: 'ADDRESS',
       pattern:
         /\b(?:rue|avenue|boulevard|chemin|place|allée)\s+(?:de\s+(?:la\s+)?|du\s+|des\s+)?[A-ZÀ-Ÿ][a-zà-ÿ]+(?:[\s-][A-Za-zà-ÿ]+)*\s+\d+[a-z]?\b/gi,
+      priority: 3,
+    },
+
+    // Street addresses (Italian) - Story 8.19
+    // Matches: Via Nassa 19, Viale Roma 42, Piazza Dante 3, Corso Italia 15
+    {
+      type: 'ADDRESS',
+      pattern:
+        /\b(?:via|viale|piazza|corso|vicolo|largo)\s+(?:del\s+|della\s+|dei\s+|delle\s+|di\s+)?[A-ZÀ-Ÿ][a-zà-ÿ]+(?:[\s-][A-Za-zà-ÿ]+)*\s+\d+[a-z]?\b/gi,
+      priority: 3,
+    },
+
+    // Italian postal codes with city (5 digits, 00100-99999)
+    // Matches: 6900 Lugano, 20121 Milano, 00187 Roma
+    // Story 8.22: Require minimum 3-character city name
+    {
+      type: 'EU_ADDRESS',
+      pattern:
+        /\b(?:I[-\s]?)?\d{5}\s+[A-ZÀÈÉÌÒÙ][a-zàèéìòù]{2,}(?:[-\s][A-Za-zàèéìòù]+)*\b/g,
       priority: 3,
     },
 
@@ -212,16 +236,36 @@ export function buildHighRecallPatterns(): PatternDef[] {
     },
 
     // === Priority 5: Financial amounts ===
+    // NOTE: AMOUNT detection disabled (Story 8.18) - financial amounts are not PII
+    // and were causing 15 false positives with 0% precision.
+    // Pattern kept as comment for reference:
+    // {
+    //   type: 'AMOUNT',
+    //   pattern: /\b(?:CHF|EUR|€|Fr\.?)\s*\d{1,3}(?:['\s.,]\d{3})*(?:[.,]\d{2})?\b/gi,
+    //   priority: 5,
+    // },
 
-    // Amount patterns (CHF, EUR)
+    // === Priority 6: Organization names (Story 8.21) ===
+    // Detect companies with legal suffixes (Swiss/EU)
+
+    // Organization with legal suffix: "Company Name AG/SA/GmbH/Ltd"
+    // Matches: ABB Ltd, Roche Holding AG, Credit Suisse Group AG
     {
-      type: 'AMOUNT',
+      type: 'ORGANIZATION',
       pattern:
-        /\b(?:CHF|EUR|€|Fr\.?)\s*\d{1,3}(?:['\s.,]\d{3})*(?:[.,]\d{2})?\b/gi,
-      priority: 5,
+        /\b[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿA-Z]+(?:[\s-]+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿA-Z]+)*\s+(?:AG|SA|GmbH|Ltd|Inc|Corp|LLC|Sàrl|SARL|Cie|KG|SE|Plc)\.?\b/g,
+      priority: 6,
     },
 
-    // === Priority 6: Person names (contextual patterns) ===
+    // Acronym organizations with suffix: "UBS AG", "ABB Ltd"
+    {
+      type: 'ORGANIZATION',
+      pattern:
+        /\b[A-Z]{2,6}\s+(?:AG|SA|GmbH|Ltd|Inc|Corp|LLC|SE|Plc)\.?\b/g,
+      priority: 6,
+    },
+
+    // === Priority 7: Person names (contextual patterns) ===
     // These patterns look for names in common contexts to reduce false positives
 
     // Names in "FirstName LastName" pattern (European names with accents)
@@ -232,7 +276,7 @@ export function buildHighRecallPatterns(): PatternDef[] {
       type: 'PERSON_NAME',
       pattern:
         /\b([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})[ ]+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})(?:[ ]+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})?\b/g,
-      priority: 6,
+      priority: 7,
       validate: validatePersonName,
     },
   ];
@@ -276,17 +320,59 @@ const PERSON_NAME_EXCLUSIONS = new Set([
   'mesdames', 'messieurs', 'madame', 'monsieur', 'herr', 'frau',
   // Technical terms
   'detection', 'browser', 'document', 'markdown', 'sample', 'test',
+  // Story 8.20: Italian street types
+  'via', 'viale', 'piazza', 'corso', 'vicolo', 'largo',
+  // Story 8.20: French street types
+  'allée', 'boulevard',
+  // Story 8.20: German street types
+  'gasse', 'weg', 'allee', 'straße',
+]);
+
+/**
+ * Story 8.20: Company legal suffixes that indicate organization, not person
+ */
+const COMPANY_SUFFIXES = new Set([
+  'ltd', 'ag', 'sa', 'gmbh', 'inc', 'corp', 'llc', 'plc',
+  'sàrl', 'sarl', 'cie', 'kg', 'ohg', 'se', 'nv', 'bv',
+]);
+
+/**
+ * Story 8.20: Company-indicating words that suggest organization
+ */
+const COMPANY_WORDS = new Set([
+  'holding', 'group', 'groupe', 'gruppe',
+  'technologies', 'technologien',
+  'services', 'dienstleistungen',
+  'solutions', 'systems', 'consulting',
+  'partners', 'associates', 'foundation', 'institute', 'bank',
 ]);
 
 /**
  * Validate a potential person name match
  * Returns true if the match looks like a real person name
+ *
+ * Story 8.20: Enhanced validation to filter out company names and addresses
  */
 export function validatePersonName(name: string): boolean {
   if (!name || name.length < 5) return false;
 
   const parts = name.trim().split(/\s+/);
   if (parts.length < 2) return false;
+
+  // Story 8.20: Check if last word is a company suffix (e.g., "ABB Ltd")
+  const lastPart = parts[parts.length - 1];
+  if (lastPart) {
+    const lastPartLower = lastPart.toLowerCase().replace(/\.$/, ''); // Remove trailing dot
+    if (COMPANY_SUFFIXES.has(lastPartLower)) return false;
+    if (COMPANY_WORDS.has(lastPartLower)) return false;
+  }
+
+  // Story 8.20: Check if first word is a street type (e.g., "Via Nassa")
+  const firstPart = parts[0];
+  if (firstPart) {
+    const firstPartLower = firstPart.toLowerCase();
+    if (PERSON_NAME_EXCLUSIONS.has(firstPartLower)) return false;
+  }
 
   for (const part of parts) {
     const lowerPart = part.toLowerCase();

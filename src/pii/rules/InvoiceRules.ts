@@ -45,7 +45,8 @@ export interface InvoiceRulesConfig {
 }
 
 const DEFAULT_CONFIG: InvoiceRulesConfig = {
-  extractAmounts: true,
+  // Disabled: AMOUNT is not PII and causes false positives (Story 8.18)
+  extractAmounts: false,
   extractVatNumbers: true,
   extractPaymentRefs: true,
   headerConfidenceBoost: 0.2,
@@ -119,8 +120,11 @@ const QR_REFERENCE_PATTERNS: RegExp[] = [
 
 /**
  * IBAN patterns (Swiss and EU)
+ * Supports both compact (CH9300762011623852957) and formatted (CH93 0076 2011 6238 5295 7) IBANs
+ * Pattern matches: Country code (2 letters) + Check digits (2 digits) + BBAN (up to 30 alphanumeric chars with optional spaces)
+ * Uses [ ]? instead of \s? to avoid matching newlines at the end
  */
-const IBAN_PATTERN = /\b[A-Z]{2}\d{2}\s?(?:[A-Z0-9]{4}\s?){2,7}[A-Z0-9]{1,4}\b/gi;
+const IBAN_PATTERN = /\b[A-Z]{2}\d{2}[ ]?(?:[A-Z0-9]{1,4}[ ]?){3,8}[A-Z0-9]{0,4}\b/gi;
 
 /**
  * Invoice Rules Engine

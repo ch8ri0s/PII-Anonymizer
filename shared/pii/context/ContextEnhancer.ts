@@ -6,12 +6,18 @@
  * than standalone "Jean".
  *
  * Based on Microsoft Presidio patterns with direction-aware context search.
+ * Story 8.7: Supports optional lemmatization for better context word matching.
  *
  * @module shared/pii/context/ContextEnhancer
  */
 
 import { type ContextWord } from './ContextWords.js';
 import { DenyList } from './DenyList.js';
+import {
+  type Lemmatizer,
+  type LemmatizerLanguage,
+  SimpleLemmatizer,
+} from '../preprocessing/index.js';
 
 /**
  * Configuration for context enhancement
@@ -30,6 +36,15 @@ export interface ContextEnhancerConfig {
   followingWeight: number;
   /** Per-entity-type overrides */
   perEntityType?: Record<string, Partial<ContextEnhancerConfig>>;
+  /**
+   * Enable lemmatization for context word matching (Story 8.7)
+   * When enabled, context words are matched against lemmatized forms
+   * e.g., "addresses" matches "address", "téléphones" matches "téléphone"
+   * Default: true
+   */
+  enableLemmatization?: boolean;
+  /** Default language for lemmatization (default: 'en') */
+  lemmatizationLanguage?: LemmatizerLanguage;
 }
 
 /**
@@ -84,6 +99,9 @@ const DEFAULT_CONFIG: ContextEnhancerConfig = {
     PHONE_NUMBER: { windowSize: 60 },
     SWISS_AVS: { windowSize: 60 },
   },
+  // Story 8.7: Enable lemmatization by default
+  enableLemmatization: true,
+  lemmatizationLanguage: 'en',
 };
 
 /**
@@ -94,9 +112,11 @@ const DEFAULT_CONFIG: ContextEnhancerConfig = {
  * - Positive and negative context word support
  * - Per-entity-type configuration overrides
  * - DenyList safety guard (never enhance denied entities)
+ * - Story 8.7: Optional lemmatization for improved context word matching
  */
 export class ContextEnhancer {
   private config: ContextEnhancerConfig;
+  private lemmatizer: Lemmatizer | null = null;
 
   /**
    * Create a new ContextEnhancer with optional configuration
@@ -112,6 +132,13 @@ export class ContextEnhancer {
         ...config?.perEntityType,
       },
     };
+
+    // Story 8.7: Initialize lemmatizer if enabled
+    if (this.config.enableLemmatization !== false) {
+      this.lemmatizer = new SimpleLemmatizer(
+        this.config.lemmatizationLanguage || 'en',
+      );
+    }
   }
 
   /**
@@ -200,6 +227,16 @@ export class ContextEnhancer {
       .slice(entity.end, followingEnd)
       .toLowerCase();
 
+    // Story 8.7: Pre-lemmatize context text words for matching
+    // Split text into words and lemmatize them for comparison
+    const language = this.config.lemmatizationLanguage || 'en';
+    const precedingLemmas = this.lemmatizer
+      ? this.extractLemmas(precedingText, language)
+      : new Set<string>();
+    const followingLemmas = this.lemmatizer
+      ? this.extractLemmas(followingText, language)
+      : new Set<string>();
+
     // Search for context words with direction awareness
     const foundWords: string[] = [];
     let totalPositiveBoost = 0;
@@ -210,10 +247,20 @@ export class ContextEnhancer {
       const weight = contextWord.weight;
       const isPositive = contextWord.polarity === 'positive';
 
+      // Story 8.7: Also get lemma of the context word for matching
+      const wordLemma = this.lemmatizer
+        ? this.lemmatizer.lemmatize(wordLower, language)
+        : wordLower;
+
       // Check preceding context (weighted higher by default)
-      const foundInPreceding = precedingText.includes(wordLower);
+      // Match either exact word or lemmatized form
+      const foundInPreceding =
+        precedingText.includes(wordLower) ||
+        (this.lemmatizer && precedingLemmas.has(wordLemma));
       // Check following context
-      const foundInFollowing = followingText.includes(wordLower);
+      const foundInFollowing =
+        followingText.includes(wordLower) ||
+        (this.lemmatizer && followingLemmas.has(wordLemma));
 
       if (foundInPreceding || foundInFollowing) {
         foundWords.push(contextWord.word);
@@ -341,6 +388,42 @@ export class ContextEnhancer {
    */
   getWindowSize(entityType: string): number {
     return this.getEffectiveConfig(entityType).windowSize;
+  }
+
+  /**
+   * Story 8.7: Extract lemmatized word set from text
+   * Used for efficient lemma-based context word matching
+   *
+   * @param text - Lowercased text to extract lemmas from
+   * @param language - Language code for lemmatization
+   * @returns Set of lemmatized words
+   */
+  private extractLemmas(text: string, language: string): Set<string> {
+    if (!this.lemmatizer) {
+      return new Set<string>();
+    }
+
+    // Split text into words (basic word boundary detection)
+    const words = text.match(/\b\w+\b/g) || [];
+    const lemmas = new Set<string>();
+
+    for (const word of words) {
+      const lemma = this.lemmatizer.lemmatize(word, language);
+      lemmas.add(lemma);
+    }
+
+    return lemmas;
+  }
+
+  /**
+   * Story 8.7: Set the language for lemmatization
+   * Useful when processing documents in different languages
+   */
+  setLemmatizationLanguage(language: LemmatizerLanguage): void {
+    this.config.lemmatizationLanguage = language;
+    if (this.config.enableLemmatization !== false) {
+      this.lemmatizer = new SimpleLemmatizer(language);
+    }
   }
 }
 

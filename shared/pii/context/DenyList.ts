@@ -116,6 +116,14 @@ const DEFAULT_CONFIG: DenyListConfig = {
       /^(Janv|Févr|Mars|Avr|Mai|Juin|Juil|Août|Sept|Oct|Nov|Déc)$/i,
       // Month abbreviations (German)
       /^(Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)$/i,
+      // Story 8.20: Company name patterns (ending with legal suffixes)
+      /\b(Ltd|AG|SA|GmbH|Inc|Corp|LLC|Sàrl|SARL|Cie|KG|OHG|SE|NV|BV|Plc)\.?$/i,
+      // Story 8.20: Street type patterns (Italian/French/German street prefixes)
+      /^(Via|Viale|Piazza|Corso|Vicolo|Largo|Rue|Avenue|Boulevard|Chemin|Route|Place|Allée|Strasse|Straße|Gasse|Weg|Platz|Allee)\b/i,
+      // Story 8.20: Company/service name patterns
+      /\b(Holding|Group|Technologies|Services|Solutions|Systems|Consulting|Partners|Associates|Foundation|Institute|Bank)\s*$/i,
+      // Story 8.20: Generic product/service words that appear as capitalized pairs
+      /^(Case|Notre|Votre|Services|Gestion|Module|Données|Coordonnées)\s/i,
     ],
     ORGANIZATION: [],
     NUMBER: [],

@@ -18,6 +18,10 @@ import type {
   EntityType,
   Epic8Metadata,
 } from '../types/detection.js';
+import {
+  TextNormalizer,
+  type NormalizationResult,
+} from '../../shared/dist/pii/index.js';
 
 /**
  * Default pipeline configuration
@@ -35,6 +39,8 @@ const DEFAULT_CONFIG: PipelineConfig = {
   debug: false,
   // Epic 8: Enable quality improvement features by default
   enableEpic8Features: true,
+  // Story 8.7: Enable text normalization by default
+  enableNormalization: true,
 };
 
 /**
@@ -46,9 +52,11 @@ const DEFAULT_CONFIG: PipelineConfig = {
 export class DetectionPipeline {
   private passes: DetectionPass[] = [];
   private config: PipelineConfig;
+  private normalizer: TextNormalizer;
 
   constructor(config: Partial<PipelineConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.normalizer = new TextNormalizer(config.normalizerOptions);
   }
 
   /**
@@ -107,19 +115,35 @@ export class DetectionPipeline {
     const startTime = Date.now();
     const docId = documentId || uuidv4();
 
+    // Story 8.7: Apply text normalization as pre-pass
+    let processText = text;
+    let normalizationResult: NormalizationResult | undefined;
+
+    if (this.config.enableNormalization !== false) {
+      const normStartTime = Date.now();
+      normalizationResult = this.normalizer.normalize(text);
+      processText = normalizationResult.normalizedText;
+      this.log(
+        `Normalization complete: ${text.length} → ${processText.length} chars (${Date.now() - normStartTime}ms)`,
+      );
+    }
+
     // Initialize pipeline context
     const context: PipelineContext = {
       documentId: docId,
-      language: language || this.detectLanguage(text),
+      language: language || this.detectLanguage(processText),
       passResults: new Map(),
       startTime,
       config: this.config,
+      // Story 8.7: Store normalization result for offset mapping
+      normalization: normalizationResult,
+      originalText: text,
     };
 
     let entities: Entity[] = [];
     const passResults: PassResult[] = [];
 
-    // Execute each enabled pass in order
+    // Execute each enabled pass in order (on normalized text)
     for (const pass of this.passes) {
       if (!pass.enabled) {
         this.log(`Skipping disabled pass: ${pass.name}`);
@@ -131,7 +155,7 @@ export class DetectionPipeline {
 
       try {
         this.log(`Executing pass: ${pass.name}`);
-        entities = await pass.execute(text, entities, context);
+        entities = await pass.execute(processText, entities, context);
 
         const passResult: PassResult = {
           passName: pass.name,
@@ -151,6 +175,11 @@ export class DetectionPipeline {
         console.error(`Error in pass ${pass.name}:`, error);
         // Continue with next pass on error
       }
+    }
+
+    // Story 8.7: Map entity offsets back to original text coordinates
+    if (normalizationResult && normalizationResult.indexMap.length > 0) {
+      entities = this.mapEntitiesToOriginal(entities, normalizationResult, text);
     }
 
     // Post-processing: deduplicate and flag for review
@@ -201,6 +230,33 @@ export class DetectionPipeline {
     );
 
     return result;
+  }
+
+  /**
+   * Map entity offsets from normalized text back to original text
+   * Story 8.7: Uses indexMap for accurate offset repair
+   */
+  private mapEntitiesToOriginal(
+    entities: Entity[],
+    normalization: NormalizationResult,
+    originalText: string,
+  ): Entity[] {
+    const { indexMap } = normalization;
+
+    return entities.map((entity) => {
+      const mappedSpan = this.normalizer.mapSpan(entity.start, entity.end, indexMap);
+
+      // Extract the actual text from original for accuracy
+      const originalMatchText = originalText.slice(mappedSpan.start, mappedSpan.end);
+
+      return {
+        ...entity,
+        start: mappedSpan.start,
+        end: mappedSpan.end,
+        // Update text to match original if different
+        text: originalMatchText || entity.text,
+      };
+    });
   }
 
   /**

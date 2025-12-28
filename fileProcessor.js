@@ -37,6 +37,9 @@ import { createAddressRelationshipPass } from './dist/pii/passes/AddressRelation
 // Import Document Type Pass (Epic 3)
 import { createDocumentTypePass } from './dist/pii/passes/DocumentTypePass.js';
 
+// Import Consolidation Pass (Epic 8 - Story 8.8)
+import { createConsolidationPass } from './dist/pii/passes/ConsolidationPass.js';
+
 // ES module paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -118,7 +121,10 @@ function initializeDetectionPipeline() {
   // Pass 5: Address Relationship (order=40) - links address components
   detectionPipeline.registerPass(createAddressRelationshipPass());
 
-  mlLog.info('Detection pipeline initialized with 5 passes (including Document Type Detection)');
+  // Pass 6: Consolidation (order=50) - resolves overlaps, consolidates addresses, links entities
+  detectionPipeline.registerPass(createConsolidationPass());
+
+  mlLog.info('Detection pipeline initialized with 6 passes (including Consolidation)');
 
   return { pipeline: detectionPipeline, highRecallPass };
 }
@@ -150,6 +156,10 @@ class FileProcessingSession {
     this.pseudonymCounters = {};
     this.pseudonymMapping = {};
 
+    // Story 8.8: Logical ID mapping for entity linking
+    // Maps logicalId (e.g., 'PERSON_1') to pseudonym for consistent anonymization
+    this.logicalIdMapping = {};
+
     // Structured address mappings (Story 2.4: Address Anonymization Strategy)
     // Stores full address data including components, confidence, and scoring factors
     this.addressMappings = [];
@@ -162,10 +172,20 @@ class FileProcessingSession {
    * Get or create a consistent pseudonym for an entity
    * @param {string} entityText - The original entity text
    * @param {string} entityType - The entity type (PER, ORG, LOC, etc.)
+   * @param {string} [logicalId] - Optional logical ID for entity linking (Story 8.8)
    * @returns {string} The pseudonym
    */
-  getOrCreatePseudonym(entityText, entityType) {
-    // Check if we already have a mapping in THIS session
+  getOrCreatePseudonym(entityText, entityType, logicalId = null) {
+    // Story 8.8: Check if we have a mapping by logicalId first (for linked entities)
+    if (logicalId && this.logicalIdMapping[logicalId]) {
+      // Return existing pseudonym for this logical entity
+      const existingPseudonym = this.logicalIdMapping[logicalId];
+      // Also map the text variation to same pseudonym
+      this.pseudonymMapping[entityText] = existingPseudonym;
+      return existingPseudonym;
+    }
+
+    // Check if we already have a mapping for this exact text in THIS session
     if (this.pseudonymMapping[entityText]) {
       return this.pseudonymMapping[entityText];
     }
@@ -178,6 +198,11 @@ class FileProcessingSession {
     // Generate pseudonym
     const pseudonym = `${entityType}_${this.pseudonymCounters[entityType]++}`;
     this.pseudonymMapping[entityText] = pseudonym;
+
+    // Story 8.8: Track logicalId mapping for consistent entity linking
+    if (logicalId) {
+      this.logicalIdMapping[logicalId] = pseudonym;
+    }
 
     return pseudonym;
   }
@@ -207,6 +232,21 @@ class FileProcessingSession {
   registerGroupedAddress(addressEntity) {
     // Determine address type for placeholder
     const addressType = addressEntity.type || 'ADDRESS';
+    const logicalId = addressEntity.logicalId;
+
+    // Story 8.8: Check if we have an existing placeholder for this logicalId
+    if (logicalId && this.logicalIdMapping[logicalId]) {
+      const existingPlaceholder = this.logicalIdMapping[logicalId];
+      // Also map the text to same placeholder
+      this.pseudonymMapping[addressEntity.text] = existingPlaceholder;
+      // Track range but don't create new mapping
+      this.anonymizedRanges.push({
+        start: addressEntity.start,
+        end: addressEntity.end,
+        placeholder: existingPlaceholder,
+      });
+      return existingPlaceholder;
+    }
 
     // Initialize counter for this address type if needed
     if (!this.pseudonymCounters[addressType]) {
@@ -216,6 +256,11 @@ class FileProcessingSession {
     // Generate placeholder: [ADDRESS_1], [SWISS_ADDRESS_1], etc.
     const counter = this.pseudonymCounters[addressType]++;
     const placeholder = `[${addressType}_${counter}]`;
+
+    // Story 8.8: Track logicalId for consistent entity linking
+    if (logicalId) {
+      this.logicalIdMapping[logicalId] = placeholder;
+    }
 
     // Extract structured data from entity metadata
     const metadata = addressEntity.metadata || {};
@@ -228,6 +273,8 @@ class FileProcessingSession {
       originalText: addressEntity.text,
       start: addressEntity.start,
       end: addressEntity.end,
+      // Story 8.8: Include logicalId for entity linking
+      logicalId: logicalId || null,
       components: {
         street: breakdown.street || null,
         number: breakdown.number || null,
@@ -290,6 +337,15 @@ class FileProcessingSession {
       entities: { ...this.pseudonymMapping },
       addresses: [...this.addressMappings],
     };
+  }
+
+  /**
+   * Get logical ID mappings for entity linking (Story 8.8)
+   *
+   * @returns {Object} Mapping of logicalId to placeholder
+   */
+  getLogicalIdMapping() {
+    return { ...this.logicalIdMapping };
   }
 }
 
@@ -645,10 +701,11 @@ async function anonymizeText(text, session) {
     }
 
     // Only create pseudonym AFTER validation passes
-    const pseudonym = session.getOrCreatePseudonym(entityText, entityType);
+    // Story 8.8: Pass logicalId for consistent entity linking
+    const pseudonym = session.getOrCreatePseudonym(entityText, entityType, entity.logicalId);
 
     // ✅ SECURITY: Don't log actual PII values - only log entity types and pseudonyms
-    mlLog.debug('Entity mapped', { entityType, pseudonym, confidence: entity.confidence?.toFixed(2) });
+    mlLog.debug('Entity mapped', { entityType, pseudonym, logicalId: entity.logicalId, confidence: entity.confidence?.toFixed(2) });
     patterns.push(fuzzyRegex.source);
     replacements.set(fuzzyRegex.source, pseudonym);
   }
@@ -732,28 +789,34 @@ async function anonymizeMarkdown(markdown, session) {
   const entityMapping = session.getMapping();
 
   // Build extended mapping with structured address data
-  // Story 3.1: Added documentType and updated to v3.2
+  // Story 8.8: Added entity linking with logicalId, updated to v4.0
   const mapping = {
-    version: '3.2', // Updated for Story 3.1 document type detection
+    version: '4.0', // Updated for Story 8.8 entity consolidation & linking
     timestamp: new Date().toISOString(),
     model: MODEL_NAME,
     // Story 3.1: Document type classification result
     documentType: anonymizeResult.documentType || 'UNKNOWN',
     detectionMethods: [
-      'Multi-Pass Pipeline v1.0',
+      'Multi-Pass Pipeline v2.0',
       'Pass 0: Document Type Detection (Epic 3)',
       'Pass 1: High-Recall (ML + Rules)',
       'Pass 2: Format Validation',
       'Pass 3: Context Scoring',
       'Pass 4: Address Relationship (Epic 2)',
+      'Pass 5: Consolidation & Entity Linking (Epic 8)',
     ],
     // Standard entity mappings (backward compatible)
     entities: entityMapping,
+    // Story 8.8: Logical ID mappings for entity linking
+    // Maps logical entity ID to placeholder for repeated entities
+    entityLinks: session.logicalIdMapping,
     // Story 2.4: Structured address data with components
+    // Story 8.8: Now includes logicalId for address linking
     addresses: addressMappings.map(addr => ({
       placeholder: addr.placeholder,
       type: addr.type,
       originalText: addr.originalText,
+      logicalId: addr.logicalId,
       components: addr.components,
       confidence: addr.confidence,
       patternMatched: addr.patternMatched,
