@@ -5,6 +5,9 @@
  */
 
 import type { SupportedLocale } from './languageDetector.js';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
+
+const log = LoggerFactory.create('i18n:formatter');
 
 /**
  * Date format style options
@@ -66,7 +69,7 @@ export function formatDate(date: Date, locale: string = 'en', style: DateStyle =
   try {
     return new Intl.DateTimeFormat(bcp47Locale, options).format(date);
   } catch (error) {
-    console.error('Date formatting error:', error);
+    log.error('Date formatting error', { locale, error: error instanceof Error ? error.message : String(error) });
     return date.toLocaleDateString();
   }
 }
@@ -95,7 +98,7 @@ export function formatTime(date: Date, locale: string = 'en'): string {
   try {
     return new Intl.DateTimeFormat(bcp47Locale, options).format(date);
   } catch (error) {
-    console.error('Time formatting error:', error);
+    log.error('Time formatting error', { locale, error: error instanceof Error ? error.message : String(error) });
     return date.toLocaleTimeString();
   }
 }
@@ -133,7 +136,7 @@ export function formatFileSize(bytes: number, locale: string = 'en'): string {
       return `${bytes} B`;
     }
   } catch (error) {
-    console.error('File size formatting error:', error);
+    log.error('File size formatting error', { locale, bytes, error: error instanceof Error ? error.message : String(error) });
     return `${bytes} B`;
   }
 }
@@ -159,7 +162,7 @@ export function formatNumber(
   try {
     return new Intl.NumberFormat(bcp47Locale, options).format(number);
   } catch (error) {
-    console.error('Number formatting error:', error);
+    log.error('Number formatting error', { locale, number, error: error instanceof Error ? error.message : String(error) });
     return String(number);
   }
 }

@@ -4,6 +4,9 @@
  */
 
 import { SupportedLocale, LocaleInfo, SUPPORTED_LANGUAGES } from './types';
+import { LoggerFactory } from '../utils/logger';
+
+const log = LoggerFactory.create('i18n:detector');
 
 /**
  * Detect language from browser navigator
@@ -23,7 +26,7 @@ export function detectLanguage(): SupportedLocale {
  */
 export function detectLanguageFromString(systemLocale: string | null | undefined): SupportedLocale {
   if (!systemLocale || typeof systemLocale !== 'string') {
-    console.warn('Invalid system locale, defaulting to English');
+    log.warn('Invalid system locale, defaulting to English');
     return 'en';
   }
 
@@ -35,7 +38,7 @@ export function detectLanguageFromString(systemLocale: string | null | undefined
     return language as SupportedLocale;
   }
 
-  console.log(`Unsupported language detected: ${language}, falling back to English`);
+  log.debug('Unsupported language detected, falling back to English', { detected: language });
   return 'en';
 }
 
@@ -82,7 +85,7 @@ export function getStoredLanguage(): SupportedLocale | null {
     }
   } catch {
     // localStorage may not be available
-    console.warn('Could not access localStorage for language preference');
+    log.warn('Could not access localStorage for language preference');
   }
   return null;
 }
@@ -95,6 +98,6 @@ export function setStoredLanguage(locale: SupportedLocale): void {
   try {
     localStorage.setItem('pii-anonymizer-locale', locale);
   } catch {
-    console.warn('Could not store language preference in localStorage');
+    log.warn('Could not store language preference in localStorage');
   }
 }

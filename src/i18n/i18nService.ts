@@ -4,6 +4,9 @@
  */
 
 import type { SupportedLocale } from './languageDetector.js';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
+
+const log = LoggerFactory.create('i18n:service');
 
 /**
  * Translation object type - nested JSON structure
@@ -29,14 +32,14 @@ export function init(
   fallback: TranslationObject | null = null,
 ): void {
   if (!locale || typeof locale !== 'string') {
-    console.warn('Invalid locale provided to init, defaulting to English');
+    log.warn('Invalid locale provided to init, defaulting to English');
     currentLocale = 'en';
   } else {
     currentLocale = locale as SupportedLocale;
   }
 
   if (!localeTranslations || typeof localeTranslations !== 'object') {
-    console.warn('Invalid translations provided to init');
+    log.warn('Invalid translations provided to init');
     translations = {};
   } else {
     translations = localeTranslations;
@@ -82,7 +85,7 @@ function lookup(key: string, translationObj: TranslationObject): string | null {
  */
 export function t(key: string, locale: string | null = null): string {
   if (!key || typeof key !== 'string') {
-    console.warn('Invalid translation key:', key);
+    log.warn('Invalid translation key', { key });
     return '';
   }
 
@@ -98,13 +101,13 @@ export function t(key: string, locale: string | null = null): string {
   if (targetLocale !== 'en' && Object.keys(fallbackTranslations).length > 0) {
     const fallback = lookup(key, fallbackTranslations);
     if (fallback) {
-      console.warn(`Translation missing for key '${key}' in locale '${targetLocale}', using English fallback`);
+      log.warn('Translation missing, using fallback', { key, locale: targetLocale });
       return fallback;
     }
   }
 
   // Last resort: return the key itself
-  console.warn(`Translation not found for key: ${key}`);
+  log.warn('Translation not found', { key });
   return key;
 }
 
@@ -118,7 +121,7 @@ export function setLocale(
   localeTranslations: TranslationObject | null | undefined,
 ): void {
   if (!locale || typeof locale !== 'string') {
-    console.warn('Invalid locale provided to setLocale');
+    log.warn('Invalid locale provided to setLocale');
     return;
   }
 
@@ -127,7 +130,7 @@ export function setLocale(
   if (localeTranslations && typeof localeTranslations === 'object') {
     translations = localeTranslations;
   } else {
-    console.warn('Invalid translations provided to setLocale');
+    log.warn('Invalid translations provided to setLocale');
     translations = {};
   }
 }
@@ -148,7 +151,7 @@ export function setFallback(fallback: TranslationObject | null | undefined): voi
   if (fallback && typeof fallback === 'object') {
     fallbackTranslations = fallback;
   } else {
-    console.warn('Invalid fallback translations provided');
+    log.warn('Invalid fallback translations provided');
     fallbackTranslations = {};
   }
 }

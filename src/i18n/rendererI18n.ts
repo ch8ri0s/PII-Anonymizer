@@ -6,6 +6,9 @@
 import { init, t, setLocale as _setLocale, getLocale, TranslationObject } from './i18nService.js';
 import { formatDate, formatTime, formatFileSize, formatNumber, formatDateTime } from './localeFormatter.js';
 import type { SupportedLocale } from './languageDetector.js';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
+
+const log = LoggerFactory.create('i18n:renderer');
 
 /**
  * i18n API response from preload
@@ -56,20 +59,20 @@ export async function initializeI18n(): Promise<SupportedLocale> {
     if (storedLanguage && languageSource === 'manual') {
       // User explicitly set a language
       targetLocale = storedLanguage as SupportedLocale;
-      console.log(`[i18n] Using user-selected language: ${targetLocale}`);
+      log.debug('Using user-selected language', { locale: targetLocale });
     } else {
       // Detect system language
       const localeInfo = await window.i18nAPI.getDetectedLocale();
 
       if (!localeInfo.success) {
-        console.warn('[i18n] Locale detection failed, defaulting to English');
+        log.warn('Locale detection failed, defaulting to English');
         targetLocale = 'en';
       } else {
         targetLocale = localeInfo.language ?? 'en';
-        console.log(`[i18n] Detected system language: ${targetLocale} (from ${localeInfo.systemLocale})`);
+        log.debug('Detected system language', { locale: targetLocale, systemLocale: localeInfo.systemLocale });
 
         if (!localeInfo.supported) {
-          console.log('[i18n] System language not supported, falling back to English');
+          log.info('System language not supported, falling back to English');
         }
       }
     }
@@ -77,10 +80,10 @@ export async function initializeI18n(): Promise<SupportedLocale> {
     // Load translations
     await loadLocale(targetLocale);
 
-    console.log(`[i18n] Initialized with locale: ${currentLocale}`);
+    log.info('i18n initialized', { locale: currentLocale });
     return currentLocale;
   } catch (error) {
-    console.error('[i18n] Initialization error:', error);
+    log.error('Initialization error', { error: error instanceof Error ? error.message : String(error) });
     // Fallback to English with empty translations
     currentLocale = 'en';
     init('en', {});
@@ -114,7 +117,7 @@ async function loadLocale(locale: SupportedLocale): Promise<void> {
     init(locale, localeData.translations, fallbackTranslations);
     currentLocale = locale;
   } catch (error) {
-    console.error(`[i18n] Failed to load locale ${locale}:`, error);
+    log.error('Failed to load locale', { locale, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -125,7 +128,7 @@ async function loadLocale(locale: SupportedLocale): Promise<void> {
  */
 export async function changeLanguage(locale: SupportedLocale): Promise<void> {
   if (locale === currentLocale) {
-    console.log(`[i18n] Already using locale: ${locale}`);
+    log.debug('Already using locale', { locale });
     return;
   }
 
@@ -137,7 +140,7 @@ export async function changeLanguage(locale: SupportedLocale): Promise<void> {
     localStorage.setItem('languageSource', 'manual');
     localStorage.setItem('languageTimestamp', Date.now().toString());
 
-    console.log(`[i18n] Changed language to: ${locale}`);
+    log.info('Changed language', { locale });
 
     // Trigger re-render (emit custom event)
     const event = new CustomEvent<LanguageChangedEventDetail>('language-changed', {
@@ -145,7 +148,7 @@ export async function changeLanguage(locale: SupportedLocale): Promise<void> {
     });
     window.dispatchEvent(event);
   } catch (error) {
-    console.error(`[i18n] Failed to change language to ${locale}:`, error);
+    log.error('Failed to change language', { locale, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -279,7 +282,7 @@ export function updateUITranslations(): void {
   // Footer
   updateFooter();
 
-  console.log(`[i18n] UI updated to locale: ${locale}`);
+  log.debug('UI updated', { locale });
 }
 
 /**

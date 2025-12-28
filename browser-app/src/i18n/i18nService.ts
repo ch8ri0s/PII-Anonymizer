@@ -5,6 +5,9 @@
 
 import type { SupportedLocale, TranslationObject } from './types';
 import { detectLanguage, getStoredLanguage, setStoredLanguage } from './languageDetector';
+import { LoggerFactory } from '../utils/logger';
+
+const log = LoggerFactory.create('i18n:service');
 
 /**
  * Module state
@@ -53,7 +56,7 @@ async function loadTranslations(locale: SupportedLocale): Promise<TranslationObj
     const data = await response.json();
     return data.translations || data;
   } catch (error) {
-    console.error(`Error loading translations for ${locale}:`, error);
+    log.error('Error loading translations', { locale, error: error instanceof Error ? error.message : String(error) });
     return {};
   }
 }
@@ -90,14 +93,14 @@ export function initWithTranslations(
   fallback: TranslationObject | null = null,
 ): void {
   if (!locale || typeof locale !== 'string') {
-    console.warn('Invalid locale provided to init, defaulting to English');
+    log.warn('Invalid locale provided to init, defaulting to English');
     currentLocale = 'en';
   } else {
     currentLocale = locale as SupportedLocale;
   }
 
   if (!localeTranslations || typeof localeTranslations !== 'object') {
-    console.warn('Invalid translations provided to init');
+    log.warn('Invalid translations provided to init');
     translations = {};
   } else {
     translations = localeTranslations;
@@ -120,7 +123,7 @@ export function initWithTranslations(
  */
 export function t(key: string, _locale: string | null = null): string {
   if (!key || typeof key !== 'string') {
-    console.warn('Invalid translation key:', key);
+    log.warn('Invalid translation key', { key });
     return '';
   }
 
@@ -134,13 +137,13 @@ export function t(key: string, _locale: string | null = null): string {
   if (currentLocale !== 'en' && Object.keys(fallbackTranslations).length > 0) {
     const fallback = lookup(key, fallbackTranslations);
     if (fallback) {
-      console.warn(`Translation missing for key '${key}' in locale '${currentLocale}', using English fallback`);
+      log.warn('Translation missing, using English fallback', { key, locale: currentLocale });
       return fallback;
     }
   }
 
   // Last resort: return the key itself
-  console.warn(`Translation not found for key: ${key}`);
+  log.warn('Translation not found', { key });
   return key;
 }
 
@@ -150,7 +153,7 @@ export function t(key: string, _locale: string | null = null): string {
  */
 export async function setLocale(locale: SupportedLocale): Promise<void> {
   if (!locale || typeof locale !== 'string') {
-    console.warn('Invalid locale provided to setLocale');
+    log.warn('Invalid locale provided to setLocale');
     return;
   }
 

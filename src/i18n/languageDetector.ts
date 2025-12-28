@@ -3,6 +3,10 @@
  * Detects user's language preference from OS locale
  */
 
+import { LoggerFactory } from '../utils/LoggerFactory.js';
+
+const log = LoggerFactory.create('i18n:detector');
+
 /**
  * Supported language codes
  */
@@ -30,7 +34,7 @@ const SUPPORTED_LANGUAGES: readonly SupportedLocale[] = ['en', 'fr', 'de'];
  */
 export function detectLanguage(systemLocale: string | null | undefined): SupportedLocale {
   if (!systemLocale || typeof systemLocale !== 'string') {
-    console.warn('Invalid system locale, defaulting to English');
+    log.warn('Invalid system locale, defaulting to English');
     return 'en';
   }
 
@@ -42,7 +46,7 @@ export function detectLanguage(systemLocale: string | null | undefined): Support
     return language as SupportedLocale;
   }
 
-  console.log(`Unsupported language detected: ${language}, falling back to English`);
+  log.debug('Unsupported language detected, falling back to English', { detected: language });
   return 'en';
 }
 
