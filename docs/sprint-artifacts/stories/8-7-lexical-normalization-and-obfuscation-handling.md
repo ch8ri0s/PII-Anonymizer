@@ -12,8 +12,9 @@ So that **phone numbers, emails, and IDs written in “human‑obfuscated” for
 |-------|-------|
 | **Story ID** | 8.7 |
 | **Epic** | 8 - PII Detection Quality Improvement |
-| **Status** | Backlog |
+| **Status** | ✅ Complete |
 | **Created** | 2025-12-24 |
+| **Completed** | 2025-12-26 |
 
 ## Acceptance Criteria
 
@@ -22,11 +23,12 @@ So that **phone numbers, emails, and IDs written in “human‑obfuscated” for
 **Then** it is normalized so that the EMAIL recognizer detects it as PII.
 
 **And** common obfuscation patterns for emails and phone numbers (EN/FR/DE) are handled (e.g. "at", "(at)", "(a)", "dot", "(dot)", spaces and dashes between digits).  
-**And** zero‑width spaces and non‑breaking spaces are removed before detection.  
-**And** Unicode is normalized to a consistent form (e.g. NFKC) before tokenization.  
+**And** zero‑width spaces and non‑breaking spaces are removed before detection.
+**And** Unicode is normalized to a consistent form (e.g. NFKC) before tokenization.
 **And** original character offsets can still be mapped back for accurate anonymisation and mapping file generation.
 **And** normalization rules are conservative and can be disabled/tuned per rule type if they cause regressions
 **And** obfuscation patterns are initially EN/FR/DE only (other locales documented as future extension)
+**And** optional lemmatization support for context word matching (Presidio `LemmaContextAwareEnhancer` pattern)
 
 ## Technical Design
 
@@ -69,6 +71,17 @@ export interface TextNormalizerOptions {
   normalizationForm?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD';
   /** Supported locales for obfuscation patterns (default: ['en', 'fr', 'de']) */
   supportedLocales?: string[];
+  /** Enable lemmatization for context matching (Presidio pattern, default: false) */
+  enableLemmatization?: boolean;
+}
+
+/**
+ * Lightweight lemmatizer for context word matching
+ * Presidio pattern: normalize words before context comparison
+ */
+export interface Lemmatizer {
+  /** Reduce word to base form (e.g., "addresses" → "address") */
+  lemmatize(word: string, language?: string): string;
 }
 
 export class TextNormalizer {
@@ -106,6 +119,14 @@ export class TextNormalizer {
     - `+41 79 123 45 67`, `+41-79-123-45-67`, `+41.79.123.45.67` → canonical digit + separator form.
   - Normalize `(0)` patterns: `+41 (0) 79 123 45 67` → `+41 79 123 45 67`.
 
+- **Lemmatization** (optional, for context matching)
+  - Lightweight suffix-stripping approach (no external NLP library dependency):
+    - English: "addresses" → "address", "emailed" → "email", "phones" → "phone"
+    - French: "téléphones" → "téléphone", "adresses" → "adresse"
+    - German: "Adressen" → "Adresse", "Telefonnummern" → "Telefonnummer"
+  - Used by `ContextEnhancer` to improve context word matching accuracy
+  - Follows Presidio's `LemmaContextAwareEnhancer` pattern without heavy NLP dependencies
+
 ### Algorithm (High‑Level)
 
 1. Iterate through original string, emitting normalized characters into `normalizedText` while building `indexMap` such that:
@@ -136,14 +157,35 @@ export class TextNormalizer {
 
 ## Definition of Done
 
-- [ ] `shared/pii/preprocessing/TextNormalizer.ts` implemented with configurable options.  
-- [ ] Normalization integrated as the first step in both Electron and Browser detection pipelines.  
-- [ ] Unit tests in `test/unit/pii/preprocessing/TextNormalizer.test.ts`.  
-- [ ] Integration tests with obfuscated fixtures added under `test/fixtures/piiAnnotated/`.  
-- [ ] Configurable normalization rules (can disable email/phone/unicode/whitespace independently)
-- [ ] Locale dependency documented (EN/FR/DE initially, extension path for other locales)
-- [ ] Regression tests verify normalization doesn't break existing detection
-- [ ] TypeScript compiles without errors in both projects.  
-- [ ] Documented briefly in `docs/architecture.md` under the detection pipeline section.
+- [x] `shared/pii/preprocessing/TextNormalizer.ts` implemented with configurable options.
+- [x] `shared/pii/preprocessing/Lemmatizer.ts` implemented with lightweight suffix-stripping
+- [x] Normalization integrated as the first step in both Electron and Browser detection pipelines.
+- [x] Unit tests in `test/unit/pii/preprocessing/TextNormalizer.test.ts`. (37 tests)
+- [x] Unit tests in `test/unit/pii/preprocessing/Lemmatizer.test.ts`. (34 tests)
+- [x] Integration tests with obfuscated fixtures added under `test/integration/pii/NormalizationIntegration.test.js`. (10 tests)
+- [x] Configurable normalization rules (can disable email/phone/unicode/whitespace/lemmatization independently)
+- [x] Locale dependency documented (EN/FR/DE initially, extension path for other locales)
+- [x] Lemmatizer integrated with `ContextEnhancer` for improved context matching
+- [x] Regression tests verify normalization doesn't break existing detection (1435 passing)
+- [x] TypeScript compiles without errors in both projects.
+- [x] Documented briefly in `docs/architecture.md` under the detection pipeline section (ADR-006, ADR-007).
+
+## Implementation Notes
+
+### Design Decisions
+
+1. **Conservative Pattern Matching**: Standalone ` at ` and ` dot ` patterns were excluded to avoid false positives like "Call us at +41". Only parenthesized/bracketed forms (`(at)`, `[at]`, `{at}`) are matched.
+
+2. **Phone Separator Preservation**: Phone separator normalization (converting dashes/dots to spaces) was removed because it breaks offset mapping. The phone regex patterns in `HighRecallPass` already handle various separator formats.
+
+3. **Lemmatizer -ss Preservation**: Added special rule to preserve words ending in `-ss` (like "address") from over-lemmatization.
+
+### Test Coverage
+
+| Component | Tests | Coverage |
+|-----------|-------|----------|
+| TextNormalizer | 37 | Unicode, whitespace, email (EN/FR/DE), phone, position mapping |
+| Lemmatizer | 34 | EN/FR/DE rules, caching, case preservation, edge cases |
+| Integration | 10 | Pipeline integration, offset accuracy, feature toggling |
 
 
