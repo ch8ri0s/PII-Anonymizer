@@ -323,6 +323,24 @@ npm run test:i18n:coverage
 
 **Test Results:** ✅ 139/139 passing
 
+### Logging
+
+This project uses `LoggerFactory` for centralized, structured logging. **Never use `console.*` directly.**
+
+```typescript
+// Electron app
+import { LoggerFactory } from './utils/LoggerFactory';
+const log = LoggerFactory.create('my-module');
+log.info('Processing started', { itemCount: 10 });
+
+// Browser app
+import { createLogger } from './utils/logger';
+const log = createLogger('my-module');
+log.info('Processing started', { itemCount: 10 });
+```
+
+**See:** [CLAUDE.md § Logging](./CLAUDE.md#logging) for full documentation including scope naming, log levels, PII safety, and troubleshooting.
+
 ### Building
 
 ```bash

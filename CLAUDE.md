@@ -340,6 +340,170 @@ npm run css:build  # Rebuild Tailwind
 npm run test:watch  # Watch mode for debugging
 ```
 
+## Logging
+
+This project uses a centralized logging system via `LoggerFactory`. **Never use `console.*` directly** - use the appropriate logger for your context.
+
+### Quick Start
+
+**Electron App (src/):**
+```typescript
+import { LoggerFactory } from './utils/LoggerFactory';
+const log = LoggerFactory.create('my-module');
+
+log.debug('Detailed info for troubleshooting', { data: value });
+log.info('Significant event occurred', { result: 'success' });
+log.warn('Something unexpected but recoverable', { issue: 'details' });
+log.error('Something failed', { error: error.message });
+```
+
+**Browser App (browser-app/src/):**
+```typescript
+import { createLogger } from './utils/logger';
+const log = createLogger('my-module');
+
+log.debug('Detailed troubleshooting info', { data: value });
+log.info('Significant event', { result: 'success' });
+log.warn('Recoverable issue', { issue: 'details' });
+log.error('Failure occurred', { error: error.message });
+```
+
+**Web Workers (browser-app/src/workers/):**
+```typescript
+import { createWorkerLogger } from '../utils/WorkerLogger';
+const log = createWorkerLogger('ml:inference');
+
+log.info('Processing started', { items: count });
+log.error('Processing failed', { error: err.message }); // Flushes immediately
+```
+
+**Test Files:**
+```javascript
+// Electron tests (test/)
+import { testLogger, createTestLogger } from '../helpers/testLogger.js';
+testLogger.info('Test setup complete');
+const log = createTestLogger('integration:pipeline');
+
+// Browser-app tests (browser-app/test/)
+import { testLogger, createTestLogger } from '../helpers/testLogger';
+```
+
+### Scope Naming Convention
+
+Use `module:submodule` format matching directory structure:
+
+| Directory | Scope Pattern | Example |
+|-----------|---------------|---------|
+| `src/pii/` | `pii:<module>` | `pii:pipeline`, `pii:rules` |
+| `src/i18n/` | `i18n:<module>` | `i18n:renderer`, `i18n:service` |
+| `src/converters/` | `converter:<type>` | `converter:pdf`, `converter:docx` |
+| `browser-app/src/pwa/` | `pwa:<module>` | `pwa:manager`, `pwa:install` |
+| `browser-app/src/services/` | `<service>` | `feedback:logger`, `feedback:store` |
+| `browser-app/src/ui/` | `ui:<module>` | `ui:upload`, `ui:review` |
+| `test/` | `test:<type>` | `test:integration`, `test:unit` |
+
+### Log Levels
+
+| Level | When to Use | Example |
+|-------|-------------|---------|
+| `debug` | Detailed troubleshooting, disabled in production | Variable values, loop iterations |
+| `info` | Significant events | Startup, completion, milestones |
+| `warn` | Recoverable issues | Missing optional config, deprecations |
+| `error` | Failures requiring attention | Exceptions, critical failures |
+
+### PII Safety (Auto-Redaction)
+
+LoggerFactory automatically redacts sensitive patterns in production:
+
+| Pattern | Replacement |
+|---------|-------------|
+| Email addresses | `[EMAIL_REDACTED]` |
+| Phone numbers | `[PHONE_REDACTED]` |
+| IBANs (Swiss/EU) | `[IBAN_REDACTED]` |
+| Swiss AHV numbers | `[AHV_REDACTED]` |
+| File paths | `[PATH_REDACTED]` |
+
+**Best Practice:** Use structured logging with metadata objects:
+```typescript
+// GOOD - metadata object, PII gets redacted
+log.info('User registered', { email: user.email });
+
+// BAD - string interpolation, PII may not be redacted in message
+log.info(`User registered: ${user.email}`);
+```
+
+### Configuration
+
+```bash
+# Environment variable (preferred in CI/tests)
+LOG_LEVEL=debug npm test    # Electron
+VITE_LOG_LEVEL=debug npm test  # Browser-app
+```
+
+```typescript
+// Programmatic (runtime)
+LoggerFactory.setLevel('debug');           // Global level
+LoggerFactory.setScopeLevel('pii', 'debug'); // Per-scope level
+```
+
+**Default Levels:**
+- Development: `debug` (all logs visible)
+- Production: `info` (Electron), `warn` (browser-app)
+- Tests: `warn` (clean CI output), override with `LOG_LEVEL=debug`
+
+### Anti-Patterns to Avoid
+
+| Don't Do This | Do This Instead |
+|---------------|-----------------|
+| `console.log('debug info')` | `log.debug('debug info')` |
+| `console.error(error)` | `log.error('Operation failed', { error: error.message })` |
+| `log.info(\`User: ${email}\`)` | `log.info('User action', { email })` |
+| `log.info('Processing item')` in a loop | `log.debug('Processing item')` |
+
+### Troubleshooting
+
+**Logs not appearing?**
+1. Check log level - default is 'warn' in production/tests
+2. Set environment variable: `LOG_LEVEL=debug` (Electron) or `VITE_LOG_LEVEL=debug` (browser-app)
+3. Verify browser DevTools console filters (uncheck "Errors only")
+4. Check scope-specific level settings
+
+**Too many logs?**
+1. Lower the level: `LoggerFactory.setLevel('warn')`
+2. Filter specific scope: `LoggerFactory.setScopeLevel('pii', 'error')`
+3. In tests, default is 'warn' for clean output
+
+**Worker logs not appearing?**
+1. Ensure main thread has `handleWorkerLogs` set up
+2. Call `WorkerLogger.flush()` before worker termination
+3. Check for errors in worker - they flush immediately
+
+### Logger API Reference
+
+```typescript
+// Logger interface (all loggers implement this)
+interface Logger {
+  debug(message: string, metadata?: Record<string, unknown>): void;
+  info(message: string, metadata?: Record<string, unknown>): void;
+  warn(message: string, metadata?: Record<string, unknown>): void;
+  error(message: string, metadata?: Record<string, unknown>): void;
+}
+
+// LoggerFactory (Electron)
+LoggerFactory.create(scope: string): Logger
+LoggerFactory.setLevel(level: LogLevel): void
+LoggerFactory.setScopeLevel(scope: string, level: LogLevel): void
+LoggerFactory.getLogFilePath(): string | null  // Electron only
+
+// Browser logger
+createLogger(scope: string): Logger
+setLogLevel(level: LogLevel): void
+
+// Worker logger
+createWorkerLogger(scope: string): Logger
+WorkerLogger.flush(): void
+```
+
 ## Environment & Configuration
 
 ### Required Environment
