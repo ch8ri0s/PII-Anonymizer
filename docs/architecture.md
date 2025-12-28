@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-A5-PII-Anonymizer is an Electron-based desktop application that processes documents locally to detect and anonymize PII for LLM-ready output. The architecture prioritizes privacy (100% local processing), extensibility (pluggable converters and detectors), and accuracy (multi-pass detection pipeline). This document captures architectural decisions for v3.0 enhancements while maintaining backward compatibility with the production v2.0.0 codebase.
+A5-PII-Anonymizer is a privacy-first document anonymization platform that processes documents locally to detect and anonymize PII for LLM-ready output. The architecture supports both **Electron desktop** and **browser PWA** deployments, prioritizing privacy (100% local processing), extensibility (pluggable converters and detectors), and accuracy (multi-pass detection pipeline). This document captures architectural decisions for v3.0 enhancements including the browser app (Epic 9), centralized logging (Epic 10), and ML enhancements (Epic 8).
 
 ---
 
@@ -10,13 +10,15 @@ A5-PII-Anonymizer is an Electron-based desktop application that processes docume
 
 | Category | Decision | Version | Affects Epics | Rationale |
 |----------|----------|---------|---------------|-----------|
-| Runtime | Electron | 39.1.1 | All | Desktop app with Node.js backend, Chromium renderer |
-| Language | TypeScript (converters), JavaScript ES2022 (main) | TS 5.x | All | Gradual migration, type safety for new code |
-| ML Framework | @xenova/transformers | 2.17.2 | Epic 1, 2 | Local inference, WASM-based, no Python dependency |
+| Runtime | Electron + Browser (PWA) | 39.1.1 / Vite | All | Desktop app with Node.js backend; Browser app for web deployment |
+| Language | TypeScript | 5.9.x | All | Full TypeScript coverage in src/, browser-app/, shared/ |
+| ML Framework | @xenova/transformers | 2.17.2 | Epic 1, 2, 8 | Local inference, WASM-based, no Python dependency |
 | Styling | Tailwind CSS | 3.x | Epic 4, 5 | Utility-first, responsive design |
-| Testing | Mocha + Chai | Mocha 10.x | All | Existing test suite, 101+ tests passing |
-| Build | electron-builder | Latest | All | Cross-platform packaging |
+| Testing | Mocha + Chai | Mocha 11.x | All | 139+ tests passing |
+| Build | electron-builder / Vite | Latest | All | Cross-platform packaging; browser bundling |
 | IPC | contextBridge (isolated) | - | All | Security: no nodeIntegration in renderer |
+| Logging | LoggerFactory + electron-log | 5.4.x | Epic 10 | Centralized logging with PII redaction |
+| Validation | zod | 3.x | All | Runtime schema validation |
 
 ---
 
@@ -32,17 +34,114 @@ A5-PII-Anonymizer/
 ├── package.json                 # Dependencies and scripts
 ├── tsconfig.json                # TypeScript configuration
 ├── tailwind.config.js           # Tailwind CSS config
+├── eslint.config.js             # ESLint flat config
 │
-├── shared/                      # [NEW] Shared code (Electron + Browser)
+├── browser-app/                 # [NEW] Standalone browser version (Epic 9)
+│   ├── src/
+│   │   ├── main.ts              # Browser app entry point
+│   │   ├── batch/               # Batch processing (BatchQueueManager)
+│   │   ├── components/          # UI components
+│   │   │   ├── EntitySidebar.ts
+│   │   │   ├── PreviewPanel.ts
+│   │   │   ├── BatchController.ts
+│   │   │   ├── KeyboardShortcuts.ts
+│   │   │   ├── preview/         # Preview subcomponents
+│   │   │   └── sidebar/         # Sidebar subcomponents
+│   │   ├── converters/          # Browser-compatible converters
+│   │   │   ├── CsvConverter.ts
+│   │   │   ├── DocxConverter.ts
+│   │   │   ├── ExcelConverter.ts
+│   │   │   ├── PdfConverter.ts
+│   │   │   └── TextConverter.ts
+│   │   ├── download/            # File download handling
+│   │   ├── errors/              # Error handling
+│   │   ├── i18n/                # Browser i18n service
+│   │   ├── model/               # ML model management
+│   │   │   └── ModelManager.ts
+│   │   ├── pii/                 # Browser-specific PII passes
+│   │   │   ├── BrowserHighRecallPass.ts
+│   │   │   ├── BrowserDocumentTypePass.ts
+│   │   │   ├── BrowserRuleEngine.ts
+│   │   │   ├── BrowserSwissPostalDatabase.ts
+│   │   │   └── BrowserAddressRelationshipPass.ts
+│   │   ├── processing/          # Processing pipeline
+│   │   │   ├── FileProcessor.ts
+│   │   │   ├── PIIDetector.ts
+│   │   │   └── Anonymizer.ts
+│   │   ├── pwa/                 # PWA support
+│   │   │   ├── PWAManager.ts
+│   │   │   ├── PWAInstallBanner.ts
+│   │   │   └── PWAStatusIndicator.ts
+│   │   ├── services/            # Browser services
+│   │   │   ├── FeedbackLogger.ts
+│   │   │   ├── FeedbackStore.ts
+│   │   │   └── FeedbackIntegration.ts
+│   │   ├── ui/                  # UI modules
+│   │   ├── utils/               # Utilities
+│   │   │   ├── logger.ts        # Browser-compatible logger
+│   │   │   └── WorkerLogger.ts  # Web Worker logger
+│   │   └── workers/             # Web Workers
+│   │       └── pii.worker.ts    # Background PII detection
+│   ├── test/                    # Browser-app tests
+│   ├── package.json             # Browser-app dependencies (Vite)
+│   └── vite.config.ts           # Vite configuration
+│
+├── shared/                      # Shared code (Electron + Browser)
+│   ├── converters/              # Shared converter utilities
+│   │   ├── CsvConverter.ts
+│   │   ├── DocxConverter.ts
+│   │   ├── ExcelConverter.ts
+│   │   ├── PdfTextProcessor.ts
+│   │   ├── TextConverter.ts
+│   │   ├── MarkdownUtils.ts
+│   │   ├── types.ts
+│   │   └── index.ts
 │   ├── pii/                     # Shared PII detection modules
-│   │   ├── postprocessing/      # [NEW] Post-processing passes (Epic 8)
+│   │   ├── context/             # Context enhancement (Epic 8)
+│   │   │   ├── ContextEnhancer.ts
+│   │   │   ├── ContextWords.ts
+│   │   │   └── DenyList.ts
+│   │   ├── countries/           # Country-specific recognizers
+│   │   │   ├── ch/              # Swiss-specific (AvsRecognizer)
+│   │   │   ├── eu/              # EU patterns
+│   │   │   ├── us/              # US patterns
+│   │   │   └── core/            # Core patterns
+│   │   ├── feedback/            # Feedback aggregation (Epic 5)
+│   │   │   ├── FeedbackAggregator.ts
+│   │   │   └── types.ts
+│   │   ├── ml/                  # ML processing (Epic 8)
+│   │   │   ├── MLInputValidator.ts
+│   │   │   ├── MLMetrics.ts
+│   │   │   ├── MLRetryHandler.ts
+│   │   │   ├── SubwordTokenMerger.ts
+│   │   │   └── TextChunker.ts
+│   │   ├── postprocessing/      # Post-processing passes (Epic 8)
 │   │   │   └── ConsolidationPass.ts  # Story 8.8
 │   │   ├── preprocessing/       # Text normalization (Epic 8)
 │   │   │   ├── TextNormalizer.ts
 │   │   │   └── Lemmatizer.ts
-│   │   └── index.ts             # Shared exports
-│   └── test/                    # Shared test utilities
-│       └── accuracy.ts          # Precision/recall calculation
+│   │   ├── recognizers/         # Pluggable recognizer framework
+│   │   │   ├── BaseRecognizer.ts
+│   │   │   ├── Registry.ts
+│   │   │   ├── YamlLoader.ts
+│   │   │   └── types.ts
+│   │   ├── HighRecallPatterns.ts
+│   │   ├── RuleEngineConfig.ts
+│   │   ├── SwissPostalData.ts
+│   │   └── index.ts
+│   ├── test/                    # Shared test utilities
+│   │   ├── accuracy.ts          # Precision/recall calculation
+│   │   ├── constants.ts
+│   │   ├── expectedResults.ts
+│   │   └── helpers.ts
+│   ├── types/                   # Shared type definitions
+│   │   ├── index.ts
+│   │   └── pdfTable.ts
+│   ├── utils/                   # Shared utilities
+│   │   ├── TableDetector.ts
+│   │   ├── TableToMarkdownConverter.ts
+│   │   └── pdfTableDetector.ts
+│   └── tsconfig.json
 │
 ├── src/
 │   ├── converters/              # Document format converters (TypeScript)
@@ -53,51 +152,76 @@ A5-PII-Anonymizer/
 │   │   ├── TextToMarkdown.ts
 │   │   └── MarkdownConverter.ts # Base interface
 │   │
-│   ├── pii/                     # PII detection (JavaScript → TypeScript migration planned)
-│   │   ├── SwissEuDetector.js   # Rule-based Swiss/EU patterns
-│   │   ├── DetectionPipeline.ts # [NEW] Multi-pass orchestrator (Epic 1)
-│   │   ├── AddressClassifier.ts # [NEW] Address component linking (Epic 2)
-│   │   ├── DocumentClassifier.ts # [NEW] Document type detection (Epic 3)
-│   │   ├── ContextScorer.ts     # [NEW] Context-based confidence (Epic 1)
-│   │   ├── validators/          # [NEW] Format validators (Epic 1)
-│   │   │   ├── SwissAvsValidator.ts
-│   │   │   ├── IbanValidator.ts
-│   │   │   └── PhoneValidator.ts
-│   │   ├── rules/               # [NEW] Document-type rules (Epic 3)
-│   │   │   ├── InvoiceRules.ts
-│   │   │   └── LetterRules.ts
-│   │   └── preprocessing/       # [NEW] Text preprocessing (Epic 8)
-│   │       ├── TextNormalizer.ts
-│   │       └── Lemmatizer.ts
+│   ├── core/                    # [NEW] Core business logic (Epic 10)
+│   │   ├── Session.ts           # Session management
+│   │   ├── anonymization.ts     # Anonymization engine
+│   │   ├── fileProcessor.ts     # TypeScript file processor
+│   │   └── index.ts
+│   │
+│   ├── pii/                     # PII detection (TypeScript)
+│   │   ├── SwissEuDetector.ts   # Rule-based Swiss/EU patterns
+│   │   ├── DetectionPipeline.ts # Multi-pass orchestrator (Epic 1)
+│   │   ├── RuleEngine.ts        # Configurable rule engine
+│   │   ├── AddressClassifier.ts # Address component linking (Epic 2)
+│   │   ├── AddressComponentDetector.ts
+│   │   ├── AddressLinker.ts
+│   │   ├── AddressScorer.ts
+│   │   ├── DocumentClassifier.ts # Document type detection (Epic 3)
+│   │   ├── SwissPostalDatabase.ts
+│   │   ├── passes/              # Detection passes
+│   │   │   ├── HighRecallPass.ts
+│   │   │   ├── FormatValidationPass.ts
+│   │   │   ├── ContextScoringPass.ts
+│   │   │   ├── DocumentTypePass.ts
+│   │   │   ├── AddressRelationshipPass.ts
+│   │   │   ├── ConsolidationPass.ts
+│   │   │   └── index.ts
+│   │   ├── validators/          # Format validators (Epic 1)
+│   │   │   └── index.ts
+│   │   └── rules/               # Document-type rules (Epic 3)
+│   │       ├── InvoiceRules.ts
+│   │       └── LetterRules.ts
 │   │
 │   ├── services/                # IPC handlers and services
 │   │   ├── filePreviewHandlers.ts
 │   │   ├── i18nHandlers.ts
 │   │   ├── converterBridge.ts
 │   │   ├── batchQueueManager.ts
-│   │   └── feedbackLogger.ts    # [NEW] User correction logging (Epic 5)
+│   │   ├── feedbackLogger.ts    # User correction logging (Epic 5)
+│   │   ├── feedbackHandlers.ts
+│   │   ├── accuracyHandlers.ts
+│   │   ├── accuracyStats.ts
+│   │   ├── modelHandlers.ts
+│   │   └── modelManager.ts
 │   │
 │   ├── ui/                      # UI components
 │   │   ├── filePreviewUI.ts
-│   │   ├── EntitySidebar.ts     # [NEW] Entity review panel (Epic 4)
-│   │   └── AccuracyDashboard.ts # [NEW] Stats display (Epic 5)
+│   │   └── EntityReviewUI.ts    # Entity review panel (Epic 4)
 │   │
-│   ├── i18n/                    # Internationalization
-│   │   ├── i18nService.js
-│   │   ├── languageDetector.js
-│   │   ├── localeFormatter.js
-│   │   └── rendererI18n.js
+│   ├── i18n/                    # Internationalization (TypeScript)
+│   │   ├── i18nService.ts
+│   │   ├── languageDetector.ts
+│   │   ├── localeFormatter.ts
+│   │   └── rendererI18n.ts
 │   │
 │   ├── config/                  # Configuration
-│   │   ├── logging.js           # Logger with non-Electron fallback
-│   │   └── detectionRules.json  # [NEW] Document-type rule config (Epic 3)
+│   │   ├── constants.ts         # Application constants
+│   │   ├── detectionRules.json  # Document-type rule config
+│   │   └── detectionDenyList.json # False positive deny list
+│   │
+│   ├── data/                    # Static data
+│   │   └── swissPostalCodes.json
 │   │
 │   ├── utils/                   # Utilities
+│   │   ├── LoggerFactory.ts     # [NEW] Centralized logging (Epic 10)
 │   │   ├── metadataExtractor.ts
 │   │   ├── pathValidator.ts
 │   │   ├── previewGenerator.ts
 │   │   ├── pdfTableDetector.ts
-│   │   └── logger.ts
+│   │   ├── errorHandler.ts
+│   │   ├── ipcValidator.ts
+│   │   ├── safeRegex.ts
+│   │   └── asyncTimeout.ts
 │   │
 │   └── types/                   # TypeScript definitions
 │       ├── index.ts
@@ -106,7 +230,12 @@ A5-PII-Anonymizer/
 │       ├── fileMetadata.ts
 │       ├── batchQueue.ts
 │       ├── pdfTable.ts
-│       └── detection.ts         # [NEW] Detection pipeline types (Epic 1)
+│       ├── detection.ts         # Detection pipeline types
+│       ├── accuracy.ts
+│       ├── entityReview.ts
+│       ├── errors.ts
+│       ├── feedback.ts
+│       └── modelDownload.ts
 │
 ├── locales/                     # Translation files
 │   ├── en.json
@@ -118,29 +247,54 @@ A5-PII-Anonymizer/
 ├── test/                        # Test suites
 │   ├── unit/
 │   │   ├── converters/
-│   │   ├── pii/                 # [NEW] Pipeline tests (Epic 1, 8)
-│   │   │   ├── DetectionPipeline.test.ts
-│   │   │   ├── AddressClassifier.test.ts
-│   │   │   ├── DocumentClassifier.test.ts
-│   │   │   └── ConsolidationPass.test.js  # [NEW] Story 8.8
-│   │   └── i18n/
+│   │   ├── pii/                 # Pipeline tests (Epic 1, 8)
+│   │   │   ├── DetectionPipeline.test.js
+│   │   │   ├── AddressModeling.test.js
+│   │   │   ├── ConsolidationPass.test.js
+│   │   │   ├── DocumentTypeDetection.test.js
+│   │   │   ├── Epic8PipelineIntegration.test.js
+│   │   │   ├── context/         # Context enhancement tests
+│   │   │   ├── address/         # Address detection tests
+│   │   │   ├── ml/              # ML module tests
+│   │   │   ├── feedback/        # Feedback tests
+│   │   │   ├── recognizers/     # Recognizer tests
+│   │   │   └── preprocessing/   # Preprocessing tests
+│   │   ├── i18n/
+│   │   ├── shared/              # Shared module tests
+│   │   └── anonymization/       # Anonymization tests
 │   ├── integration/
-│   │   ├── pipeline.test.js     # [NEW] Multi-pass integration (Epic 1)
-│   │   └── pii/
-│   │       └── ConsolidationIntegration.test.js  # [NEW] Story 8.8
+│   │   ├── pii/
+│   │   │   ├── ConsolidationIntegration.test.js
+│   │   │   ├── NormalizationIntegration.test.js
+│   │   │   ├── QualityValidation.test.js
+│   │   │   ├── RuntimeContextIntegration.test.js
+│   │   │   ├── ItalianPatterns.test.js
+│   │   │   └── PresidioCompatibility.test.js
+│   │   └── fullPipeline.test.js
+│   ├── accuracy/                # Accuracy benchmarks
+│   ├── performance/             # Performance tests
 │   └── fixtures/
-│       ├── piiAnnotated/        # [NEW] Golden test dataset
+│       ├── piiAnnotated/        # Golden test dataset
+│       ├── realistic/           # Realistic test documents
 │       └── pdfTables.js
 │
 ├── models/                      # ML model cache
 │   └── Xenova/
 │       └── distilbert-base-multilingual-cased-ner-hrl/
 │
+├── scripts/                     # Build and utility scripts
+│   ├── patch-pdf-parse.js
+│   └── generate-realistic-test-files.mjs
+│
 └── docs/                        # Documentation
     ├── prd.md
     ├── epics.md
     ├── architecture.md          # This document
-    └── test-design-system.md    # System-level test design
+    ├── test-design-system.md    # System-level test design
+    ├── ML_DETECTION_REVIEW.md   # ML detection analysis
+    └── sprint-artifacts/        # Sprint planning documents
+        ├── sprint-status.yaml
+        └── stories/             # User stories by epic
 ```
 
 ---
@@ -149,11 +303,14 @@ A5-PII-Anonymizer/
 
 | Epic | Primary Components | Secondary Components |
 |------|-------------------|---------------------|
-| Epic 1: Multi-Pass Detection | `src/pii/DetectionPipeline.ts`, `src/pii/ContextScorer.ts`, `src/pii/validators/` | `fileProcessor.js`, `src/types/detection.ts` |
-| Epic 2: Address Modeling | `src/pii/AddressClassifier.ts` | `src/pii/SwissEuDetector.js`, mapping file schema |
-| Epic 3: Document-Type Detection | `src/pii/DocumentClassifier.ts`, `src/pii/rules/`, `src/config/detectionRules.json` | `src/converters/PdfToMarkdown.ts` |
-| Epic 4: User Review | `src/ui/EntitySidebar.ts`, `renderer.js`, `index.html` | `src/services/`, preload.cjs |
-| Epic 5: Confidence & Feedback | `src/services/feedbackLogger.ts`, `src/ui/AccuracyDashboard.ts` | localStorage, electron app data |
+| Epic 1: Multi-Pass Detection | `src/pii/DetectionPipeline.ts`, `src/pii/passes/ContextScoringPass.ts`, `src/pii/validators/` | `fileProcessor.js`, `src/types/detection.ts` |
+| Epic 2: Address Modeling | `src/pii/AddressClassifier.ts`, `src/pii/AddressLinker.ts`, `src/pii/AddressScorer.ts` | `src/pii/AddressComponentDetector.ts`, `src/pii/SwissPostalDatabase.ts` |
+| Epic 3: Document-Type Detection | `src/pii/DocumentClassifier.ts`, `src/pii/rules/`, `src/config/detectionRules.json` | `src/pii/passes/DocumentTypePass.ts` |
+| Epic 4: User Review | `src/ui/EntityReviewUI.ts`, `renderer.js`, `index.html` | `src/services/`, `preload.cjs` |
+| Epic 5: Confidence & Feedback | `src/services/feedbackLogger.ts`, `shared/pii/feedback/FeedbackAggregator.ts` | `src/services/accuracyStats.ts` |
+| Epic 8: ML Enhancements | `shared/pii/ml/`, `shared/pii/preprocessing/`, `shared/pii/postprocessing/` | `shared/pii/context/`, `shared/pii/recognizers/` |
+| Epic 9: Browser App | `browser-app/src/`, `shared/` | PWA support, Web Workers |
+| Epic 10: Logger Migration | `src/utils/LoggerFactory.ts`, `browser-app/src/utils/logger.ts` | `browser-app/src/utils/WorkerLogger.ts` |
 
 ---
 
@@ -165,9 +322,10 @@ A5-PII-Anonymizer/
 |------------|---------|---------|-------|
 | Electron | 39.1.1 | Desktop framework | Main + renderer process isolation |
 | Node.js | 18+ | Runtime | ES modules, async/await |
-| TypeScript | 5.x | Type safety | Strict mode, converters migrated |
+| TypeScript | 5.9.x | Type safety | Strict mode, full migration complete |
 | @xenova/transformers | 2.17.2 | ML inference | WASM-based, browser-compatible |
 | Tailwind CSS | 3.x | Styling | Utility classes, JIT |
+| Vite | Latest | Browser build | Used in browser-app |
 
 ### Document Processing Libraries
 
@@ -179,32 +337,59 @@ A5-PII-Anonymizer/
 | marked | Markdown validation | GFM support |
 | turndown | HTML → Markdown | Table support |
 
+### Development Tools
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| electron-log | Structured logging | File + console transport |
+| zod | Runtime validation | Schema validation |
+| husky | Git hooks | Pre-commit linting |
+| lint-staged | Staged file linting | TypeScript + ESLint |
+| ESLint | Code quality | Flat config (eslint.config.js) |
+
 ### Integration Points
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        MAIN PROCESS                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │fileProcessor │───▶│ Converters   │───▶│ PII Pipeline │       │
-│  │     .js      │    │ (TypeScript) │    │ (TypeScript) │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
-│         │                                       │                │
-│         │ IPC (contextBridge)                   │                │
-│         ▼                                       ▼                │
-│  ┌──────────────┐                       ┌──────────────┐        │
-│  │   Handlers   │                       │  ML Model    │        │
-│  │ (TypeScript) │                       │  (WASM)      │        │
-│  └──────────────┘                       └──────────────┘        │
-└─────────────────────────────────────────────────────────────────┘
-                              │ IPC
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      RENDERER PROCESS                            │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │ renderer.js  │───▶│ UI Components│───▶│    i18n      │       │
-│  │              │    │ (TypeScript) │    │ (JavaScript) │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      ELECTRON APP (main.js)                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
+│  │fileProcessor │───▶│ Converters   │───▶│ PII Pipeline │               │
+│  │     .js      │    │ (TypeScript) │    │ (TypeScript) │               │
+│  └──────────────┘    └──────────────┘    └──────────────┘               │
+│         │                   │                   │                        │
+│         │                   └───────────────────┼────────────┐           │
+│         │ IPC (contextBridge)                   ▼            ▼           │
+│         ▼                                ┌──────────────┐ ┌────────────┐ │
+│  ┌──────────────┐                        │  ML Model    │ │LoggerFactory│ │
+│  │   Handlers   │                        │  (WASM)      │ │(electron-log)│ │
+│  │ (TypeScript) │                        └──────────────┘ └────────────┘ │
+│  └──────────────┘                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+          │ IPC                                    ▲
+          ▼                                        │ imports
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      RENDERER PROCESS                                    │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
+│  │ renderer.js  │───▶│ UI Components│───▶│    i18n      │               │
+│  │              │    │ (TypeScript) │    │ (TypeScript) │               │
+│  └──────────────┘    └──────────────┘    └──────────────┘               │
+└─────────────────────────────────────────────────────────────────────────┘
+                                ▲
+                                │ shared/
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    BROWSER APP (browser-app/)                            │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
+│  │   main.ts    │───▶│  Components  │───▶│  PWA Support │               │
+│  │   (Vite)     │    │ (TypeScript) │    │ (TypeScript) │               │
+│  └──────────────┘    └──────────────┘    └──────────────┘               │
+│         │                   │                   │                        │
+│         ▼                   ▼                   ▼                        │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐               │
+│  │FileProcessor │    │ PIIDetector  │    │  Web Worker  │               │
+│  │  (Browser)   │    │  (Browser)   │    │ (pii.worker) │               │
+│  └──────────────┘    └──────────────┘    └──────────────┘               │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -350,6 +535,117 @@ The ConsolidationPass is registered with order 50, executing after AddressRelati
 The mapping file (v4.0) includes:
 - `entityLinks`: Maps logicalId to placeholder for repeated entities
 - `addresses[].logicalId`: Links repeated address occurrences
+
+### Centralized Logging Architecture (Epic 10)
+
+**Purpose:** Unified logging across Electron main process, renderer, browser app, and web workers with structured output, PII redaction, and environment-aware configuration.
+
+**Components:**
+
+1. **LoggerFactory** (`src/utils/LoggerFactory.ts`) - Electron app logging
+   - Factory pattern: `LoggerFactory.create('scope')` returns scoped Logger
+   - Uses electron-log for file + console transport
+   - Configurable per-scope log levels
+   - PII redaction in production logs
+   - Singleton pattern with cached instances
+
+2. **Browser Logger** (`browser-app/src/utils/logger.ts`) - Browser app logging
+   - Console-based output with structured formatting
+   - Same API as LoggerFactory for consistency
+   - No file transport (browser limitation)
+
+3. **WorkerLogger** (`browser-app/src/utils/WorkerLogger.ts`) - Web Worker logging
+   - postMessage-based communication to main thread
+   - Structured log forwarding
+   - Worker-safe implementation
+
+**Architecture:**
+
+```typescript
+// Factory pattern usage
+import { LoggerFactory } from './utils/LoggerFactory';
+
+const log = LoggerFactory.create('fileProcessor');
+log.info('Processing started', { fileCount: 10 });
+log.error('Processing failed', { error: err.message });
+
+// Configuration
+LoggerFactory.configure({
+  level: 'debug',
+  scopeLevels: { 'pii': 'info' },
+  redactPII: true,
+});
+```
+
+**Log Level Hierarchy:**
+- `debug` → `info` → `warn` → `error`
+- Environment-based defaults: `debug` in development, `info` in production
+- Per-scope overrides via `LOG_LEVEL` env or `scopeLevels` config
+
+**PII Redaction Patterns:**
+- Email addresses → `[EMAIL_REDACTED]`
+- Phone numbers → `[PHONE_REDACTED]`
+- IBAN numbers → `[IBAN_REDACTED]`
+- Swiss AHV numbers → `[AHV_REDACTED]`
+- File paths → `[PATH_REDACTED]`
+
+### Browser App Architecture (Epic 9)
+
+**Purpose:** Standalone web application version of the PII anonymizer that runs entirely in the browser, enabling deployment as a PWA without Electron dependencies.
+
+**Key Differences from Electron:**
+
+| Aspect | Electron App | Browser App |
+|--------|--------------|-------------|
+| Entry Point | `main.js` | `browser-app/src/main.ts` |
+| Build System | electron-builder | Vite |
+| File Access | Node.js fs | File API / drag-drop |
+| PII Processing | Main process | Web Worker |
+| Logging | electron-log | console + WorkerLogger |
+| Storage | Electron userData | IndexedDB / localStorage |
+| ML Model | Node.js runtime | WASM in browser |
+
+**Processing Pipeline:**
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  UploadUI    │────▶│FileProcessor │────▶│ PIIDetector  │
+│ (drag-drop)  │     │  (Browser)   │     │  (Worker)    │
+└──────────────┘     └──────────────┘     └──────────────┘
+                            │                    │
+                            ▼                    ▼
+                     ┌──────────────┐     ┌──────────────┐
+                     │  Converters  │     │ Web Worker   │
+                     │  (Browser)   │     │(pii.worker)  │
+                     └──────────────┘     └──────────────┘
+                            │                    │
+                            └────────┬───────────┘
+                                     ▼
+                            ┌──────────────┐
+                            │ PreviewPanel │
+                            │ (rendering)  │
+                            └──────────────┘
+```
+
+**PWA Features:**
+- Service worker for offline capability
+- Install banner for "Add to Home Screen"
+- PWA status indicator in UI
+- Cached ML model for offline use
+
+**Shared Code Strategy:**
+
+The `shared/` directory contains code used by both Electron and browser apps:
+- `shared/pii/` - PII detection algorithms, preprocessing, ML utilities
+- `shared/converters/` - Document conversion utilities
+- `shared/types/` - TypeScript type definitions
+- `shared/test/` - Test utilities and fixtures
+
+Browser-specific implementations (prefixed with `Browser*`):
+- `BrowserHighRecallPass.ts` - Browser-compatible high recall detection
+- `BrowserDocumentTypePass.ts` - Document type detection without Node.js
+- `BrowserRuleEngine.ts` - Rule engine for browser environment
+- `BrowserSwissPostalDatabase.ts` - Postal code lookup via fetch
 
 ### Text Normalization & Lemmatization (Epic 8 - Story 8.7)
 
@@ -552,18 +848,25 @@ class ProcessingError extends Error {
 ### Logging Strategy
 
 ```typescript
-// Pattern: Structured logging with levels
-import { logger } from '../config/logging';
+// Pattern: Structured logging with LoggerFactory (Epic 10)
+import { LoggerFactory } from '../utils/LoggerFactory';
 
-// Levels: error, warn, info, debug
-logger.info('Processing started', { filePath, fileSize });
-logger.debug('Entity detected', { entity, confidence });
-logger.warn('Low confidence entity', { entity, confidence, threshold });
-logger.error('Processing failed', { error, context });
+// Create scoped logger (singleton per scope)
+const log = LoggerFactory.create('fileProcessor');
+
+// Levels: debug, info, warn, error
+log.info('Processing started', { filePath, fileSize });
+log.debug('Entity detected', { entity, confidence });
+log.warn('Low confidence entity', { entity, confidence, threshold });
+log.error('Processing failed', { error, context });
 
 // Never log PII content - only metadata
-logger.info('Entity found', { type: entity.type, position: entity.start }); // Good
-logger.info('Entity found', { text: entity.text }); // BAD - leaks PII
+log.info('Entity found', { type: entity.type, position: entity.start }); // Good
+log.info('Entity found', { text: entity.text }); // BAD - leaks PII (auto-redacted in prod)
+
+// Browser app logging (same API)
+import { createLogger } from '../utils/logger';
+const browserLog = createLogger('component');
 ```
 
 ---
@@ -946,14 +1249,14 @@ npm run test:watch       # Watch mode for tests
 
 ### ADR-002: TypeScript Migration Strategy
 
-**Status:** Accepted
+**Status:** Completed
 **Context:** Existing JavaScript codebase needs type safety for new features.
 **Decision:** Gradual migration - new code in TypeScript, existing code migrated as touched.
 **Consequences:**
 - (+) Immediate type safety for new code
 - (+) No "big bang" migration risk
-- (-) Mixed codebase during transition
-- (-) Need to maintain both compile paths
+- (+) Full TypeScript coverage in src/, browser-app/, shared/ directories
+- (-) Root JS files (main.js, fileProcessor.js) remain for Electron compatibility
 
 ### ADR-003: Local-First ML Inference
 
@@ -1015,9 +1318,48 @@ npm run test:watch       # Watch mode for tests
 - (-) Less accurate than full NLP lemmatization
 - (-) Manual suffix rules need maintenance
 
+### ADR-008: Centralized Logging via LoggerFactory (Epic 10)
+
+**Status:** Accepted
+**Context:** Inconsistent console.log usage across codebase, no PII protection in logs, different logging needs for Electron vs browser.
+**Decision:** Implement LoggerFactory with factory pattern, scoped loggers, electron-log backend, and automatic PII redaction in production.
+**Consequences:**
+- (+) Unified logging API across all environments
+- (+) Automatic PII redaction protects sensitive data
+- (+) File logging in Electron for debugging
+- (+) ESLint rule enforces console.log restriction
+- (-) Migration effort for existing console.log calls
+- (-) Browser app uses separate logger implementation
+
+### ADR-009: Browser App with Vite + PWA (Epic 9)
+
+**Status:** Accepted
+**Context:** Need web deployment without Electron dependencies for broader accessibility.
+**Decision:** Separate browser-app/ directory with Vite build, Web Workers for PII processing, PWA support for offline use.
+**Consequences:**
+- (+) Web deployment without app store distribution
+- (+) Offline capability via PWA service worker
+- (+) Faster development iteration with Vite HMR
+- (+) Code sharing via shared/ directory
+- (-) Some code duplication for Browser* adapter classes
+- (-) Separate build and test pipelines
+
+### ADR-010: Pluggable Recognizer Framework (Epic 8)
+
+**Status:** Accepted
+**Context:** Hard-coded PII patterns limit extensibility, country-specific patterns tightly coupled.
+**Decision:** Implement BaseRecognizer class with Registry for dynamic pattern loading, YAML-based configuration support.
+**Consequences:**
+- (+) Easy addition of new PII patterns
+- (+) Country-specific recognizers (ch/, eu/, us/)
+- (+) Improved testing isolation
+- (+) YAML configuration for non-developers
+- (-) Additional abstraction layer
+- (-) Registry initialization complexity
+
 ---
 
 _Generated by BMAD Decision Architecture Workflow v1.0_
 _Date: 2025-12-05_
-_Updated: 2025-12-26 (ADR-006, ADR-007 for Story 8.7)_
+_Updated: 2025-12-28 (ADR-008, ADR-009, ADR-010 for Epic 8, 9, 10)_
 _For: Olivier_
