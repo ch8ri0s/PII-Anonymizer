@@ -231,17 +231,21 @@ describe('Validator Map Lookup (Story 11.7)', function () {
       expect(validator).to.exist;
     });
 
-    it('_resetValidatorMap should only reset map, not validators cache', function () {
-      // Initialize both caches
+    it('_resetValidatorMap should only reset array cache, registry remains intact', function () {
+      // Initialize cache
       const validators1 = getAllValidators();
-      getValidatorForType('EMAIL');
+      const email1 = getValidatorForType('EMAIL');
 
-      // Reset only map
+      // Reset only array cache (not registry)
       _resetValidatorMap();
 
-      // Validators cache should still be intact
+      // Registry validators should be same instances
       const validators2 = getAllValidators();
-      expect(validators1).to.equal(validators2);
+      const email2 = getValidatorForType('EMAIL');
+
+      // Array is rebuilt but underlying validators are same instances from registry
+      expect(validators2).to.have.lengthOf(validators1.length);
+      expect(email1).to.equal(email2); // Same validator instance from registry
 
       // Map should be rebuilt from same validators
       const validator = getValidatorForType('EMAIL');
