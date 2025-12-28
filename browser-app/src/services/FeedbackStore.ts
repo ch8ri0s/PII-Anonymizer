@@ -319,6 +319,59 @@ export async function deleteAllEntries(): Promise<number> {
 }
 
 /**
+ * Delete oldest entries to enforce event count limit
+ * @param maxEvents Maximum number of events to retain
+ * @returns Number of entries deleted
+ */
+export async function deleteOldestEntries(maxEvents: number): Promise<number> {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(CORRECTIONS_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(CORRECTIONS_STORE_NAME);
+
+    // First get count
+    const countRequest = store.count();
+
+    countRequest.onsuccess = () => {
+      const currentCount = countRequest.result;
+
+      if (currentCount <= maxEvents) {
+        resolve(0);
+        return;
+      }
+
+      const toDelete = currentCount - maxEvents;
+      let deletedCount = 0;
+
+      // Open cursor in ascending order (oldest first)
+      const index = store.index('by-timestamp');
+      const cursorRequest = index.openCursor(null, 'next');
+
+      cursorRequest.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+
+        if (cursor && deletedCount < toDelete) {
+          cursor.delete();
+          deletedCount++;
+          cursor.continue();
+        } else {
+          resolve(deletedCount);
+        }
+      };
+
+      cursorRequest.onerror = () => {
+        reject(new Error(`Failed to delete oldest entries: ${cursorRequest.error?.message || 'Unknown error'}`));
+      };
+    };
+
+    countRequest.onerror = () => {
+      reject(new Error(`Failed to count entries: ${countRequest.error?.message || 'Unknown error'}`));
+    };
+  });
+}
+
+/**
  * Delete the entire database (for testing or complete reset)
  * @param retries Number of retries if database is blocked (default: 3)
  */

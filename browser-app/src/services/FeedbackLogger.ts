@@ -2,12 +2,19 @@
  * FeedbackLogger - User Correction Feedback Logging Service
  *
  * Story 7.8: User Correction Feedback Logging
+ * Story 8.9: User Feedback Learning Loop (extensions)
+ *
  * AC #1: Correction is logged to IndexedDB with anonymized context
  * AC #2: Log entry includes: action type, entity type, anonymized context, document hash, timestamp
  * AC #3: For dismissals: original detection source and confidence score are recorded
  * AC #4: User can enable/disable feedback logging via settings toggle
  * AC #5: Settings preference persists in localStorage
  * AC #6: Simple statistics are exposed
+ *
+ * Story 8.9 Extensions:
+ * - getAggregatedSummary(): Get top false positive and missed PII patterns
+ * - deleteAllFeedbackData(): Clear all feedback data
+ * - Event-based retention with maxEvents/maxAgeDays
  *
  * Browser port of src/services/feedbackLogger.ts using IndexedDB and localStorage.
  */
@@ -32,6 +39,9 @@ import {
   getAllEntries,
   getRecentEntries,
   deleteEntriesOlderThan,
+  deleteAllEntries,
+  getEntryCount,
+  deleteOldestEntries,
 } from './FeedbackStore';
 
 import {
@@ -40,6 +50,18 @@ import {
   generateId,
   getCurrentMonth,
 } from './LogAnonymizer';
+
+import type {
+  FeedbackEvent,
+  FeedbackSummary,
+} from '@shared/feedback';
+
+import {
+  DEFAULT_RETENTION_SETTINGS,
+  MAX_CONTEXT_LENGTH,
+  toFeedbackAction,
+  FeedbackAggregator,
+} from '@shared/feedback';
 
 // Module-level singleton state
 let settings: FeedbackSettings | null = null;
@@ -162,9 +184,12 @@ export async function logCorrection(input: LogCorrectionInput): Promise<LogResul
     const timestamp = new Date().toISOString();
     const month = getCurrentMonth();
 
-    // Anonymize the context and hash the document name
+    // Truncate context at log time for privacy (max 200 chars)
+    const truncatedContext = input.contextText?.slice(0, MAX_CONTEXT_LENGTH) || '';
+
+    // Anonymize the truncated context and hash the document name
     const anonymizedContext = anonymizeForLog(
-      input.contextText,
+      truncatedContext,
       input.entityType,
       input.originalText,
     );
@@ -352,4 +377,148 @@ export async function initFeedbackLogger(): Promise<void> {
 export function resetFeedbackLogger(): void {
   settings = null;
   invalidateStatisticsCache();
+}
+
+// ============================================================================
+// Story 8.9: Feedback Learning Loop Extensions
+// ============================================================================
+
+/**
+ * Convert legacy CorrectionEntry to FeedbackEvent
+ */
+function toFeedbackEvent(entry: CorrectionEntry): FeedbackEvent {
+  const action = toFeedbackAction(entry.action);
+
+  // Build entity from legacy format
+  const entity = {
+    text: entry.context?.slice(0, MAX_CONTEXT_LENGTH) || '',
+    type: entry.entityType,
+    start: entry.position?.start ?? 0,
+    end: entry.position?.end ?? 0,
+    confidence: entry.confidence,
+    source: entry.originalSource,
+  };
+
+  return {
+    id: entry.id,
+    timestamp: entry.timestamp,
+    source: 'browser',
+    documentId: entry.documentHash,
+    action,
+    originalEntity: action === 'mark_as_not_pii' ? entity : undefined,
+    updatedEntity: action === 'mark_as_pii' ? entity : undefined,
+    contextWindow: entry.context?.slice(0, MAX_CONTEXT_LENGTH),
+  };
+}
+
+/**
+ * Get all entries as FeedbackEvents
+ * Used for aggregation with FeedbackAggregator
+ */
+export async function getAllFeedbackEvents(): Promise<FeedbackEvent[]> {
+  if (!isAvailable()) {
+    return [];
+  }
+
+  try {
+    const entries = await getAllEntries();
+    return entries.map(e => toFeedbackEvent(e));
+  } catch (error) {
+    console.error('Failed to get feedback events:', error);
+    return [];
+  }
+}
+
+/**
+ * Get aggregated feedback summary
+ * Uses FeedbackAggregator to identify top patterns
+ *
+ * @returns Summary of false positives and missed PII patterns
+ */
+export async function getAggregatedSummary(): Promise<FeedbackSummary> {
+  const events = await getAllFeedbackEvents();
+  const aggregator = new FeedbackAggregator(events);
+  return aggregator.summarize();
+}
+
+/**
+ * Delete all feedback data
+ * Clears all entries from IndexedDB
+ *
+ * @returns Number of entries deleted
+ */
+export async function deleteAllFeedbackData(): Promise<number> {
+  if (!isAvailable()) {
+    return 0;
+  }
+
+  try {
+    const count = await deleteAllEntries();
+    invalidateStatisticsCache();
+    console.log(`Deleted ${count} feedback entries`);
+    return count;
+  } catch (error) {
+    console.error('Failed to delete feedback data:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get total entry count
+ *
+ * @returns Total number of feedback entries
+ */
+export async function getTotalEntryCount(): Promise<number> {
+  if (!isAvailable()) {
+    return 0;
+  }
+
+  try {
+    return await getEntryCount();
+  } catch (error) {
+    console.error('Failed to get entry count:', error);
+    return 0;
+  }
+}
+
+/**
+ * Apply retention policy based on event count and age
+ * Called during rotation but with configurable limits
+ *
+ * @param maxEvents Maximum number of events to retain (default: 10000)
+ * @param maxAgeDays Maximum age in days to retain events (default: 90)
+ * @returns Number of entries deleted
+ */
+export async function applyRetentionPolicy(
+  maxEvents: number = DEFAULT_RETENTION_SETTINGS.maxEvents,
+  maxAgeDays: number = DEFAULT_RETENTION_SETTINGS.maxAgeDays,
+): Promise<number> {
+  if (!isAvailable()) {
+    return 0;
+  }
+
+  let deletedCount = 0;
+
+  try {
+    // First, delete by age
+    const monthsFromDays = Math.ceil(maxAgeDays / 30);
+    deletedCount = await deleteEntriesOlderThan(monthsFromDays);
+
+    // Then, delete oldest entries if over event limit
+    const currentCount = await getEntryCount();
+    if (currentCount > maxEvents) {
+      const countDeleted = await deleteOldestEntries(maxEvents);
+      deletedCount += countDeleted;
+      console.log(`Deleted ${countDeleted} oldest entries to enforce limit (${maxEvents})`);
+    }
+
+    if (deletedCount > 0) {
+      invalidateStatisticsCache();
+    }
+
+    return deletedCount;
+  } catch (error) {
+    console.error('Failed to apply retention policy:', error);
+    return 0;
+  }
 }

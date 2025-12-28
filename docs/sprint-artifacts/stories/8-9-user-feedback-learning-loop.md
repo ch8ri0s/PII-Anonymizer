@@ -12,8 +12,11 @@ So that **false positives and false negatives decrease over time without manual 
 |-------|-------|
 | **Story ID** | 8.9 |
 | **Epic** | 8 - PII Detection Quality Improvement |
-| **Status** | Backlog |
+| **Status** | Done |
 | **Created** | 2025-12-24 |
+| **Context Created** | 2025-12-27 |
+| **Implemented** | 2025-12-27 |
+| **Reviewed** | 2025-12-27 |
 
 ## Acceptance Criteria
 
@@ -175,16 +178,99 @@ export class FeedbackAggregator {
 
 ## Definition of Done
 
-- [ ] `FeedbackEvent` type defined and used consistently in both desktop and browser code paths.  
-- [ ] `FeedbackAggregator` implemented with unit tests.  
-- [ ] `feedbackLogger` extended to persist events locally and expose a read API.  
-- [ ] Retention policy implemented (max events/days, automatic pruning)
-- [ ] Export script implemented with raw/anonymised modes
-- [ ] Export script documented in `docs/accuracyDashboard.md` or similar with operational workflow
-- [ ] Accuracy Dashboard updated (optional but preferred) to show top patterns from aggregated feedback.  
-- [ ] Privacy guarantee: No raw PII text logged, only metadata + limited context window
-- [ ] No network calls are introduced; privacy guarantees remain intact.  
-- [ ] TypeScript compiles without errors in both projects.
-- [ ] Monthly review workflow documented for maintainers
+- [x] `FeedbackEvent` type defined and used consistently in both desktop and browser code paths.
+- [x] `FeedbackAggregator` implemented with unit tests.
+- [x] `feedbackLogger` extended to persist events locally and expose a read API.
+- [x] Retention policy implemented (max events/days, automatic pruning)
+- [x] Export script implemented with raw/anonymised modes
+- [x] Export script documented in `docs/feedback-learning-loop.md` with operational workflow
+- [ ] Accuracy Dashboard updated (optional but preferred) to show top patterns from aggregated feedback.
+- [x] Privacy guarantee: No raw PII text logged, only metadata + limited context window
+- [x] No network calls are introduced; privacy guarantees remain intact.
+- [x] TypeScript compiles without errors in both projects.
+- [x] Monthly review workflow documented for maintainers
+
+## Tasks/Subtasks
+
+- [x] T1: Extend src/services/feedbackLogger.ts for desktop (retention, aggregation API)
+- [x] T2: Extend browser-app/src/services/FeedbackLogger.ts (aggregation API)
+- [x] T3: Create shared/pii/feedback/FeedbackAggregator.ts
+- [x] T4: Create shared/pii/feedback/types.ts (FeedbackEvent, AggregatedPattern)
+- [x] T5: Create scripts/export-feedback-dataset.mjs (raw/anonymised modes)
+- [x] T6: Add retention policy (max events/days, automatic pruning)
+- [x] T7: Add "Delete Feedback Data" action
+- [ ] T8: Update Accuracy Dashboard to show top patterns (optional - skipped)
+- [x] T9: Write unit tests for FeedbackAggregator (20 tests)
+- [x] T10: Document operational workflow
+
+## File List
+
+### New Files
+- `shared/pii/feedback/types.ts` - Type definitions for FeedbackEvent, AggregatedPattern, RetentionSettings
+- `shared/pii/feedback/FeedbackAggregator.ts` - Pattern aggregation class
+- `shared/pii/feedback/index.ts` - Module exports
+- `scripts/export-feedback-dataset.mjs` - Export script with raw/anonymised modes
+- `test/unit/pii/feedback/FeedbackAggregator.test.js` - 20 unit tests
+- `docs/feedback-learning-loop.md` - Operational workflow documentation
+
+### Modified Files
+- `src/services/feedbackLogger.ts` - Added retention policy, aggregation API, delete all
+- `browser-app/src/services/FeedbackLogger.ts` - Added aggregation API, delete all
+- `shared/pii/index.ts` - Added feedback module exports
+
+## Dev Agent Record
+
+### Debug Log
+- 2025-12-27: Started implementation
+- Created shared feedback types and FeedbackAggregator
+- Extended desktop feedbackLogger with retention, aggregation, delete API
+- Extended browser FeedbackLogger with same API
+- Created export script with raw/anonymised modes
+- Wrote 20 unit tests for FeedbackAggregator
+- Documented monthly operational workflow
+
+### Completion Notes
+Story 8.9 implemented with all core functionality:
+- FeedbackEvent type with full entity metadata
+- FeedbackAggregator groups patterns by frequency
+- Retention policy: max 10,000 events OR 90 days
+- Export script: node scripts/export-feedback-dataset.mjs
+- Privacy: No raw PII, max 200 char context, document hashing
+- 20 tests passing, 1520 total tests passing
+- T8 (Accuracy Dashboard) skipped as optional
+
+### Code Review Improvements (2025-12-27)
+Post-review improvements addressing security auditor and config-safety recommendations:
+
+1. **Browser retention now enforces event count limit**
+   - Added `deleteOldestEntries()` function to FeedbackStore.ts
+   - `applyRetentionPolicy()` now actually deletes excess events
+
+2. **Export script path validation**
+   - Added `validateOutputPath()` function with security checks
+   - Prevents path traversal (only allows CWD, home, or temp directories)
+   - Added proper error handling for file operations
+   - Raw mode warning displayed for sensitive exports
+
+3. **Context truncation at log time**
+   - Context now truncated to MAX_CONTEXT_LENGTH (200 chars) before storage
+   - Applied in both desktop and browser implementations
+   - Ensures privacy guarantee regardless of retrieval path
+
+4. **Shared IFeedbackLogger interface**
+   - Defined in shared/pii/feedback/types.ts
+   - Desktop FeedbackLogger class implements interface
+   - Ensures API consistency across platforms
+
+5. **Browser path aliases**
+   - Added @shared/feedback path alias to browser-app tsconfig
+   - Cleaner imports in browser FeedbackLogger
+
+## Change Log
+
+| Date | Change |
+|------|--------|
+| 2025-12-27 | Story implemented with all required tasks |
+| 2025-12-27 | Post-review: Added browser retention enforcement, path validation, context truncation, IFeedbackLogger interface |
 
 
