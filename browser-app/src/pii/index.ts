@@ -35,6 +35,7 @@ export { FormatValidationPass, createFormatValidationPass } from '@pii/passes/Fo
 export { ContextScoringPass, createContextScoringPass } from '@pii/passes/ContextScoringPass';
 export { AddressRelationshipPass, createAddressRelationshipPass } from '@pii/passes/AddressRelationshipPass';
 export { DocumentTypePass, createDocumentTypePass } from '@pii/passes/DocumentTypePass';
+export { ConsolidationPass, createConsolidationPass } from '@pii/passes/ConsolidationPass';
 export { DocumentClassifier, createDocumentClassifier } from '@pii/DocumentClassifier';
 export { AddressClassifier, createAddressClassifier } from '@pii/AddressClassifier';
 export { AddressLinker, createAddressLinker } from '@pii/AddressLinker';

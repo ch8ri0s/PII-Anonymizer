@@ -14,6 +14,12 @@ import { SwissEuDetector } from '@core/index';
 import type { PIIMatch } from '@core/index';
 import { isModelReady, isFallbackMode, runInference } from '../model';
 
+// Story 8.10: Shared subword token merger
+import {
+  type MLToken,
+  mergeSubwordTokens as mergeTokensShared,
+} from '../../../shared/dist/pii/index.js';
+
 // Import pipeline components
 import type { Entity, DetectionResult, PipelineConfig } from '../types/detection.js';
 import { DetectionPipeline, createPipeline } from '@pii/DetectionPipeline';
@@ -22,6 +28,7 @@ import { createContextScoringPass } from '@pii/passes/ContextScoringPass';
 import { createBrowserHighRecallPass } from '../pii/BrowserHighRecallPass';
 import { createBrowserDocumentTypePass } from '../pii/BrowserDocumentTypePass';
 import { createBrowserAddressRelationshipPass } from '../pii/BrowserAddressRelationshipPass';
+import { createConsolidationPass } from '@pii/passes/ConsolidationPass';
 
 // Worker types
 import type { WorkerRequest, WorkerResponse, ProgressCallback } from '../workers/types';
@@ -113,6 +120,7 @@ export class PIIDetector {
     this.pipeline.registerPass(createContextScoringPass());
     this.pipeline.registerPass(createBrowserAddressRelationshipPass());
     this.pipeline.registerPass(createBrowserDocumentTypePass());
+    this.pipeline.registerPass(createConsolidationPass()); // Story 8.8
   }
 
   /**
@@ -254,15 +262,17 @@ export class PIIDetector {
    * Detect PII using the full multi-pass pipeline
    * Provides higher accuracy (94%+) than basic detect()
    *
+   * Story 8.16: Now supports RuntimeContext via options.config.context
+   *
    * @param text - Text to analyze
-   * @param options - Detection options
+   * @param options - Detection options (including RuntimeContext for caller hints)
    * @returns Full detection result with entities and metadata
    */
   async detectWithPipeline(
     text: string,
     options: PipelineDetectionOptions = {},
   ): Promise<DetectionResult> {
-    const { useWorker = false, onProgress, timeout = 30000 } = options;
+    const { useWorker = false, onProgress, timeout = 30000, config } = options;
 
     // Use worker for regex-only background processing
     if (useWorker && this.worker && this.workerReady) {
@@ -273,6 +283,11 @@ export class PIIDetector {
     await this.initializePipeline();
     if (!this.pipeline) {
       throw new Error('Pipeline initialization failed');
+    }
+
+    // Story 8.16: Apply config overrides including RuntimeContext
+    if (config) {
+      this.pipeline.configure(config);
     }
 
     onProgress?.(10, 'Starting pipeline detection');
@@ -363,13 +378,18 @@ export class PIIDetector {
 
   /**
    * Run ML model inference
+   * Story 8.10: Uses shared SubwordTokenMerger for consistent token merging
    */
   private async runMLDetection(text: string): Promise<ExtendedPIIMatch[]> {
     try {
       const mlResults = await runInference(text);
 
-      // Merge consecutive tokens of the same entity type (B-XXX, I-XXX)
-      const mergedEntities = this.mergeSubwordTokens(mlResults, text);
+      // Story 8.10: Use shared SubwordTokenMerger for consistent B-XXX/I-XXX merging
+      const mergedEntities = mergeTokensShared(
+        mlResults as MLToken[],
+        text,
+        { minLength: 2 },
+      );
 
       return mergedEntities.map(entity => ({
         type: this.mapMLEntityType(entity.entity),
@@ -383,64 +403,6 @@ export class PIIDetector {
       console.warn('ML detection failed, using regex-only:', error);
       return [];
     }
-  }
-
-  /**
-   * Merge consecutive subword tokens into complete entities
-   * HuggingFace NER uses B-XXX (beginning) and I-XXX (inside) labels
-   */
-  private mergeSubwordTokens(
-    results: Array<{ word: string; entity: string; score: number; start: number; end: number }>,
-    originalText: string,
-  ): Array<{ word: string; entity: string; score: number; start: number; end: number }> {
-    if (results.length === 0) return [];
-
-    type TokenEntity = { word: string; entity: string; score: number; start: number; end: number };
-    const merged: TokenEntity[] = [];
-    let current: TokenEntity | null = null;
-
-    // Helper to finalize current entity
-    const finalizeCurrent = (): void => {
-      if (current) {
-        current.word = originalText.substring(current.start, current.end);
-        merged.push(current);
-      }
-    };
-
-    // Helper to create new entity from token
-    const createFromToken = (token: TokenEntity): TokenEntity => ({
-      word: token.word,
-      entity: token.entity,
-      score: token.score,
-      start: token.start,
-      end: token.end,
-    });
-
-    for (const token of results) {
-      const isInside = token.entity.startsWith('I-');
-      const entityType = token.entity.replace(/^[BI]-/, '');
-
-      // Check if this is a continuation of the same entity type
-      const isContinuation = isInside && current &&
-        current.entity.replace(/^[BI]-/, '') === entityType;
-
-      if (isContinuation && current) {
-        // Extend the current entity
-        current.end = token.end;
-        // Average the scores
-        current.score = (current.score + token.score) / 2;
-      } else {
-        // Start new entity: beginning token, standalone token, different type, or no current
-        finalizeCurrent();
-        current = createFromToken(token);
-      }
-    }
-
-    // Don't forget the last entity
-    finalizeCurrent();
-
-    // Filter out very short entities (likely noise)
-    return merged.filter(e => e.word.length >= 2);
   }
 
   /**

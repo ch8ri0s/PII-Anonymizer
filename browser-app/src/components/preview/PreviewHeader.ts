@@ -10,6 +10,32 @@ import { copyToClipboard, generateMappingMarkdown, applyAnonymization } from './
 import type { EntityWithSelection } from '../EntitySidebar';
 
 /**
+ * Get anonymized base name from filename.
+ * Shows first 2 chars + last 2 chars of the base name.
+ * Example: "invoice_2024.pdf" -> "in24"
+ *
+ * @param fileName - Original filename
+ * @returns Anonymized base name (without extension)
+ */
+function getAnonymizedBaseName(fileName: string): string {
+  // Extract base name (without extension)
+  const lastDotIndex = fileName.lastIndexOf('.');
+  const hasExtension = lastDotIndex > 0;
+  const baseName = hasExtension ? fileName.slice(0, lastDotIndex) : fileName;
+
+  // Handle very short base names - use as-is
+  if (baseName.length <= 4) {
+    return baseName;
+  }
+
+  // Get first 2 and last 2 characters
+  const first = baseName.slice(0, 2);
+  const last = baseName.slice(-2);
+
+  return `${first}${last}`;
+}
+
+/**
  * Anonymize a filename for display while preserving recognizability.
  * Shows first 2 chars + "..." + last 2 chars + original extension + ".md"
  * Example: "invoice_2024.pdf" -> "in...24.pdf.md"
@@ -321,8 +347,8 @@ async function handleCopy(): Promise<void> {
  */
 function handleDownloadMd(): void {
   const anonymizedContent = applyAnonymization(state.originalContent, state.entities);
-  const baseName = state.fileName.replace(/\.[^.]+$/, '');
-  downloadFile(anonymizedContent, `${baseName}_anonymized.md`);
+  const anonBaseName = getAnonymizedBaseName(state.fileName);
+  downloadFile(anonymizedContent, `${anonBaseName}_anon.md`);
   config.onDownloadMd?.();
 }
 
@@ -335,8 +361,8 @@ function handleDownloadMapping(): void {
     state.entities.filter(e => e.selected),
     state.entities,
   );
-  const baseName = state.fileName.replace(/\.[^.]+$/, '');
-  downloadFile(mappingContent, `${baseName}_mapping.md`);
+  const anonBaseName = getAnonymizedBaseName(state.fileName);
+  downloadFile(mappingContent, `${anonBaseName}_mapping.md`);
   config.onDownloadMapping?.();
 }
 

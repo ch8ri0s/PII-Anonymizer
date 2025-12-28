@@ -22,7 +22,9 @@
       "@pii/*": ["../src/pii/*"],
       "@types/*": ["../src/types/*"],
       "@utils/*": ["../src/utils/*"],
-      "@shared-test/*": ["../shared/test/*"]
+      "@shared-test/*": ["../shared/test/*"],
+      "@shared/feedback": ["../shared/pii/feedback/index.ts"],
+      "@shared/feedback/*": ["../shared/pii/feedback/*"]
     }
   },
   "include": ["src", "test", "e2e"]

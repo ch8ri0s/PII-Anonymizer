@@ -95,6 +95,9 @@ export default defineConfig({
       '@pii': path.resolve(__dirname, '../src/pii'),
       '@types': path.resolve(__dirname, '../src/types'),
       '@utils': path.resolve(__dirname, '../src/utils'),
+      // Import shared modules
+      '@shared/feedback': path.resolve(__dirname, '../shared/pii/feedback'),
+      '@shared/pii': path.resolve(__dirname, '../shared/pii'),
       // Ensure browser uses onnxruntime-web, not onnxruntime-node
       'onnxruntime-node': 'onnxruntime-web',
     },

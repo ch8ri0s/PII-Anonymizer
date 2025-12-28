@@ -16,6 +16,23 @@ import {
 } from '../components';
 import { downloadZip } from '../utils/download';
 
+/**
+ * Get anonymized base name from filename.
+ * Shows first 2 chars + last 2 chars of the base name.
+ * Example: "invoice_2024.pdf" -> "in24"
+ */
+function getAnonymizedBaseName(fileName: string): string {
+  const lastDotIndex = fileName.lastIndexOf('.');
+  const hasExtension = lastDotIndex > 0;
+  const baseName = hasExtension ? fileName.slice(0, lastDotIndex) : fileName;
+
+  if (baseName.length <= 4) {
+    return baseName;
+  }
+
+  return `${baseName.slice(0, 2)}${baseName.slice(-2)}`;
+}
+
 export interface ReviewUIConfig {
   onBack?: () => void;
   onAnonymizeComplete?: (content: string, mapping: string) => void;
@@ -207,17 +224,17 @@ function handleDownload(): void {
   const anonymizedContent = applyAnonymization(originalContent, selectedEntities);
   const mappingContent = generateMappingMarkdown(currentFileName, selectedEntities, allEntities);
 
-  // Generate filenames
-  const baseName = currentFileName.replace(/\.[^.]+$/, '');
-  const anonymizedFilename = `${baseName}_anonymized.md`;
-  const mappingFilename = `${baseName}_mapping.md`;
+  // Generate anonymized filenames (first 2 + last 2 chars of base name)
+  const anonBaseName = getAnonymizedBaseName(currentFileName);
+  const anonymizedFilename = `${anonBaseName}_anon.md`;
+  const mappingFilename = `${anonBaseName}_mapping.md`;
 
   // Download files
   const files = new Map<string, string>();
   files.set(anonymizedFilename, anonymizedContent);
   files.set(mappingFilename, mappingContent);
 
-  void downloadZip(files, `${baseName}_anonymized.zip`).catch((error: Error) => {
+  void downloadZip(files, `${anonBaseName}_anon.zip`).catch((error: Error) => {
     console.error('[ReviewUI] Failed to download files:', error);
   });
 }

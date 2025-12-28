@@ -116,18 +116,21 @@ describe('BrowserHighRecallPass', () => {
       expect(entities.some(e => e.type === 'VAT_NUMBER')).toBe(true);
     });
 
-    it('should detect amounts in CHF', async () => {
+    // Story 8.18: AMOUNT detection is disabled by default (not PII)
+    it('should NOT detect amounts by default (Story 8.18)', async () => {
       const text = 'Total: CHF 1\'234.50';
       const entities = await pass.execute(text, [], context);
 
-      expect(entities.some(e => e.type === 'AMOUNT')).toBe(true);
+      // AMOUNT detection is disabled by default as it's not PII
+      expect(entities.some(e => e.type === 'AMOUNT')).toBe(false);
     });
 
-    it('should detect amounts in EUR', async () => {
+    it('should NOT detect EUR amounts by default (Story 8.18)', async () => {
       const text = 'Total: EUR 1.234,50';
       const entities = await pass.execute(text, [], context);
 
-      expect(entities.some(e => e.type === 'AMOUNT')).toBe(true);
+      // AMOUNT detection is disabled by default as it's not PII
+      expect(entities.some(e => e.type === 'AMOUNT')).toBe(false);
     });
   });
 
