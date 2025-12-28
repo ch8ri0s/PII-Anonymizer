@@ -79,7 +79,7 @@ export default [
       // ===== Error Prevention =====
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-undef': 'error',
-      'no-console': 'off',
+      'no-console': 'error', // Story 10.1: Enforce LoggerFactory usage - see overrides for exclusions
       'no-debugger': 'warn',
 
       // ===== Best Practices =====
@@ -397,6 +397,7 @@ export default [
 
   // ===========================================
   // Relaxed rules for test files
+  // Story 10.8: Migration complete - console enforcement enabled
   // ===========================================
   {
     files: ['test/**/*.ts', 'test/**/*.js', 'e2e/**/*.ts'],
@@ -412,6 +413,7 @@ export default [
       },
     },
     rules: {
+      'no-console': 'warn', // Story 10.8: Migration complete - use testLogger helper
       'max-lines': 'off',
       'max-lines-per-function': 'off',
       'max-nested-callbacks': 'off',

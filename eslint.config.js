@@ -79,7 +79,7 @@ export default [
       // ===== Error Prevention =====
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-undef': 'error',
-      'no-console': 'off', // Console needed for Electron main process
+      'no-console': 'error', // Story 10.1: Enforce LoggerFactory usage - see eslint overrides for exclusions
       'no-debugger': 'warn',
 
       // ===== Best Practices =====
@@ -209,6 +209,9 @@ export default [
       // Disable base rule as it conflicts with TypeScript
       'no-unused-vars': 'off',
 
+      // ===== Error Prevention =====
+      'no-console': 'error', // Story 10.1: Enforce LoggerFactory usage
+
       // ===== Best Practices =====
       'eqeqeq': ['error', 'always'],
       'no-eval': 'error',
@@ -316,10 +319,12 @@ export default [
 
   // ===========================================
   // Relaxed rules for test files
+  // Story 10.8: Migration complete - console enforcement enabled
   // ===========================================
   {
     files: ['test/**/*.js', 'test/**/*.ts', 'test/**/*.cjs'],
     rules: {
+      'no-console': 'warn', // Story 10.8: Migration complete - use testLogger helper
       'max-lines': 'off',
       'max-lines-per-function': 'off',
       'max-nested-callbacks': 'off', // Mocha describe/it nesting
@@ -342,6 +347,19 @@ export default [
       'no-console': 'off',
       'security/detect-non-literal-fs-filename': 'off',
       'security/detect-child-process': 'off',
+      'max-lines-per-function': 'off',
+    },
+  },
+
+  // ===========================================
+  // Relaxed rules for root-level test scripts
+  // Story 10.1: Standalone test utilities exempt from no-console
+  // ===========================================
+  {
+    files: ['test-*.js', 'test-*.mjs'],
+    rules: {
+      'no-console': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
       'max-lines-per-function': 'off',
     },
   },
