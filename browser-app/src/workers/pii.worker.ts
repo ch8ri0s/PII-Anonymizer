@@ -1,11 +1,13 @@
 /**
- * PII Detection Web Worker (Story 7.3, Task 8; Story 8.15)
+ * PII Detection Web Worker (Story 7.3, Task 8; Story 8.15; Story 10.3)
  *
  * Runs the full PII detection pipeline in a background thread.
  * Communicates with main thread via postMessage.
  *
  * Story 8.15: Added ML inference capability using @huggingface/transformers v3.
  * ML inference now runs in the worker to keep the UI thread responsive.
+ *
+ * Story 10.3: Added WorkerLogger for structured logging via postMessage.
  */
 
 import type { WorkerRequest, WorkerResponse, WorkerStatus, MLPrediction } from './types';
@@ -14,6 +16,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Import pipeline components
 import { SwissEuDetector } from '@core/index';
+
+// Story 10.3: Import WorkerLogger for structured logging
+import { WorkerLogger } from '../utils/WorkerLogger';
+
+// Create scoped logger for this worker
+const log = WorkerLogger.create('pii:worker');
 
 // Story 8.15: ML model pipeline (lazily loaded)
 let mlPipeline: ((text: string) => Promise<MLPrediction[]>) | null = null;
@@ -230,7 +238,7 @@ async function loadMLModel(): Promise<void> {
   mlModelError = null;
 
   try {
-    console.log('[Worker] Loading @huggingface/transformers v3...');
+    log.info('Loading @huggingface/transformers v3...');
 
     // Dynamic import of transformers.js v3
     const { pipeline, env } = await import('@huggingface/transformers');
@@ -239,7 +247,7 @@ async function loadMLModel(): Promise<void> {
     env.allowRemoteModels = true;
     env.allowLocalModels = false;
 
-    console.log('[Worker] Creating token-classification pipeline...');
+    log.info('Creating token-classification pipeline...');
 
     // Create the NER pipeline
     const nerPipeline = await pipeline(
@@ -254,10 +262,10 @@ async function loadMLModel(): Promise<void> {
     };
 
     mlModelReady = true;
-    console.log('[Worker] ML model loaded successfully');
+    log.info('ML model loaded successfully');
   } catch (error) {
     mlModelError = error instanceof Error ? error.message : String(error);
-    console.error('[Worker] Failed to load ML model:', mlModelError);
+    log.error('Failed to load ML model', { error: mlModelError });
   } finally {
     mlModelLoading = false;
   }

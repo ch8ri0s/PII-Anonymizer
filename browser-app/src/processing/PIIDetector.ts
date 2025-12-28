@@ -33,6 +33,12 @@ import { createConsolidationPass } from '@pii/passes/ConsolidationPass';
 // Worker types
 import type { WorkerRequest, WorkerResponse, ProgressCallback } from '../workers/types';
 
+// Story 10.3: Worker log handling, Story 10.6: Logger for processing
+import { handleWorkerLogs, createLogger } from '../utils/logger';
+
+// Logger for PII detection processing
+const log = createLogger('processing:pii');
+
 // Re-export types for convenience
 export type { PIIMatch, Entity, DetectionResult };
 
@@ -136,11 +142,15 @@ export class PIIDetector {
       );
 
       this.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+        // Story 10.3: Handle worker logs first
+        if (handleWorkerLogs(event)) {
+          return;
+        }
         this.handleWorkerMessage(event.data);
       };
 
       this.worker.onerror = (error) => {
-        console.error('Worker error:', error);
+        log.error('Worker error', { message: error.message });
         // Reject all pending requests
         for (const [id, { reject }] of this.pendingRequests) {
           reject(new Error(`Worker error: ${error.message}`));
@@ -151,7 +161,7 @@ export class PIIDetector {
       // Send init message
       this.worker.postMessage({ id: 'init', type: 'init' });
     } catch (error) {
-      console.warn('Failed to initialize worker:', error);
+      log.warn('Failed to initialize worker, using main thread', { error: error instanceof Error ? error.message : String(error) });
       this.worker = null;
     }
   }
@@ -400,7 +410,7 @@ export class PIIDetector {
         mlScore: entity.score,
       }));
     } catch (error) {
-      console.warn('ML detection failed, using regex-only:', error);
+      log.warn('ML detection failed, using regex-only', { error: error instanceof Error ? error.message : String(error) });
       return [];
     }
   }

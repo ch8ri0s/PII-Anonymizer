@@ -23,6 +23,12 @@ import {
 import type { WorkerRequest, WorkerResponse, MLPrediction } from '../workers/types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Story 10.3: Worker log handling, Story 10.6: Logger for model management
+import { handleWorkerLogs, createLogger } from '../utils/logger';
+
+// Logger for model management
+const log = createLogger('model:manager');
+
 // Pipeline instance for inference
 let pipelineInstance: unknown = null;
 let loadingPromise: Promise<LoadResult> | null = null;
@@ -140,7 +146,7 @@ async function doLoadModel(
 
   try {
     // Dynamic import of transformers.js v3 (@huggingface/transformers)
-    console.log('[ModelManager] Loading @huggingface/transformers v3...');
+    log.info('Loading @huggingface/transformers v3...');
 
     const { pipeline, env } = await import('@huggingface/transformers');
 
@@ -150,8 +156,8 @@ async function doLoadModel(
     env.allowLocalModels = false; // Browser - use remote only
 
     // Log environment info for debugging
-    console.log('[ModelManager] transformers.js v3 loaded successfully');
-    console.log('[ModelManager] env:', env);
+    log.info('transformers.js v3 loaded successfully');
+    log.debug('Environment config', { allowRemoteModels: env.allowRemoteModels, allowLocalModels: env.allowLocalModels });
 
     // Create timeout promise
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -302,6 +308,11 @@ export function initWorker(): Worker {
   );
 
   mlWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+    // Story 10.3: Handle worker logs first
+    if (handleWorkerLogs(event)) {
+      return;
+    }
+
     const { id, type, payload } = event.data;
 
     // Handle progress updates
@@ -340,7 +351,7 @@ export function initWorker(): Worker {
   };
 
   mlWorker.onerror = (event) => {
-    console.error('[ModelManager] Worker error:', event.message);
+    log.error('Worker error', { message: event.message });
     // Reject all pending requests
     for (const [id, pending] of pendingRequests) {
       pending.reject(new Error(`Worker error: ${event.message}`));
