@@ -4,6 +4,12 @@
 # when changes are pushed to the main branch.
 #
 # Story 7.6: PWA & Deployment Readiness
+# Story 10.9: CI/CD Log Level Configuration
+#
+# Log Level Configuration:
+# - Default: LOG_LEVEL=error (tests), LOG_LEVEL=warn (build/typecheck)
+# - Debug: Manually trigger workflow and select 'debug' from log_level dropdown
+# - Levels: error (minimal) | warn (warnings) | info (verbose) | debug (full)
 
 name: Deploy Browser App
 
@@ -14,6 +20,17 @@ on:
       - 'browser-app/**'
       - '.github/workflows/deploy-browser-app.yml'
   workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level for debugging (error=minimal, debug=verbose)'
+        required: false
+        default: 'error'
+        type: choice
+        options:
+          - error
+          - warn
+          - info
+          - debug
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -54,10 +71,14 @@ jobs:
       - name: Run type check
         working-directory: browser-app
         run: npm run typecheck
+        env:
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'warn' }}  # Show type warnings
 
       - name: Run tests
         working-directory: browser-app
         run: npm test
+        env:
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'error' }}  # Minimal test output
 
       - name: Build for production
         working-directory: browser-app
@@ -65,6 +86,7 @@ jobs:
         env:
           # Use relative paths for GitHub Pages subdirectory deployment
           VITE_BASE_URL: './'
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'warn' }}  # Show build warnings
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
