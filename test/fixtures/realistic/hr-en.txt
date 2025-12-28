@@ -1,0 +1,26 @@
+EMPLOYEE DATA
+
+Personal Information:
+Name: Ms. Emma Johnson
+Date of birth: 15 March 1985
+AVS Number: 756.4567.8901.23
+
+Contact Details:
+Address: Rue de Lausanne 12, 1000 Lausanne
+Phone: +41 22 456 78 90
+Email: emma.johnson@ubsgroupag.ch
+
+Employment:
+Company: UBS Group AG
+Position: Senior Software Engineer
+Start date: 24/12/2025
+Salary: CHF 120,000 per year
+
+Bank Details:
+IBAN: CH93 0076 2011 6238 5295 7
+
+Emergency Contact:
+Name: John Johnson
+Phone: +41 22 456 78 90
+
+This data is confidential and subject to data protection law.

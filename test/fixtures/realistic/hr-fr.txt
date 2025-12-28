@@ -1,0 +1,26 @@
+DONNÉES EMPLOYÉ
+
+Données personnelles:
+Nom: M. Jean Dupont
+Date de naissance: 15 mars 1985
+Numéro AVS: 756.4567.8901.23
+
+Coordonnées:
+Adresse: Bahnhofstrasse 42, 8001 Zürich
+Téléphone: +41 22 456 78 90
+E-mail: jean.dupont@rocheholdingag.ch
+
+Relation de travail:
+Entreprise: Roche Holding AG
+Poste: Ingénieur logiciel senior
+Date d'entrée: 24.12.2025
+Salaire: CHF 120'000 par an
+
+Coordonnées bancaires:
+IBAN: CH56 0483 5012 3456 7800 9
+
+Contact d'urgence:
+Nom: Marie Dupont
+Téléphone: +41 22 456 78 90
+
+Ces données sont confidentielles et soumises à la loi sur la protection des données.

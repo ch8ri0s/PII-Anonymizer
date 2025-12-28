@@ -1,0 +1,35 @@
+CONTRAT DE TRAVAIL
+
+Entre
+
+Zurich Insurance Group
+Marktgasse 5
+4001 Basel
+
+et
+
+Mme Julie Laurent
+Marktgasse 5
+4001 Basel
+Date de naissance: 15 mars 1985
+Numéro AVS: 756.5678.9012.34
+
+le contrat de travail suivant est conclu:
+
+1. Poste: Ingénieur logiciel senior
+2. Date de début: 24.12.2025
+3. Salaire: CHF 120'000 par an
+4. Temps de travail: 100% (42 heures par semaine)
+
+Coordonnées:
+- Téléphone: +41 22 456 78 90
+- E-mail: julie.laurent@example.ch
+- IBAN: CH65 0023 0230 1234 5678 9
+
+Ce contrat est régi par le droit du travail suisse.
+
+Signatures:
+
+_________________          _________________
+Zurich Insurance Group            Mme Laurent
+24.12.2025

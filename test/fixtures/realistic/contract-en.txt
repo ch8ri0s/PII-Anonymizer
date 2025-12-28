@@ -1,0 +1,35 @@
+EMPLOYMENT CONTRACT
+
+Between
+
+Roche Holding AG
+Rue du Rhône 14
+1204 Genève
+
+and
+
+Mr. John Smith
+Rue du Rhône 14
+1204 Genève
+Date of birth: 15 March 1985
+AVS Number: 756.5678.9012.34
+
+the following employment contract is concluded:
+
+1. Position: Senior Software Engineer
+2. Start date: 24/12/2025
+3. Salary: CHF 120,000 per year
+4. Working time: 100% (42 hours per week)
+
+Contact details:
+- Phone: +41 78 234 56 78
+- Email: john.smith@example.ch
+- IBAN: CH56 0483 5012 3456 7800 9
+
+This contract is governed by Swiss labor law.
+
+Signatures:
+
+_________________          _________________
+Roche Holding AG            Mr. Smith
+24/12/2025

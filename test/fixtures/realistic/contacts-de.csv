@@ -1,0 +1,11 @@
+Name,Adresse,Telefon,E-Mail,IBAN,AVS-Nummer
+Herr Michael Hoffmann,Rue du Rhône 14, 1204 Genève,+41 79 123 45 67,michael.hoffmann@example.ch,CH56 0483 5012 3456 7800 9,756.4567.8901.23
+Frau Sarah Schäfer,Bahnhofstrasse 42, 8001 Zürich,+41 21 234 56 78,sarah.schäfer@example.ch,CH56 0483 5012 3456 7800 9,756.4567.8901.23
+Herr Thomas Wagner,Rue du Rhône 14, 1204 Genève,+41 22 456 78 90,thomas.wagner@example.ch,CH65 0023 0230 1234 5678 9,756.2345.6789.01
+Herr Peter Weber,Via Nassa 19, 6900 Lugano,+41 78 234 56 78,peter.weber@example.ch,CH44 3199 9123 4567 8901 2,756.5678.9012.34
+Frau Sarah Schäfer,Rue du Rhône 14, 1204 Genève,+41 78 234 56 78,sarah.schäfer@example.ch,CH36 0880 8001 2345 6789 0,756.2345.6789.01
+Frau Sarah Schäfer,Marktgasse 5, 4001 Basel,+41 31 345 67 89,sarah.schäfer@example.ch,CH65 0023 0230 1234 5678 9,756.4567.8901.23
+Frau Lisa Becker,Rue du Rhône 14, 1204 Genève,+41 78 234 56 78,lisa.becker@example.ch,CH36 0880 8001 2345 6789 0,756.2345.6789.01
+Frau Anna Schmidt,Via Nassa 19, 6900 Lugano,+41 79 123 45 67,anna.schmidt@example.ch,CH56 0483 5012 3456 7800 9,756.5678.9012.34
+Herr Thomas Wagner,Marktgasse 5, 4001 Basel,+41 79 123 45 67,thomas.wagner@example.ch,CH36 0880 8001 2345 6789 0,756.5678.9012.34
+Herr Michael Hoffmann,Spitalgasse 8, 3011 Bern,+41 22 456 78 90,michael.hoffmann@example.ch,CH36 0880 8001 2345 6789 0,756.2345.6789.01

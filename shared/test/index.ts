@@ -79,3 +79,23 @@ export {
   meetsThresholds,
   aggregateMetrics,
 } from './accuracy';
+
+export {
+  // Presidio adapter utilities
+  type PresidioSpan,
+  type PresidioSample,
+  type AnnotatedDocument,
+  type IbanTestCase,
+  type InvalidIbanTestCase,
+  type FormattedIbanTestCase,
+  type IbanEdgeCase,
+  type IbanTestCases,
+  PRESIDIO_TYPE_MAP,
+  mapPresidioEntityType,
+  convertPresidioSpan,
+  convertPresidioSample,
+  loadPresidioFixtures,
+  loadIbanTestCases,
+  ibanToTestDocument,
+  generateIbanTestDocuments,
+} from './presidioAdapter';

@@ -1,0 +1,17 @@
+Cher/Chère Mme Laurent,
+
+nous souhaitons vous informer que votre demande du 24.12.2025 a été traitée avec succès.
+
+Vos coordonnées:
+- Nom: Mme Julie Laurent
+- Adresse: Rue du Rhône 14, 1204 Genève
+- Téléphone: +41 31 345 67 89
+- E-mail: julie.laurent@example.ch
+
+Si vous avez d'autres questions, nous sommes à votre disposition.
+
+Cordialement,
+UBS Group AG
+
+Votre équipe
+24.12.2025

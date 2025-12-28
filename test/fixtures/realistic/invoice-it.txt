@@ -1,0 +1,35 @@
+FATTURA N° IT-2025-0042
+
+Fornitore:
+TechnoSwiss Solutions SA
+Via Nassa 19
+6900 Lugano
+Svizzera
+CHE-123.456.789 IVA
+
+Cliente:
+Sig. Marco Benedetti
+Viale Roma 42
+20121 Milano
+Italia
+
+Data: 27 dicembre 2025
+Scadenza: 27 gennaio 2026
+
+DESCRIZIONE                              IMPORTO
+-------------------------------------------
+Servizi di consulenza IT                CHF 2'500.00
+Licenza software annuale                CHF 1'200.00
+Supporto tecnico premium                CHF   800.00
+-------------------------------------------
+Totale                                  CHF 4'500.00
+
+Pagamento:
+IBAN: CH93 0076 2011 6238 5295 7
+BIC: BCVLCH2L
+
+Per domande:
+Email: fatture@technoswiss.ch
+Tel: +41 91 922 33 44
+
+Grazie per la vostra fiducia!

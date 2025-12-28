@@ -1,0 +1,11 @@
+Nom,Adresse,Téléphone,E-mail,IBAN,Numéro AVS
+Mme Marie Martin,Rue du Rhône 14, 1204 Genève,+41 78 234 56 78,marie.martin@example.ch,CH65 0023 0230 1234 5678 9,756.3456.7890.12
+Mme Camille Michel,Bahnhofstrasse 42, 8001 Zürich,+41 78 234 56 78,camille.michel@example.ch,CH56 0483 5012 3456 7800 9,756.4567.8901.23
+Mme Marie Martin,Hauptstrasse 23, 9000 St. Gallen,+41 78 234 56 78,marie.martin@example.ch,CH56 0483 5012 3456 7800 9,756.2345.6789.01
+M. Pierre Bernard,Hauptstrasse 23, 9000 St. Gallen,+41 31 345 67 89,pierre.bernard@example.ch,CH36 0880 8001 2345 6789 0,756.5678.9012.34
+Mme Julie Laurent,Via Nassa 19, 6900 Lugano,+41 21 234 56 78,julie.laurent@example.ch,CH93 0076 2011 6238 5295 7,756.4567.8901.23
+M. Antoine Simon,Spitalgasse 8, 3011 Bern,+41 21 234 56 78,antoine.simon@example.ch,CH44 3199 9123 4567 8901 2,756.4567.8901.23
+Mme Sophie Dubois,Hauptstrasse 23, 9000 St. Gallen,+41 22 456 78 90,sophie.dubois@example.ch,CH36 0880 8001 2345 6789 0,756.5678.9012.34
+Mme Marie Martin,Spitalgasse 8, 3011 Bern,+41 21 234 56 78,marie.martin@example.ch,CH36 0880 8001 2345 6789 0,756.3456.7890.12
+M. Luc Moreau,Rue de Lausanne 12, 1000 Lausanne,+41 78 234 56 78,luc.moreau@example.ch,CH36 0880 8001 2345 6789 0,756.2345.6789.01
+M. Antoine Simon,Spitalgasse 8, 3011 Bern,+41 31 345 67 89,antoine.simon@example.ch,CH65 0023 0230 1234 5678 9,756.4567.8901.23

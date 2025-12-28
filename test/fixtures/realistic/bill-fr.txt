@@ -1,0 +1,16 @@
+REÇU
+
+Client: Mme Julie Laurent
+Adresse: Spitalgasse 8, 3011 Bern
+Téléphone: +41 44 123 45 67
+E-mail: julie.laurent@example.ch
+
+---
+Produit A                      CHF 45.90
+Service B                      CHF 120.00
+Conseil                        CHF 85.50
+---
+Total: CHF 251.40
+
+Payé le: 24.12.2025
+Merci pour votre achat!

@@ -1,0 +1,22 @@
+Inquiry regarding your services
+
+From: Ms. Olivia Brown <olivia.brown@example.ch>
+To: support@zurichinsurancegroup.ch
+Date: 24/12/2025, 23:57:36
+
+Dear Sir or Madam,
+
+I am contacting you regarding a question about your services.
+
+My contact details:
+- Name: Ms. Olivia Brown
+- Address: Rue de Lausanne 12, 1000 Lausanne
+- Phone: +41 78 234 56 78
+- Email: olivia.brown@example.ch
+
+Could you please provide me with further information?
+
+Thank you in advance.
+
+Best regards,
+Ms. Brown

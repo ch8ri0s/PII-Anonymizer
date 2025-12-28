@@ -1,0 +1,37 @@
+RECHNUNG
+
+Von:
+ABB Ltd
+Spitalgasse 8
+3011 Bern
+
+Tel: +41 31 345 67 89
+Email: michael.hoffmann@abbltd.ch
+
+An:
+Herr Michael Hoffmann
+Spitalgasse 8
+3011 Bern
+
+Rechnungsnummer: INV-056442
+Rechnungsdatum: 24.12.2025
+Fälligkeitsdatum: 23.1.2026
+
+---
+Positions:
+Beratungsleistungen Q1 2025 | 40 h | CHF 150.00 | CHF 6000.00
+Entwicklung Software-Modul | 20 h | CHF 200.00 | CHF 4000.00
+Projektmanagement | 10 h | CHF 180.00 | CHF 1800.00
+
+---
+Zwischensumme: CHF 11800.00
+MwSt (7.7%): CHF 908.60
+Total: CHF 12708.60
+
+Zahlungsinformationen:
+IBAN: CH36 0880 8001 2345 6789 0
+Referenz: INV-056442
+
+AVS-Nummer: 756.3456.7890.12
+
+Vielen Dank für Ihr Vertrauen!

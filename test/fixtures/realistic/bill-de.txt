@@ -1,0 +1,16 @@
+QUITTUNG
+
+Kunde: Herr Peter Weber
+Adresse: Bahnhofstrasse 42, 8001 Zürich
+Telefon: +41 44 123 45 67
+E-Mail: peter.weber@example.ch
+
+---
+Produkt A                      CHF 45.90
+Service B                      CHF 120.00
+Beratung                       CHF 85.50
+---
+Total: CHF 251.40
+
+Bezahlt am: 24.12.2025
+Vielen Dank für Ihren Einkauf!

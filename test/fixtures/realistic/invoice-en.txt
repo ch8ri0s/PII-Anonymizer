@@ -1,0 +1,37 @@
+INVOICE
+
+From:
+Swisscom AG
+Spitalgasse 8
+3011 Bern
+
+Phone: +41 21 234 56 78
+Email: david.williams@swisscomag.ch
+
+To:
+Mr. David Williams
+Spitalgasse 8
+3011 Bern
+
+Invoice Number: INV-056487
+Invoice Date: 24/12/2025
+Due Date: 23/01/2026
+
+---
+Positions:
+Consulting Services Q1 2025 | 40 h | CHF 150.00 | CHF 6000.00
+Software Module Development | 20 h | CHF 200.00 | CHF 4000.00
+Project Management | 10 h | CHF 180.00 | CHF 1800.00
+
+---
+Zwischensumme: CHF 11800.00
+MwSt (7.7%): CHF 908.60
+Total: CHF 12708.60
+
+Payment Information:
+IBAN: CH36 0880 8001 2345 6789 0
+Reference: INV-056487
+
+AVS Number: 756.3456.7890.12
+
+Thank you for your trust!

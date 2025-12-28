@@ -1,0 +1,22 @@
+Anfrage bezüglich Ihrer Dienstleistungen
+
+Von: Herr Thomas Wagner <thomas.wagner@example.ch>
+An: support@rocheholdingag.ch
+Datum: 24.12.2025, 23:57:36
+
+Sehr geehrte Damen und Herren,
+
+ich wende mich an Sie bezüglich einer Frage zu Ihren Dienstleistungen.
+
+Meine Kontaktdaten:
+- Name: Herr Thomas Wagner
+- Adresse: Rue de Lausanne 12, 1000 Lausanne
+- Telefon: +41 31 345 67 89
+- E-Mail: thomas.wagner@example.ch
+
+Können Sie mir bitte weitere Informationen zukommen lassen?
+
+Vielen Dank im Voraus.
+
+Mit freundlichen Grüssen,
+Herr Wagner

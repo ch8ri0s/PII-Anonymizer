@@ -1,0 +1,35 @@
+ARBEITSVERTRAG
+
+Zwischen
+
+Swisscom AG
+Bahnhofstrasse 42
+8001 Zürich
+
+und
+
+Herr Thomas Wagner
+Bahnhofstrasse 42
+8001 Zürich
+Geburtsdatum: 15. März 1985
+AVS-Nummer: 756.1234.5678.90
+
+wird folgender Arbeitsvertrag geschlossen:
+
+1. Position: Senior Software Engineer
+2. Startdatum: 24.12.2025
+3. Gehalt: CHF 120'000 pro Jahr
+4. Arbeitszeit: 100% (42 Stunden pro Woche)
+
+Kontaktdaten:
+- Telefon: +41 78 234 56 78
+- E-Mail: thomas.wagner@example.ch
+- IBAN: CH93 0076 2011 6238 5295 7
+
+Dieser Vertrag unterliegt dem schweizerischen Arbeitsrecht.
+
+Unterschriften:
+
+_________________          _________________
+Swisscom AG            Herr Wagner
+24.12.2025

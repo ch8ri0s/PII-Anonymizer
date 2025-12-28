@@ -1,0 +1,37 @@
+FACTURE
+
+De:
+ABB Ltd
+Via Nassa 19
+6900 Lugano
+
+Tél: +41 31 345 67 89
+Email: antoine.simon@abbltd.ch
+
+À:
+M. Antoine Simon
+Via Nassa 19
+6900 Lugano
+
+Numéro de facture: INV-056486
+Date de facture: 24.12.2025
+Date d'échéance: 23.01.2026
+
+---
+Positions:
+Services de conseil Q1 2025 | 40 h | CHF 150.00 | CHF 6000.00
+Développement module logiciel | 20 h | CHF 200.00 | CHF 4000.00
+Gestion de projet | 10 h | CHF 180.00 | CHF 1800.00
+
+---
+Zwischensumme: CHF 11800.00
+MwSt (7.7%): CHF 908.60
+Total: CHF 12708.60
+
+Informations de paiement:
+IBAN: CH65 0023 0230 1234 5678 9
+Référence: INV-056486
+
+Numéro AVS: 756.4567.8901.23
+
+Merci de votre confiance!

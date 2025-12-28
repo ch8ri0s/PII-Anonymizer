@@ -1,0 +1,11 @@
+Name,Address,Phone,Email,IBAN,AVS Number
+Ms. Emma Johnson,Marktgasse 5, 4001 Basel,+41 31 345 67 89,emma.johnson@example.ch,CH93 0076 2011 6238 5295 7,756.5678.9012.34
+Ms. Emma Johnson,Rue du Rhône 14, 1204 Genève,+41 44 123 45 67,emma.johnson@example.ch,CH93 0076 2011 6238 5295 7,756.2345.6789.01
+Mr. David Williams,Hauptstrasse 23, 9000 St. Gallen,+41 78 234 56 78,david.williams@example.ch,CH93 0076 2011 6238 5295 7,756.1234.5678.90
+Mr. David Williams,Via Nassa 19, 6900 Lugano,+41 44 123 45 67,david.williams@example.ch,CH44 3199 9123 4567 8901 2,756.3456.7890.12
+Ms. Emma Johnson,Spitalgasse 8, 3011 Bern,+41 22 456 78 90,emma.johnson@example.ch,CH36 0880 8001 2345 6789 0,756.4567.8901.23
+Mr. John Smith,Avenue de la Gare 7, 1950 Sion,+41 79 123 45 67,john.smith@example.ch,CH93 0076 2011 6238 5295 7,756.2345.6789.01
+Mr. David Williams,Rue de Lausanne 12, 1000 Lausanne,+41 21 234 56 78,david.williams@example.ch,CH44 3199 9123 4567 8901 2,756.5678.9012.34
+Mr. David Williams,Bahnhofstrasse 42, 8001 Zürich,+41 78 234 56 78,david.williams@example.ch,CH93 0076 2011 6238 5295 7,756.1234.5678.90
+Mr. David Williams,Via Nassa 19, 6900 Lugano,+41 78 234 56 78,david.williams@example.ch,CH65 0023 0230 1234 5678 9,756.4567.8901.23
+Mr. David Williams,Via Nassa 19, 6900 Lugano,+41 22 456 78 90,david.williams@example.ch,CH36 0880 8001 2345 6789 0,756.3456.7890.12

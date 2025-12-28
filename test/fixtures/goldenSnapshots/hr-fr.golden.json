@@ -1,0 +1,86 @@
+[
+  {
+    "text": "Jean Dupont",
+    "type": "PERSON_NAME",
+    "start": 47,
+    "end": 58,
+    "confidence": 0.9333333333333331
+  },
+  {
+    "text": "15 mars 1985",
+    "type": "DATE",
+    "start": 78,
+    "end": 90,
+    "confidence": 1
+  },
+  {
+    "text": "756.4567.8901.23",
+    "type": "SWISS_AVS",
+    "start": 103,
+    "end": 119,
+    "confidence": 0.8166666666666667
+  },
+  {
+    "text": "Bahnhofstrasse 42",
+    "type": "ADDRESS",
+    "start": 143,
+    "end": 160,
+    "confidence": 1
+  },
+  {
+    "text": "8001 Zürich\nTéléphone",
+    "type": "SWISS_ADDRESS",
+    "start": 162,
+    "end": 183,
+    "confidence": 0.9799999999999999
+  },
+  {
+    "text": "+41 22 456 78 90",
+    "type": "PHONE",
+    "start": 185,
+    "end": 201,
+    "confidence": 1
+  },
+  {
+    "text": "jean.dupont@rocheholdingag.ch",
+    "type": "EMAIL",
+    "start": 210,
+    "end": 239,
+    "confidence": 1
+  },
+  {
+    "text": "Roche Holding AG",
+    "type": "ORGANIZATION",
+    "start": 274,
+    "end": 290,
+    "confidence": 1
+  },
+  {
+    "text": "24.12.2025",
+    "type": "DATE",
+    "start": 339,
+    "end": 349,
+    "confidence": 1
+  },
+  {
+    "text": "CH56 0483 5012 3456 7800 9",
+    "type": "IBAN",
+    "start": 408,
+    "end": 434,
+    "confidence": 1
+  },
+  {
+    "text": "Marie Dupont",
+    "type": "PERSON_NAME",
+    "start": 460,
+    "end": 472,
+    "confidence": 0.8166666666666665
+  },
+  {
+    "text": "+41 22 456 78 90",
+    "type": "PHONE",
+    "start": 484,
+    "end": 500,
+    "confidence": 0.9239999999999998
+  }
+]

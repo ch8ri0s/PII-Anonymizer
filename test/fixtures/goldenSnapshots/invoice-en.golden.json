@@ -1,0 +1,128 @@
+[
+  {
+    "text": "Swisscom AG",
+    "type": "ORGANIZATION",
+    "start": 15,
+    "end": 26,
+    "confidence": 0.6999999999999998
+  },
+  {
+    "text": "Spitalgasse 8",
+    "type": "ADDRESS",
+    "start": 27,
+    "end": 40,
+    "confidence": 0.7933333333333331
+  },
+  {
+    "text": "3011 Bern",
+    "type": "SWISS_ADDRESS",
+    "start": 41,
+    "end": 50,
+    "confidence": 0.9519999999999997
+  },
+  {
+    "text": "+41 21 234 56 78",
+    "type": "PHONE",
+    "start": 59,
+    "end": 75,
+    "confidence": 0.9799999999999999
+  },
+  {
+    "text": "david.williams@swisscomag.ch",
+    "type": "EMAIL",
+    "start": 83,
+    "end": 111,
+    "confidence": 1
+  },
+  {
+    "text": "David Williams",
+    "type": "PERSON_NAME",
+    "start": 121,
+    "end": 135,
+    "confidence": 0.9799999999999998
+  },
+  {
+    "text": "Spitalgasse 8",
+    "type": "ADDRESS",
+    "start": 136,
+    "end": 149,
+    "confidence": 0.6533333333333332
+  },
+  {
+    "text": "3011 Bern",
+    "type": "SWISS_ADDRESS",
+    "start": 150,
+    "end": 159,
+    "confidence": 0.7839999999999999
+  },
+  {
+    "text": "Invoice Number",
+    "type": "PERSON_NAME",
+    "start": 161,
+    "end": 175,
+    "confidence": 0.9799999999999998
+  },
+  {
+    "text": "Invoice Date",
+    "type": "PERSON_NAME",
+    "start": 188,
+    "end": 200,
+    "confidence": 0.8633333333333331
+  },
+  {
+    "text": "24/12/2025",
+    "type": "DATE",
+    "start": 202,
+    "end": 212,
+    "confidence": 0.9286666666666665
+  },
+  {
+    "text": "Due Date",
+    "type": "PERSON_NAME",
+    "start": 213,
+    "end": 221,
+    "confidence": 0.8633333333333331
+  },
+  {
+    "text": "23/01/2026",
+    "type": "DATE",
+    "start": 223,
+    "end": 233,
+    "confidence": 0.8119999999999998
+  },
+  {
+    "text": "Software Module Development",
+    "type": "PERSON_NAME",
+    "start": 312,
+    "end": 339,
+    "confidence": 0.41999999999999993
+  },
+  {
+    "text": "Project Management",
+    "type": "PERSON_NAME",
+    "start": 374,
+    "end": 392,
+    "confidence": 0.41999999999999993
+  },
+  {
+    "text": "Payment Information",
+    "type": "PERSON_NAME",
+    "start": 505,
+    "end": 524,
+    "confidence": 0.7699999999999999
+  },
+  {
+    "text": "CH36 0880 8001 2345 6789 0",
+    "type": "IBAN",
+    "start": 532,
+    "end": 558,
+    "confidence": 0.7366666666666666
+  },
+  {
+    "text": "756.3456.7890.12",
+    "type": "SWISS_AVS",
+    "start": 594,
+    "end": 610,
+    "confidence": 0.6966666666666667
+  }
+]

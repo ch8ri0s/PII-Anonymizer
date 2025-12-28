@@ -1,0 +1,16 @@
+RECEIPT
+
+Customer: Ms. Olivia Brown
+Address: Hauptstrasse 23, 9000 St. Gallen
+Phone: +41 44 123 45 67
+Email: olivia.brown@example.ch
+
+---
+Product A                      CHF 45.90
+Service B                      CHF 120.00
+Consultation                   CHF 85.50
+---
+Total: CHF 251.40
+
+Paid on: 24/12/2025
+Thank you for your purchase!

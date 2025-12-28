@@ -26,192 +26,870 @@
       "language": "fr",
       "documentType": "invoice",
       "entities": [
-        { "text": "ABB Ltd", "type": "ORGANIZATION", "start": 15, "end": 22 },
-        { "text": "Via Nassa 19", "type": "ADDRESS", "start": 23, "end": 35 },
-        { "text": "6900 Lugano", "type": "ADDRESS", "start": 36, "end": 47 },
-        { "text": "+41 31 345 67 89", "type": "PHONE_NUMBER", "start": 54, "end": 70 },
-        { "text": "antoine.simon@abbltd.ch", "type": "EMAIL", "start": 78, "end": 101 },
-        { "text": "M. Antoine Simon", "type": "PERSON_NAME", "start": 108, "end": 124 },
-        { "text": "Via Nassa 19", "type": "ADDRESS", "start": 125, "end": 137 },
-        { "text": "6900 Lugano", "type": "ADDRESS", "start": 138, "end": 149 },
-        { "text": "24.12.2025", "type": "DATE", "start": 192, "end": 202 },
-        { "text": "23.01.2026", "type": "DATE", "start": 222, "end": 232 },
-        { "text": "CH65 0023 0230 1234 5678 9", "type": "IBAN", "start": 457, "end": 483 },
-        { "text": "756.4567.8901.23", "type": "SWISS_AVS", "start": 516, "end": 532 }
+        {
+          "text": "ABB Ltd",
+          "type": "ORGANIZATION",
+          "start": 13,
+          "end": 20
+        },
+        {
+          "text": "Via Nassa 19",
+          "type": "ADDRESS",
+          "start": 21,
+          "end": 33
+        },
+        {
+          "text": "6900 Lugano",
+          "type": "ADDRESS",
+          "start": 34,
+          "end": 45
+        },
+        {
+          "text": "+41 31 345 67 89",
+          "type": "PHONE_NUMBER",
+          "start": 52,
+          "end": 68
+        },
+        {
+          "text": "antoine.simon@abbltd.ch",
+          "type": "EMAIL",
+          "start": 76,
+          "end": 99
+        },
+        {
+          "text": "M. Antoine Simon",
+          "type": "PERSON_NAME",
+          "start": 104,
+          "end": 120
+        },
+        {
+          "text": "Via Nassa 19",
+          "type": "ADDRESS",
+          "start": 21,
+          "end": 33
+        },
+        {
+          "text": "6900 Lugano",
+          "type": "ADDRESS",
+          "start": 34,
+          "end": 45
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 194,
+          "end": 204
+        },
+        {
+          "text": "23.01.2026",
+          "type": "DATE",
+          "start": 222,
+          "end": 232
+        },
+        {
+          "text": "CH65 0023 0230 1234 5678 9",
+          "type": "IBAN",
+          "start": 537,
+          "end": 563
+        },
+        {
+          "text": "756.4567.8901.23",
+          "type": "SWISS_AVS",
+          "start": 599,
+          "end": 615
+        }
       ]
     },
     "invoice-en.txt": {
       "language": "en",
       "documentType": "invoice",
       "entities": [
-        { "text": "Swisscom AG", "type": "ORGANIZATION", "start": 15, "end": 26 },
-        { "text": "Spitalgasse 8", "type": "ADDRESS", "start": 27, "end": 40 },
-        { "text": "3011 Bern", "type": "ADDRESS", "start": 41, "end": 50 },
-        { "text": "+41 21 234 56 78", "type": "PHONE_NUMBER", "start": 59, "end": 75 },
-        { "text": "david.williams@swisscomag.ch", "type": "EMAIL", "start": 83, "end": 111 },
-        { "text": "Mr. David Williams", "type": "PERSON_NAME", "start": 118, "end": 136 },
-        { "text": "Spitalgasse 8", "type": "ADDRESS", "start": 137, "end": 150 },
-        { "text": "3011 Bern", "type": "ADDRESS", "start": 151, "end": 160 },
-        { "text": "24/12/2025", "type": "DATE", "start": 198, "end": 208 },
-        { "text": "23/01/2026", "type": "DATE", "start": 220, "end": 230 },
-        { "text": "CH36 0880 8001 2345 6789 0", "type": "IBAN", "start": 470, "end": 496 },
-        { "text": "756.3456.7890.12", "type": "SWISS_AVS", "start": 525, "end": 541 }
+        {
+          "text": "Swisscom AG",
+          "type": "ORGANIZATION",
+          "start": 15,
+          "end": 26
+        },
+        {
+          "text": "Spitalgasse 8",
+          "type": "ADDRESS",
+          "start": 27,
+          "end": 40
+        },
+        {
+          "text": "3011 Bern",
+          "type": "ADDRESS",
+          "start": 41,
+          "end": 50
+        },
+        {
+          "text": "+41 21 234 56 78",
+          "type": "PHONE_NUMBER",
+          "start": 59,
+          "end": 75
+        },
+        {
+          "text": "david.williams@swisscomag.ch",
+          "type": "EMAIL",
+          "start": 83,
+          "end": 111
+        },
+        {
+          "text": "Mr. David Williams",
+          "type": "PERSON_NAME",
+          "start": 117,
+          "end": 135
+        },
+        {
+          "text": "Spitalgasse 8",
+          "type": "ADDRESS",
+          "start": 27,
+          "end": 40
+        },
+        {
+          "text": "3011 Bern",
+          "type": "ADDRESS",
+          "start": 41,
+          "end": 50
+        },
+        {
+          "text": "24/12/2025",
+          "type": "DATE",
+          "start": 202,
+          "end": 212
+        },
+        {
+          "text": "23/01/2026",
+          "type": "DATE",
+          "start": 223,
+          "end": 233
+        },
+        {
+          "text": "CH36 0880 8001 2345 6789 0",
+          "type": "IBAN",
+          "start": 532,
+          "end": 558
+        },
+        {
+          "text": "756.3456.7890.12",
+          "type": "SWISS_AVS",
+          "start": 594,
+          "end": 610
+        }
       ]
     },
     "invoice-de.txt": {
       "language": "de",
       "documentType": "invoice",
       "entities": [
-        { "text": "ABB Ltd", "type": "ORGANIZATION", "start": 14, "end": 21 },
-        { "text": "Spitalgasse 8", "type": "ADDRESS", "start": 22, "end": 35 },
-        { "text": "3011 Bern", "type": "ADDRESS", "start": 36, "end": 45 },
-        { "text": "+41 31 345 67 89", "type": "PHONE_NUMBER", "start": 52, "end": 68 },
-        { "text": "michael.hoffmann@abbltd.ch", "type": "EMAIL", "start": 76, "end": 102 },
-        { "text": "Herr Michael Hoffmann", "type": "PERSON_NAME", "start": 109, "end": 130 },
-        { "text": "Spitalgasse 8", "type": "ADDRESS", "start": 131, "end": 144 },
-        { "text": "3011 Bern", "type": "ADDRESS", "start": 145, "end": 154 },
-        { "text": "24.12.2025", "type": "DATE", "start": 189, "end": 199 },
-        { "text": "23.1.2026", "type": "DATE", "start": 221, "end": 230 },
-        { "text": "CH36 0880 8001 2345 6789 0", "type": "IBAN", "start": 476, "end": 502 },
-        { "text": "756.3456.7890.12", "type": "SWISS_AVS", "start": 526, "end": 542 }
+        {
+          "text": "ABB Ltd",
+          "type": "ORGANIZATION",
+          "start": 15,
+          "end": 22
+        },
+        {
+          "text": "Spitalgasse 8",
+          "type": "ADDRESS",
+          "start": 23,
+          "end": 36
+        },
+        {
+          "text": "3011 Bern",
+          "type": "ADDRESS",
+          "start": 37,
+          "end": 46
+        },
+        {
+          "text": "+41 31 345 67 89",
+          "type": "PHONE_NUMBER",
+          "start": 53,
+          "end": 69
+        },
+        {
+          "text": "michael.hoffmann@abbltd.ch",
+          "type": "EMAIL",
+          "start": 77,
+          "end": 103
+        },
+        {
+          "text": "Herr Michael Hoffmann",
+          "type": "PERSON_NAME",
+          "start": 109,
+          "end": 130
+        },
+        {
+          "text": "Spitalgasse 8",
+          "type": "ADDRESS",
+          "start": 23,
+          "end": 36
+        },
+        {
+          "text": "3011 Bern",
+          "type": "ADDRESS",
+          "start": 37,
+          "end": 46
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 200,
+          "end": 210
+        },
+        {
+          "text": "23.1.2026",
+          "type": "DATE",
+          "start": 229,
+          "end": 238
+        },
+        {
+          "text": "CH36 0880 8001 2345 6789 0",
+          "type": "IBAN",
+          "start": 537,
+          "end": 563
+        },
+        {
+          "text": "756.3456.7890.12",
+          "type": "SWISS_AVS",
+          "start": 598,
+          "end": 614
+        }
       ]
     },
     "letter-fr.txt": {
       "language": "fr",
       "documentType": "letter",
       "entities": [
-        { "text": "Mme Laurent", "type": "PERSON_NAME", "start": 12, "end": 23 },
-        { "text": "24.12.2025", "type": "DATE", "start": 72, "end": 82 },
-        { "text": "Mme Julie Laurent", "type": "PERSON_NAME", "start": 127, "end": 144 },
-        { "text": "Rue du Rhône 14, 1204 Genève", "type": "ADDRESS", "start": 157, "end": 185 },
-        { "text": "+41 31 345 67 89", "type": "PHONE_NUMBER", "start": 200, "end": 216 },
-        { "text": "julie.laurent@example.ch", "type": "EMAIL", "start": 227, "end": 251 },
-        { "text": "UBS Group AG", "type": "ORGANIZATION", "start": 318, "end": 330 },
-        { "text": "24.12.2025", "type": "DATE", "start": 348, "end": 358 }
+        {
+          "text": "Mme Laurent",
+          "type": "PERSON_NAME",
+          "start": 11,
+          "end": 22
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 76,
+          "end": 86
+        },
+        {
+          "text": "Mme Julie Laurent",
+          "type": "PERSON_NAME",
+          "start": 139,
+          "end": 156
+        },
+        {
+          "text": "Rue du Rhône 14, 1204 Genève",
+          "type": "ADDRESS",
+          "start": 168,
+          "end": 196
+        },
+        {
+          "text": "+41 31 345 67 89",
+          "type": "PHONE_NUMBER",
+          "start": 210,
+          "end": 226
+        },
+        {
+          "text": "julie.laurent@example.ch",
+          "type": "EMAIL",
+          "start": 237,
+          "end": 261
+        },
+        {
+          "text": "UBS Group AG",
+          "type": "ORGANIZATION",
+          "start": 344,
+          "end": 356
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 76,
+          "end": 86
+        }
       ]
     },
     "letter-en.txt": {
       "language": "en",
       "documentType": "letter",
       "entities": [
-        { "text": "Ms. Johnson", "type": "PERSON_NAME", "start": 5, "end": 16 },
-        { "text": "24/12/2025", "type": "DATE", "start": 68, "end": 78 },
-        { "text": "Ms. Emma Johnson", "type": "PERSON_NAME", "start": 126, "end": 142 },
-        { "text": "Rue du Rhône 14, 1204 Genève", "type": "ADDRESS", "start": 155, "end": 183 },
-        { "text": "+41 44 123 45 67", "type": "PHONE_NUMBER", "start": 193, "end": 209 },
-        { "text": "emma.johnson@example.ch", "type": "EMAIL", "start": 219, "end": 242 },
-        { "text": "Roche Holding AG", "type": "ORGANIZATION", "start": 307, "end": 323 },
-        { "text": "24/12/2025", "type": "DATE", "start": 336, "end": 346 }
+        {
+          "text": "Ms. Johnson",
+          "type": "PERSON_NAME",
+          "start": 5,
+          "end": 16
+        },
+        {
+          "text": "24/12/2025",
+          "type": "DATE",
+          "start": 70,
+          "end": 80
+        },
+        {
+          "text": "Ms. Emma Johnson",
+          "type": "PERSON_NAME",
+          "start": 145,
+          "end": 161
+        },
+        {
+          "text": "Rue du Rhône 14, 1204 Genève",
+          "type": "ADDRESS",
+          "start": 173,
+          "end": 201
+        },
+        {
+          "text": "+41 44 123 45 67",
+          "type": "PHONE_NUMBER",
+          "start": 211,
+          "end": 227
+        },
+        {
+          "text": "emma.johnson@example.ch",
+          "type": "EMAIL",
+          "start": 237,
+          "end": 260
+        },
+        {
+          "text": "Roche Holding AG",
+          "type": "ORGANIZATION",
+          "start": 334,
+          "end": 350
+        },
+        {
+          "text": "24/12/2025",
+          "type": "DATE",
+          "start": 70,
+          "end": 80
+        }
       ]
     },
     "letter-de.txt": {
       "language": "de",
       "documentType": "letter",
       "entities": [
-        { "text": "Herr Wagner", "type": "PERSON_NAME", "start": 14, "end": 25 },
-        { "text": "24.12.2025", "type": "DATE", "start": 51, "end": 61 },
-        { "text": "Herr Thomas Wagner", "type": "PERSON_NAME", "start": 111, "end": 129 },
-        { "text": "Avenue de la Gare 7, 1950 Sion", "type": "ADDRESS", "start": 141, "end": 171 },
-        { "text": "+41 79 123 45 67", "type": "PHONE_NUMBER", "start": 183, "end": 199 },
-        { "text": "thomas.wagner@example.ch", "type": "EMAIL", "start": 210, "end": 234 },
-        { "text": "ABB Ltd", "type": "ORGANIZATION", "start": 317, "end": 324 },
-        { "text": "24.12.2025", "type": "DATE", "start": 337, "end": 347 }
+        {
+          "text": "Herr Wagner",
+          "type": "PERSON_NAME",
+          "start": 15,
+          "end": 26
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 80,
+          "end": 90
+        },
+        {
+          "text": "Herr Thomas Wagner",
+          "type": "PERSON_NAME",
+          "start": 149,
+          "end": 167
+        },
+        {
+          "text": "Avenue de la Gare 7, 1950 Sion",
+          "type": "ADDRESS",
+          "start": 179,
+          "end": 209
+        },
+        {
+          "text": "+41 79 123 45 67",
+          "type": "PHONE_NUMBER",
+          "start": 221,
+          "end": 237
+        },
+        {
+          "text": "thomas.wagner@example.ch",
+          "type": "EMAIL",
+          "start": 248,
+          "end": 272
+        },
+        {
+          "text": "ABB Ltd",
+          "type": "ORGANIZATION",
+          "start": 371,
+          "end": 378
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 80,
+          "end": 90
+        }
       ]
     },
     "hr-fr.txt": {
       "language": "fr",
       "documentType": "hr",
       "entities": [
-        { "text": "M. Jean Dupont", "type": "PERSON_NAME", "start": 43, "end": 57 },
-        { "text": "15 mars 1985", "type": "DATE", "start": 78, "end": 90 },
-        { "text": "756.4567.8901.23", "type": "SWISS_AVS", "start": 105, "end": 121 },
-        { "text": "Bahnhofstrasse 42, 8001 Zürich", "type": "ADDRESS", "start": 142, "end": 172 },
-        { "text": "+41 22 456 78 90", "type": "PHONE_NUMBER", "start": 185, "end": 201 },
-        { "text": "jean.dupont@rocheholdingag.ch", "type": "EMAIL", "start": 211, "end": 240 },
-        { "text": "Roche Holding AG", "type": "ORGANIZATION", "start": 264, "end": 280 },
-        { "text": "24.12.2025", "type": "DATE", "start": 328, "end": 338 },
-        { "text": "CH56 0483 5012 3456 7800 9", "type": "IBAN", "start": 398, "end": 424 },
-        { "text": "Marie Dupont", "type": "PERSON_NAME", "start": 454, "end": 466 },
-        { "text": "+41 22 456 78 90", "type": "PHONE_NUMBER", "start": 479, "end": 495 }
+        {
+          "text": "M. Jean Dupont",
+          "type": "PERSON_NAME",
+          "start": 44,
+          "end": 58
+        },
+        {
+          "text": "15 mars 1985",
+          "type": "DATE",
+          "start": 78,
+          "end": 90
+        },
+        {
+          "text": "756.4567.8901.23",
+          "type": "SWISS_AVS",
+          "start": 103,
+          "end": 119
+        },
+        {
+          "text": "Bahnhofstrasse 42, 8001 Zürich",
+          "type": "ADDRESS",
+          "start": 143,
+          "end": 173
+        },
+        {
+          "text": "+41 22 456 78 90",
+          "type": "PHONE_NUMBER",
+          "start": 185,
+          "end": 201
+        },
+        {
+          "text": "jean.dupont@rocheholdingag.ch",
+          "type": "EMAIL",
+          "start": 210,
+          "end": 239
+        },
+        {
+          "text": "Roche Holding AG",
+          "type": "ORGANIZATION",
+          "start": 274,
+          "end": 290
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 339,
+          "end": 349
+        },
+        {
+          "text": "CH56 0483 5012 3456 7800 9",
+          "type": "IBAN",
+          "start": 408,
+          "end": 434
+        },
+        {
+          "text": "Marie Dupont",
+          "type": "PERSON_NAME",
+          "start": 460,
+          "end": 472
+        },
+        {
+          "text": "+41 22 456 78 90",
+          "type": "PHONE_NUMBER",
+          "start": 185,
+          "end": 201
+        }
       ]
     },
     "hr-en.txt": {
       "language": "en",
       "documentType": "hr",
       "entities": [
-        { "text": "Ms. Emma Johnson", "type": "PERSON_NAME", "start": 38, "end": 54 },
-        { "text": "15 March 1985", "type": "DATE", "start": 72, "end": 85 },
-        { "text": "756.4567.8901.23", "type": "SWISS_AVS", "start": 99, "end": 115 },
-        { "text": "Rue de Lausanne 12, 1000 Lausanne", "type": "ADDRESS", "start": 136, "end": 169 },
-        { "text": "+41 22 456 78 90", "type": "PHONE_NUMBER", "start": 178, "end": 194 },
-        { "text": "emma.johnson@ubsgroupag.ch", "type": "EMAIL", "start": 203, "end": 229 },
-        { "text": "UBS Group AG", "type": "ORGANIZATION", "start": 250, "end": 262 },
-        { "text": "24/12/2025", "type": "DATE", "start": 312, "end": 322 },
-        { "text": "CH93 0076 2011 6238 5295 7", "type": "IBAN", "start": 380, "end": 406 },
-        { "text": "John Johnson", "type": "PERSON_NAME", "start": 432, "end": 444 },
-        { "text": "+41 22 456 78 90", "type": "PHONE_NUMBER", "start": 453, "end": 469 }
+        {
+          "text": "Ms. Emma Johnson",
+          "type": "PERSON_NAME",
+          "start": 43,
+          "end": 59
+        },
+        {
+          "text": "15 March 1985",
+          "type": "DATE",
+          "start": 75,
+          "end": 88
+        },
+        {
+          "text": "756.4567.8901.23",
+          "type": "SWISS_AVS",
+          "start": 101,
+          "end": 117
+        },
+        {
+          "text": "Rue de Lausanne 12, 1000 Lausanne",
+          "type": "ADDRESS",
+          "start": 145,
+          "end": 178
+        },
+        {
+          "text": "+41 22 456 78 90",
+          "type": "PHONE_NUMBER",
+          "start": 186,
+          "end": 202
+        },
+        {
+          "text": "emma.johnson@ubsgroupag.ch",
+          "type": "EMAIL",
+          "start": 210,
+          "end": 236
+        },
+        {
+          "text": "UBS Group AG",
+          "type": "ORGANIZATION",
+          "start": 259,
+          "end": 271
+        },
+        {
+          "text": "24/12/2025",
+          "type": "DATE",
+          "start": 319,
+          "end": 329
+        },
+        {
+          "text": "CH93 0076 2011 6238 5295 7",
+          "type": "IBAN",
+          "start": 380,
+          "end": 406
+        },
+        {
+          "text": "John Johnson",
+          "type": "PERSON_NAME",
+          "start": 433,
+          "end": 445
+        },
+        {
+          "text": "+41 22 456 78 90",
+          "type": "PHONE_NUMBER",
+          "start": 186,
+          "end": 202
+        }
       ]
     },
     "hr-de.txt": {
       "language": "de",
       "documentType": "hr",
       "entities": [
-        { "text": "Herr Michael Hoffmann", "type": "PERSON_NAME", "start": 31, "end": 52 },
-        { "text": "15. März 1985", "type": "DATE", "start": 67, "end": 80 },
-        { "text": "756.3456.7890.12", "type": "SWISS_AVS", "start": 94, "end": 110 },
-        { "text": "Via Nassa 19, 6900 Lugano", "type": "ADDRESS", "start": 127, "end": 152 },
-        { "text": "+41 21 234 56 78", "type": "PHONE_NUMBER", "start": 163, "end": 179 },
-        { "text": "michael.hoffmann@creditsuissegroupag.ch", "type": "EMAIL", "start": 189, "end": 228 },
-        { "text": "Credit Suisse Group AG", "type": "ORGANIZATION", "start": 251, "end": 273 },
-        { "text": "24.12.2025", "type": "DATE", "start": 328, "end": 338 },
-        { "text": "CH65 0023 0230 1234 5678 9", "type": "IBAN", "start": 391, "end": 417 },
-        { "text": "Hans Hoffmann", "type": "PERSON_NAME", "start": 441, "end": 454 },
-        { "text": "+41 21 234 56 78", "type": "PHONE_NUMBER", "start": 465, "end": 481 }
+        {
+          "text": "Herr Michael Hoffmann",
+          "type": "PERSON_NAME",
+          "start": 37,
+          "end": 58
+        },
+        {
+          "text": "15. März 1985",
+          "type": "DATE",
+          "start": 73,
+          "end": 86
+        },
+        {
+          "text": "756.3456.7890.12",
+          "type": "SWISS_AVS",
+          "start": 99,
+          "end": 115
+        },
+        {
+          "text": "Via Nassa 19, 6900 Lugano",
+          "type": "ADDRESS",
+          "start": 140,
+          "end": 165
+        },
+        {
+          "text": "+41 21 234 56 78",
+          "type": "PHONE_NUMBER",
+          "start": 175,
+          "end": 191
+        },
+        {
+          "text": "michael.hoffmann@creditsuissegroupag.ch",
+          "type": "EMAIL",
+          "start": 200,
+          "end": 239
+        },
+        {
+          "text": "Credit Suisse Group AG",
+          "type": "ORGANIZATION",
+          "start": 267,
+          "end": 289
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 341,
+          "end": 351
+        },
+        {
+          "text": "CH65 0023 0230 1234 5678 9",
+          "type": "IBAN",
+          "start": 404,
+          "end": 430
+        },
+        {
+          "text": "Hans Hoffmann",
+          "type": "PERSON_NAME",
+          "start": 454,
+          "end": 467
+        },
+        {
+          "text": "+41 21 234 56 78",
+          "type": "PHONE_NUMBER",
+          "start": 175,
+          "end": 191
+        }
       ]
     },
     "support-email-fr.txt": {
       "language": "fr",
       "documentType": "support-email",
       "entities": [
-        { "text": "Mme Camille Michel", "type": "PERSON_NAME", "start": 37, "end": 55 },
-        { "text": "camille.michel@example.ch", "type": "EMAIL", "start": 57, "end": 82 },
-        { "text": "support@novartisag.ch", "type": "EMAIL", "start": 88, "end": 109 },
-        { "text": "24.12.2025", "type": "DATE", "start": 117, "end": 127 },
-        { "text": "Mme Camille Michel", "type": "PERSON_NAME", "start": 231, "end": 249 },
-        { "text": "Marktgasse 5, 4001 Basel", "type": "ADDRESS", "start": 262, "end": 286 },
-        { "text": "+41 31 345 67 89", "type": "PHONE_NUMBER", "start": 301, "end": 317 },
-        { "text": "camille.michel@example.ch", "type": "EMAIL", "start": 328, "end": 353 },
-        { "text": "Mme Michel", "type": "PERSON_NAME", "start": 438, "end": 448 }
+        {
+          "text": "Mme Camille Michel",
+          "type": "PERSON_NAME",
+          "start": 37,
+          "end": 55
+        },
+        {
+          "text": "camille.michel@example.ch",
+          "type": "EMAIL",
+          "start": 57,
+          "end": 82
+        },
+        {
+          "text": "support@novartisag.ch",
+          "type": "EMAIL",
+          "start": 87,
+          "end": 108
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 115,
+          "end": 125
+        },
+        {
+          "text": "Mme Camille Michel",
+          "type": "PERSON_NAME",
+          "start": 37,
+          "end": 55
+        },
+        {
+          "text": "Marktgasse 5, 4001 Basel",
+          "type": "ADDRESS",
+          "start": 284,
+          "end": 308
+        },
+        {
+          "text": "+41 31 345 67 89",
+          "type": "PHONE_NUMBER",
+          "start": 322,
+          "end": 338
+        },
+        {
+          "text": "camille.michel@example.ch",
+          "type": "EMAIL",
+          "start": 57,
+          "end": 82
+        },
+        {
+          "text": "Mme Michel",
+          "type": "PERSON_NAME",
+          "start": 462,
+          "end": 472
+        }
       ]
     },
     "support-email-en.txt": {
       "language": "en",
       "documentType": "support-email",
       "entities": [
-        { "text": "Ms. Olivia Brown", "type": "PERSON_NAME", "start": 39, "end": 55 },
-        { "text": "olivia.brown@example.ch", "type": "EMAIL", "start": 57, "end": 80 },
-        { "text": "support@zurichinsurancegroup.ch", "type": "EMAIL", "start": 86, "end": 117 },
-        { "text": "24/12/2025", "type": "DATE", "start": 125, "end": 135 },
-        { "text": "Ms. Olivia Brown", "type": "PERSON_NAME", "start": 235, "end": 251 },
-        { "text": "Rue de Lausanne 12, 1000 Lausanne", "type": "ADDRESS", "start": 264, "end": 297 },
-        { "text": "+41 78 234 56 78", "type": "PHONE_NUMBER", "start": 307, "end": 323 },
-        { "text": "olivia.brown@example.ch", "type": "EMAIL", "start": 333, "end": 356 },
-        { "text": "Ms. Brown", "type": "PERSON_NAME", "start": 440, "end": 449 }
+        {
+          "text": "Ms. Olivia Brown",
+          "type": "PERSON_NAME",
+          "start": 39,
+          "end": 55
+        },
+        {
+          "text": "olivia.brown@example.ch",
+          "type": "EMAIL",
+          "start": 57,
+          "end": 80
+        },
+        {
+          "text": "support@zurichinsurancegroup.ch",
+          "type": "EMAIL",
+          "start": 86,
+          "end": 117
+        },
+        {
+          "text": "24/12/2025",
+          "type": "DATE",
+          "start": 124,
+          "end": 134
+        },
+        {
+          "text": "Ms. Olivia Brown",
+          "type": "PERSON_NAME",
+          "start": 39,
+          "end": 55
+        },
+        {
+          "text": "Rue de Lausanne 12, 1000 Lausanne",
+          "type": "ADDRESS",
+          "start": 285,
+          "end": 318
+        },
+        {
+          "text": "+41 78 234 56 78",
+          "type": "PHONE_NUMBER",
+          "start": 328,
+          "end": 344
+        },
+        {
+          "text": "olivia.brown@example.ch",
+          "type": "EMAIL",
+          "start": 57,
+          "end": 80
+        },
+        {
+          "text": "Ms. Brown",
+          "type": "PERSON_NAME",
+          "start": 471,
+          "end": 480
+        }
       ]
     },
     "support-email-de.txt": {
       "language": "de",
       "documentType": "support-email",
       "entities": [
-        { "text": "Herr Thomas Wagner", "type": "PERSON_NAME", "start": 47, "end": 65 },
-        { "text": "thomas.wagner@example.ch", "type": "EMAIL", "start": 67, "end": 91 },
-        { "text": "support@rocheholdingag.ch", "type": "EMAIL", "start": 97, "end": 122 },
-        { "text": "24.12.2025", "type": "DATE", "start": 130, "end": 140 },
-        { "text": "Herr Thomas Wagner", "type": "PERSON_NAME", "start": 269, "end": 287 },
-        { "text": "Rue de Lausanne 12, 1000 Lausanne", "type": "ADDRESS", "start": 299, "end": 332 },
-        { "text": "+41 31 345 67 89", "type": "PHONE_NUMBER", "start": 344, "end": 360 },
-        { "text": "thomas.wagner@example.ch", "type": "EMAIL", "start": 371, "end": 395 },
-        { "text": "Herr Wagner", "type": "PERSON_NAME", "start": 510, "end": 521 }
+        {
+          "text": "Herr Thomas Wagner",
+          "type": "PERSON_NAME",
+          "start": 47,
+          "end": 65
+        },
+        {
+          "text": "thomas.wagner@example.ch",
+          "type": "EMAIL",
+          "start": 67,
+          "end": 91
+        },
+        {
+          "text": "support@rocheholdingag.ch",
+          "type": "EMAIL",
+          "start": 97,
+          "end": 122
+        },
+        {
+          "text": "24.12.2025",
+          "type": "DATE",
+          "start": 130,
+          "end": 140
+        },
+        {
+          "text": "Herr Thomas Wagner",
+          "type": "PERSON_NAME",
+          "start": 47,
+          "end": 65
+        },
+        {
+          "text": "Rue de Lausanne 12, 1000 Lausanne",
+          "type": "ADDRESS",
+          "start": 314,
+          "end": 347
+        },
+        {
+          "text": "+41 31 345 67 89",
+          "type": "PHONE_NUMBER",
+          "start": 359,
+          "end": 375
+        },
+        {
+          "text": "thomas.wagner@example.ch",
+          "type": "EMAIL",
+          "start": 67,
+          "end": 91
+        },
+        {
+          "text": "Herr Wagner",
+          "type": "PERSON_NAME",
+          "start": 523,
+          "end": 534
+        }
+      ]
+    },
+    "invoice-it.txt": {
+      "language": "it",
+      "documentType": "invoice",
+      "entities": [
+        {
+          "text": "TechnoSwiss Solutions SA",
+          "type": "ORGANIZATION",
+          "start": 36,
+          "end": 60
+        },
+        {
+          "text": "Via Nassa 19",
+          "type": "ADDRESS",
+          "start": 61,
+          "end": 73
+        },
+        {
+          "text": "6900 Lugano",
+          "type": "ADDRESS",
+          "start": 74,
+          "end": 85
+        },
+        {
+          "text": "CHE-123.456.789",
+          "type": "VAT_NUMBER",
+          "start": 95,
+          "end": 110
+        },
+        {
+          "text": "Sig. Marco Benedetti",
+          "type": "PERSON_NAME",
+          "start": 125,
+          "end": 145
+        },
+        {
+          "text": "Viale Roma 42",
+          "type": "ADDRESS",
+          "start": 146,
+          "end": 159
+        },
+        {
+          "text": "20121 Milano",
+          "type": "ADDRESS",
+          "start": 160,
+          "end": 172
+        },
+        {
+          "text": "27 dicembre 2025",
+          "type": "DATE",
+          "start": 187,
+          "end": 203
+        },
+        {
+          "text": "27 gennaio 2026",
+          "type": "DATE",
+          "start": 214,
+          "end": 229
+        },
+        {
+          "text": "CH93 0076 2011 6238 5295 7",
+          "type": "IBAN",
+          "start": 598,
+          "end": 624
+        },
+        {
+          "text": "fatture@technoswiss.ch",
+          "type": "EMAIL",
+          "start": 660,
+          "end": 682
+        },
+        {
+          "text": "+41 91 922 33 44",
+          "type": "PHONE_NUMBER",
+          "start": 688,
+          "end": 704
+        }
       ]
     },
     "contract-fr.txt": {
@@ -258,19 +936,20 @@
     }
   },
   "summary": {
-    "totalDocuments": 18,
-    "annotatedDocuments": 12,
+    "totalDocuments": 19,
+    "annotatedDocuments": 13,
     "pendingAnnotation": 6,
-    "totalEntities": 117,
+    "totalEntities": 129,
     "entitiesByType": {
-      "PERSON_NAME": 27,
-      "ORGANIZATION": 9,
-      "ADDRESS": 19,
-      "PHONE_NUMBER": 15,
-      "EMAIL": 18,
-      "IBAN": 6,
+      "PERSON_NAME": 28,
+      "ORGANIZATION": 10,
+      "ADDRESS": 23,
+      "PHONE_NUMBER": 16,
+      "EMAIL": 19,
+      "IBAN": 7,
       "SWISS_AVS": 6,
-      "DATE": 17,
+      "DATE": 19,
+      "VAT_NUMBER": 1,
       "SWISS_UID": 0
     }
   }

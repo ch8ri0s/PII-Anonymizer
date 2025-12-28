@@ -1,0 +1,17 @@
+Dear Ms. Johnson,
+
+we would like to inform you that your request from 24/12/2025 has been successfully processed.
+
+Your contact details:
+- Name: Ms. Emma Johnson
+- Address: Rue du Rhône 14, 1204 Genève
+- Phone: +41 44 123 45 67
+- Email: emma.johnson@example.ch
+
+If you have any further questions, we are happy to help.
+
+Best regards,
+Roche Holding AG
+
+Your Team
+24/12/2025

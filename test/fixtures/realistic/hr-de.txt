@@ -1,0 +1,26 @@
+MITARBEITERDATEN
+
+Personalien:
+Name: Herr Michael Hoffmann
+Geburtsdatum: 15. März 1985
+AVS-Nummer: 756.3456.7890.12
+
+Kontaktdaten:
+Adresse: Via Nassa 19, 6900 Lugano
+Telefon: +41 21 234 56 78
+E-Mail: michael.hoffmann@creditsuissegroupag.ch
+
+Arbeitsverhältnis:
+Firma: Credit Suisse Group AG
+Position: Senior Software Engineer
+Eintrittsdatum: 24.12.2025
+Gehalt: CHF 120'000 pro Jahr
+
+Bankverbindung:
+IBAN: CH65 0023 0230 1234 5678 9
+
+Notfallkontakt:
+Name: Hans Hoffmann
+Telefon: +41 21 234 56 78
+
+Diese Daten sind vertraulich und unterliegen dem Datenschutzgesetz.
