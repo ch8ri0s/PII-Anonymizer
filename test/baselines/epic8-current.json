@@ -1,0 +1,96 @@
+{
+  "$schema": "./baseline-schema.json",
+  "version": "1.0.0",
+  "created": "2025-12-28",
+  "description": "Current Epic 8 metrics after quality improvements",
+  "platforms": {
+    "electron": {
+      "overall": {
+        "precision": 0.7668711656441718,
+        "recall": 0.9541984732824428,
+        "f1": 0.8503401360544217,
+        "documentsEvaluated": 13,
+        "totalEntitiesExpected": 131,
+        "totalEntitiesDetected": 163
+      },
+      "perEntityType": {
+        "ORGANIZATION": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "truePositives": 10,
+          "falsePositives": 0,
+          "falseNegatives": 0
+        },
+        "ADDRESS": {
+          "precision": 0.7142857142857143,
+          "recall": 1,
+          "f1": 0.8333333333333333,
+          "truePositives": 25,
+          "falsePositives": 10,
+          "falseNegatives": 0
+        },
+        "PHONE_NUMBER": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "truePositives": 16,
+          "falsePositives": 0,
+          "falseNegatives": 0
+        },
+        "EMAIL": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "truePositives": 19,
+          "falsePositives": 0,
+          "falseNegatives": 0
+        },
+        "PERSON_NAME": {
+          "precision": 0.44,
+          "recall": 0.9166666666666666,
+          "f1": 0.5945945945945945,
+          "truePositives": 22,
+          "falsePositives": 28,
+          "falseNegatives": 2
+        },
+        "DATE": {
+          "precision": 1,
+          "recall": 0.8695652173913043,
+          "f1": 0.9302325581395349,
+          "truePositives": 20,
+          "falsePositives": 0,
+          "falseNegatives": 3
+        },
+        "IBAN": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "truePositives": 7,
+          "falsePositives": 0,
+          "falseNegatives": 0
+        },
+        "SWISS_AVS": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "truePositives": 6,
+          "falsePositives": 0,
+          "falseNegatives": 0
+        },
+        "SWISS_UID": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "truePositives": 0,
+          "falsePositives": 0,
+          "falseNegatives": 1
+        }
+      },
+      "targets": {
+        "precision": 0.9,
+        "recall": 0.9
+      }
+    }
+  }
+}
