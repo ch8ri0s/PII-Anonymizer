@@ -8,6 +8,10 @@
 
 import { getErrorMessage } from '../types/errors.js';
 import { TIMEOUT, PROCESSING } from '../config/constants.js';
+import { LoggerFactory } from './LoggerFactory.js';
+
+// Logger for timeout utilities
+const log = LoggerFactory.create('utils:timeout');
 
 /**
  * Processing progress information for IPC events
@@ -363,7 +367,10 @@ export class ProgressReporter {
       this.onProgress(progress);
     } catch (error: unknown) {
       // Don't let progress errors break processing
-      console.error(`Progress reporter error for ${this.operation}:`, getErrorMessage(error));
+      log.error('Progress reporter error', {
+        operation: this.operation,
+        error: getErrorMessage(error),
+      });
     }
   }
 }

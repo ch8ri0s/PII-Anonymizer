@@ -9,6 +9,10 @@
 
 import type { ExtendedPIIMatch } from '../processing/PIIDetector';
 import type { EntityWithSelection, EntitySidebarCallbacks } from './EntitySidebar';
+import { createLogger } from '../utils/logger';
+
+// Logger for preview panel
+const log = createLogger('ui:preview');
 import {
   initEntitySidebar,
   updateEntities,
@@ -275,8 +279,8 @@ export function initPreviewPanel(
 
   // Initialize sub-components
   initPreviewHeader(mainElement, {
-    onCopySuccess: () => console.log('Copied to clipboard'),
-    onCopyError: () => console.error('Failed to copy'),
+    onCopySuccess: () => log.debug('Copied to clipboard'),
+    onCopyError: () => log.error('Failed to copy'),
   });
 
   initPreviewBody(mainElement, {
@@ -421,7 +425,7 @@ function handleManualMark(
  */
 function handleTextSelection(text: string, start: number, end: number): void {
   // This will be handled by the context menu
-  console.log('Text selected:', text, start, end);
+  log.debug('Text selected', { text, start, end });
 }
 
 /**

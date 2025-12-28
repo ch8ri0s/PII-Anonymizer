@@ -7,15 +7,18 @@
  */
 
 import { getReplacementToken } from '../preview/AnonymizationEngine';
+import { createLogger } from '../../utils/logger';
+
+// Logger for offset mapper - debug level for verbose trace logging
+const log = createLogger('utils:offset');
 
 /**
- * Debug logging - only logs when enabled
- * Set DEBUG_OFFSET_MAPPER to true in browser console to enable: window.DEBUG_OFFSET_MAPPER = true
+ * Debug logging - uses logger with debug level
+ * To enable, set log level to 'debug' in LoggerFactory.setLevel('debug')
+ * or via VITE_LOG_LEVEL=debug environment variable
  */
-function debug(...args: unknown[]): void {
-  if (typeof window !== 'undefined' && (window as unknown as { DEBUG_OFFSET_MAPPER?: boolean }).DEBUG_OFFSET_MAPPER) {
-    console.log('[OffsetMapper]', ...args);
-  }
+function debug(message: string, data?: Record<string, unknown>): void {
+  log.debug(message, data);
 }
 
 /**
@@ -48,14 +51,14 @@ export function mapDomOffsetToOriginal(
   let domPos = 0;
   let originalPos = 0;
 
-  debug('Mapping domOffset:', domOffset, 'with', entities.length, 'entities');
+  debug('Mapping domOffset', { domOffset, entityCount: entities.length });
 
   for (let i = 0; i < sortedEntities.length; i++) {
     const entity = sortedEntities[i];
     // Text before this entity (same in both DOM and original)
     const textBeforeLength = entity.start - originalPos;
 
-    debug(`Entity ${i}:`, {
+    debug(`Processing entity ${i}`, {
       text: entity.text,
       type: entity.type,
       start: entity.start,
@@ -68,7 +71,7 @@ export function mapDomOffsetToOriginal(
     if (domOffset < domPos + textBeforeLength) {
       // Selection is in plain text before this entity
       const result = originalPos + (domOffset - domPos);
-      debug('In text before entity, returning:', result);
+      debug('In text before entity', { result });
       return result;
     }
 
@@ -84,29 +87,29 @@ export function mapDomOffsetToOriginal(
       // Selected: shows [TYPE] token - use same function as renderer
       const token = getReplacementToken(entity.type);
       domEntityLength = badgeLength + token.length;
-      debug(`Selected entity: badge="${entityNum}" token="${token}" domEntityLength=${domEntityLength}`);
+      debug('Selected entity', { badge: entityNum, token, domEntityLength });
     } else {
       // Unselected: shows original text
       domEntityLength = badgeLength + entity.text.length;
-      debug(`Unselected entity: domEntityLength=${domEntityLength}`);
+      debug('Unselected entity', { domEntityLength });
     }
 
-    debug(`Check: ${domOffset} < ${domPos} + ${domEntityLength} = ${domPos + domEntityLength}?`, domOffset < domPos + domEntityLength);
+    debug('Boundary check', { domOffset, domPos, domEntityLength, threshold: domPos + domEntityLength, isWithin: domOffset < domPos + domEntityLength });
 
     if (domOffset < domPos + domEntityLength) {
       // Selection is within this entity - map to entity start
-      debug('Within entity, returning entity.start:', entity.start);
+      debug('Within entity, returning entity.start', { entityStart: entity.start });
       return entity.start;
     }
 
     domPos += domEntityLength;
     originalPos = entity.end;
-    debug(`After entity: domPos=${domPos}, originalPos=${originalPos}`);
+    debug('After entity', { domPos, originalPos });
   }
 
   // After all entities - remaining text
   const result = originalPos + (domOffset - domPos);
-  debug('After all entities, returning:', result);
+  debug('After all entities', { result });
   return result;
 }
 

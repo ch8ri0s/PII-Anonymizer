@@ -24,6 +24,10 @@ import {
   ENTITY_TYPE_LABELS,
   ENTITY_TYPE_COLORS,
 } from '../types/entityReview.js';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
+
+// Logger for Entity Review UI
+const log = LoggerFactory.create('ui:review');
 
 /**
  * Generate a unique ID for entities
@@ -69,7 +73,7 @@ export class EntityReviewUI {
   initialize(containerId: string): void {
     this.container = document.getElementById(containerId);
     if (!this.container) {
-      console.error(`[EntityReviewUI] Container not found: ${containerId}`);
+      log.error('Container not found', { containerId });
       return;
     }
 

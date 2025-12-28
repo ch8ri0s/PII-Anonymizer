@@ -9,6 +9,10 @@ import type { ProcessingResult } from '../types';
 import { convertToMarkdown, isSupported } from '../converters';
 import { PIIDetector } from './PIIDetector';
 import { anonymizeMarkdown, FileProcessingSession } from './Anonymizer';
+import { createLogger } from '../utils/logger';
+
+// Logger for file processing
+const log = createLogger('processing:file');
 
 export class FileProcessor {
   private detector: PIIDetector;
@@ -88,7 +92,7 @@ export class FileProcessor {
         });
         results.set(file.name, result);
       } catch (error) {
-        console.error(`Error processing ${file.name}:`, error);
+        log.error('File processing failed', { fileName: file.name, error: error instanceof Error ? error.message : String(error) });
       }
     }
 
