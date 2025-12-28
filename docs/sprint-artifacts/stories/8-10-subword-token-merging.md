@@ -12,8 +12,9 @@ So that **"Hans Müller" is detected as a single PERSON_NAME entity instead of f
 |-------|-------|
 | **Story ID** | 8.10 |
 | **Epic** | 8 - PII Detection Quality Improvement |
-| **Status** | Backlog |
+| **Status** | Done |
 | **Created** | 2025-12-24 |
+| **Completed** | 2025-12-27 |
 | **Priority** | P0 - Critical |
 
 ## Acceptance Criteria
@@ -211,16 +212,36 @@ private async runMLDetection(text: string): Promise<Entity[]> {
 
 ## Definition of Done
 
-- [ ] `shared/pii/ml/SubwordTokenMerger.ts` created with comprehensive tests
-- [ ] `HighRecallPass.ts` updated to use shared merger
-- [ ] `BrowserHighRecallPass.ts` updated to use shared merger (removes duplication)
-- [ ] `PIIDetector.ts` updated to use shared merger
-- [ ] Unit tests in `test/unit/pii/ml/SubwordTokenMerger.test.ts`
-- [ ] Integration tests verify merged entities in both Electron and Browser
-- [ ] All test scenarios pass
-- [ ] TypeScript compiles without errors
-- [ ] No regressions in existing ML detection tests
-- [ ] Performance impact is negligible (<1ms per document)
+- [x] `shared/pii/ml/SubwordTokenMerger.ts` created with comprehensive tests
+- [x] `HighRecallPass.ts` updated to use shared merger
+- [x] `BrowserHighRecallPass.ts` updated to use shared merger (removes duplication)
+- [x] `PIIDetector.ts` updated to use shared merger
+- [x] Unit tests in `test/unit/pii/ml/SubwordTokenMerger.test.js` (37 tests)
+- [x] Integration tests verify merged entities in both Electron and Browser
+- [x] All test scenarios pass
+- [x] TypeScript compiles without errors
+- [x] No regressions in existing ML detection tests (1555 Electron + 914 Browser)
+- [x] Performance impact is negligible (<1ms per document)
+
+## Implementation Summary
+
+**Files Created:**
+- `shared/pii/ml/SubwordTokenMerger.ts` - Shared utility with `mergeSubwordTokens()`, `SubwordTokenMerger` class
+- `shared/pii/ml/index.ts` - Module exports
+- `test/unit/pii/ml/SubwordTokenMerger.test.js` - 37 comprehensive tests
+
+**Files Modified:**
+- `shared/pii/index.ts` - Added ml module exports
+- `src/pii/passes/HighRecallPass.ts` - Integrated shared merger
+- `browser-app/src/pii/BrowserHighRecallPass.ts` - Integrated shared merger
+- `browser-app/src/processing/PIIDetector.ts` - Replaced local implementation with shared merger
+
+**Features:**
+- Merges consecutive B-XXX/I-XXX tokens into single entities
+- Calculates averaged confidence scores
+- Supports configurable minLength and maxGap
+- Handles both `entity` and `entity_group` token formats
+- Works identically in Electron and Browser
 
 ## Precision/Recall Impact Testing
 
@@ -263,4 +284,5 @@ const result = meetsThresholds(metrics, {
 **Before:** Electron produces fragmented entities, inconsistent with Browser
 **After:** Both platforms produce identical, complete entities
 **Quality Improvement:** +5-10% accuracy for multi-word names and locations
+
 
