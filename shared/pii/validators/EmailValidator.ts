@@ -12,6 +12,7 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
+import { CONFIDENCE } from './confidence.js';
 
 /**
  * RFC 5322 simplified email pattern
@@ -24,17 +25,29 @@ const EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}
  * Validates email addresses using RFC 5322 patterns.
  */
 export class EmailValidator implements ValidationRule {
+  /** Maximum email length per RFC 5321 */
+  static readonly MAX_LENGTH = 254;
+
   entityType: ValidatorEntityType = 'EMAIL';
   name = 'EmailValidator';
 
   validate(entity: ValidatorEntity): ValidationResult {
+    // SECURITY: Check length before regex to prevent ReDoS
+    if (entity.text.length > EmailValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${EmailValidator.MAX_LENGTH})`,
+      };
+    }
+
     const email = entity.text.toLowerCase();
 
     // Basic RFC 5322 pattern
     if (!EMAIL_PATTERN.test(email)) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: 'Does not match email format',
       };
     }
@@ -43,7 +56,7 @@ export class EmailValidator implements ValidationRule {
     if (email.includes('..')) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: 'Contains consecutive dots',
       };
     }
@@ -53,14 +66,14 @@ export class EmailValidator implements ValidationRule {
     if (!tld || tld.length < 2) {
       return {
         isValid: false,
-        confidence: 0.4,
+        confidence: CONFIDENCE.INVALID_FORMAT,
         reason: 'Invalid TLD',
       };
     }
 
     return {
       isValid: true,
-      confidence: 0.9,
+      confidence: CONFIDENCE.FORMAT_VALID,
     };
   }
 }
@@ -80,5 +93,9 @@ export function validateEmailFull(text: string): ValidationResult {
   const validator = new EmailValidator();
   return validator.validate({ text });
 }
+
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new EmailValidator());
 
 export default EmailValidator;

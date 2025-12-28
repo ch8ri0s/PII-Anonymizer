@@ -12,6 +12,7 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
+import { CONFIDENCE } from './confidence.js';
 
 /**
  * Valid country code prefixes
@@ -29,17 +30,29 @@ const SWISS_MOBILE_PREFIXES = ['76', '77', '78', '79'];
  * Validates Swiss and EU phone numbers.
  */
 export class PhoneValidator implements ValidationRule {
+  /** Maximum phone input length (E.164 max 15 digits + formatting) */
+  static readonly MAX_LENGTH = 20;
+
   entityType: ValidatorEntityType = 'PHONE';
   name = 'PhoneValidator';
 
   validate(entity: ValidatorEntity): ValidationResult {
+    // SECURITY: Check length before processing to prevent ReDoS
+    if (entity.text.length > PhoneValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${PhoneValidator.MAX_LENGTH})`,
+      };
+    }
+
     const digits = entity.text.replace(/\D/g, '');
 
     // Check length (international formats: 9-15 digits)
     if (digits.length < 9 || digits.length > 15) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: `Invalid length: ${digits.length} digits`,
       };
     }
@@ -55,7 +68,7 @@ export class PhoneValidator implements ValidationRule {
     if (!hasValidPrefix && !isLocalFormat) {
       return {
         isValid: false,
-        confidence: 0.5,
+        confidence: CONFIDENCE.WEAK,
         reason: 'No recognized country code',
       };
     }
@@ -69,14 +82,14 @@ export class PhoneValidator implements ValidationRule {
       if (SWISS_MOBILE_PREFIXES.some(prefix => localPart.startsWith(prefix))) {
         return {
           isValid: true,
-          confidence: 0.9,
+          confidence: CONFIDENCE.FORMAT_VALID,
         };
       }
     }
 
     return {
       isValid: true,
-      confidence: 0.75,
+      confidence: CONFIDENCE.MODERATE,
     };
   }
 }
@@ -96,5 +109,9 @@ export function validatePhoneFull(text: string): ValidationResult {
   const validator = new PhoneValidator();
   return validator.validate({ text });
 }
+
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new PhoneValidator());
 
 export default PhoneValidator;

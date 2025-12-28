@@ -154,4 +154,8 @@ export function validateDateFull(text: string): ValidationResult {
   return validator.validate({ text });
 }
 
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new DateValidator());
+
 export default DateValidator;

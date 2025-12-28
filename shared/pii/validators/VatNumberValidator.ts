@@ -14,6 +14,7 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
+import { CONFIDENCE } from './confidence.js';
 
 /**
  * Validate Swiss UID checksum (weighted sum mod 11)
@@ -48,10 +49,22 @@ const EU_VAT_PATTERN = /^(DE|FR|IT|AT)\d{8,11}$/;
  * Validates Swiss CHE and EU VAT numbers.
  */
 export class VatNumberValidator implements ValidationRule {
+  /** Maximum VAT input length (EU VAT max) */
+  static readonly MAX_LENGTH = 20;
+
   entityType: ValidatorEntityType = 'VAT_NUMBER';
   name = 'VatNumberValidator';
 
   validate(entity: ValidatorEntity): ValidationResult {
+    // SECURITY: Check length before processing to prevent ReDoS
+    if (entity.text.length > VatNumberValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${VatNumberValidator.MAX_LENGTH})`,
+      };
+    }
+
     const text = entity.text.toUpperCase();
 
     // Swiss VAT: CHE-XXX.XXX.XXX
@@ -60,7 +73,7 @@ export class VatNumberValidator implements ValidationRule {
       if (digits.length !== 9) {
         return {
           isValid: false,
-          confidence: 0.4,
+          confidence: CONFIDENCE.INVALID_FORMAT,
           reason: `Invalid Swiss VAT length: ${digits.length} digits`,
         };
       }
@@ -69,14 +82,14 @@ export class VatNumberValidator implements ValidationRule {
       if (!validateSwissUID(digits)) {
         return {
           isValid: false,
-          confidence: 0.5,
+          confidence: CONFIDENCE.WEAK,
           reason: 'Swiss UID checksum failed',
         };
       }
 
       return {
         isValid: true,
-        confidence: 0.9,
+        confidence: CONFIDENCE.FORMAT_VALID,
       };
     }
 
@@ -84,13 +97,13 @@ export class VatNumberValidator implements ValidationRule {
     if (EU_VAT_PATTERN.test(text.replace(/\s/g, ''))) {
       return {
         isValid: true,
-        confidence: 0.75,
+        confidence: CONFIDENCE.MODERATE,
       };
     }
 
     return {
       isValid: false,
-      confidence: 0.4,
+      confidence: CONFIDENCE.INVALID_FORMAT,
       reason: 'Unrecognized VAT format',
     };
   }
@@ -111,5 +124,9 @@ export function validateVatNumberFull(text: string): ValidationResult {
   const validator = new VatNumberValidator();
   return validator.validate({ text });
 }
+
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new VatNumberValidator());
 
 export default VatNumberValidator;

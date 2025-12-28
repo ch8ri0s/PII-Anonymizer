@@ -14,6 +14,7 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
+import { CONFIDENCE } from './confidence.js';
 
 /**
  * Calculate EAN-13 checksum
@@ -35,17 +36,29 @@ function calculateEAN13Checksum(digits: string): number {
  * Uses EAN-13 checksum algorithm.
  */
 export class SwissAvsValidator implements ValidationRule {
+  /** Maximum AVS input length (13 digits + separators) */
+  static readonly MAX_LENGTH = 20;
+
   entityType: ValidatorEntityType = 'SWISS_AVS';
   name = 'SwissAvsValidator';
 
   validate(entity: ValidatorEntity): ValidationResult {
+    // SECURITY: Check length before processing to prevent ReDoS
+    if (entity.text.length > SwissAvsValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${SwissAvsValidator.MAX_LENGTH})`,
+      };
+    }
+
     const digits = entity.text.replace(/\D/g, '');
 
     // Must be 13 digits
     if (digits.length !== 13) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: `Invalid length: ${digits.length} digits (expected 13)`,
       };
     }
@@ -54,7 +67,7 @@ export class SwissAvsValidator implements ValidationRule {
     if (!digits.startsWith('756')) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: 'Does not start with Swiss country code 756',
       };
     }
@@ -67,14 +80,14 @@ export class SwissAvsValidator implements ValidationRule {
     if (checksum !== expectedCheck) {
       return {
         isValid: false,
-        confidence: 0.4,
+        confidence: CONFIDENCE.INVALID_FORMAT,
         reason: `Checksum mismatch: expected ${checksum}, got ${expectedCheck}`,
       };
     }
 
     return {
       isValid: true,
-      confidence: 0.95,
+      confidence: CONFIDENCE.CHECKSUM_VALID,
     };
   }
 }
@@ -94,5 +107,9 @@ export function validateSwissAvsFull(text: string): ValidationResult {
   const validator = new SwissAvsValidator();
   return validator.validate({ text });
 }
+
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new SwissAvsValidator());
 
 export default SwissAvsValidator;

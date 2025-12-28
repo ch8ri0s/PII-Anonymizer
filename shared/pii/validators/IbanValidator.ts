@@ -14,6 +14,7 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
+import { CONFIDENCE } from './confidence.js';
 
 /**
  * IBAN lengths by country code
@@ -77,17 +78,29 @@ function validateMod97(iban: string): boolean {
  * Supports Swiss and EU country codes.
  */
 export class IbanValidator implements ValidationRule {
+  /** Maximum IBAN length (Malta has longest at 31, with spaces up to 34) */
+  static readonly MAX_LENGTH = 34;
+
   entityType: ValidatorEntityType = 'IBAN';
   name = 'IbanValidator';
 
   validate(entity: ValidatorEntity): ValidationResult {
+    // SECURITY: Check length before processing to prevent ReDoS
+    if (entity.text.length > IbanValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${IbanValidator.MAX_LENGTH})`,
+      };
+    }
+
     const iban = entity.text.replace(/\s/g, '').toUpperCase();
 
     // Check minimum length
     if (iban.length < 15) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: `Too short: ${iban.length} characters`,
       };
     }
@@ -99,7 +112,7 @@ export class IbanValidator implements ValidationRule {
     if (expectedLength && iban.length !== expectedLength) {
       return {
         isValid: false,
-        confidence: 0.4,
+        confidence: CONFIDENCE.INVALID_FORMAT,
         reason: `Invalid length for ${countryCode}: ${iban.length} (expected ${expectedLength})`,
       };
     }
@@ -108,14 +121,14 @@ export class IbanValidator implements ValidationRule {
     if (!validateMod97(iban)) {
       return {
         isValid: false,
-        confidence: 0.4,
+        confidence: CONFIDENCE.INVALID_FORMAT,
         reason: 'Checksum validation failed (Mod 97-10)',
       };
     }
 
     return {
       isValid: true,
-      confidence: 0.95,
+      confidence: CONFIDENCE.CHECKSUM_VALID,
     };
   }
 }
@@ -135,5 +148,9 @@ export function validateIbanFull(text: string): ValidationResult {
   const validator = new IbanValidator();
   return validator.validate({ text });
 }
+
+// Self-register on module import
+import { registerValidator } from './registry.js';
+registerValidator(new IbanValidator());
 
 export default IbanValidator;
