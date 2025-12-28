@@ -7,6 +7,8 @@
  * @module shared/pii/HighRecallPatterns
  */
 
+import { validateSwissAddress } from './validators/SwissAddressValidator.js';
+
 /**
  * Entity type for PII detection
  */
@@ -149,11 +151,13 @@ export function buildHighRecallPatterns(): PatternDef[] {
     // Note: Swiss postal codes are 1000-9999, but we exclude patterns that look like
     // ISO timestamps (year followed by T or -) to avoid false positives in frontmatter
     // Story 8.22: Require minimum 3-character city name to reduce false positives
+    // Story 10.x: Added validation to filter year false positives (e.g., "2024 Attestation")
     {
       type: 'SWISS_ADDRESS',
       pattern:
         /\b(?:CH[-\s]?)?[1-9]\d{3}(?![-T])\s+[A-ZÄÖÜ][a-zäöüé]{2,}(?:[-\s][A-Za-zäöüé]+)*/g,
       priority: 3,
+      validate: validateSwissAddress,
     },
 
     // German/Austrian postal codes with city

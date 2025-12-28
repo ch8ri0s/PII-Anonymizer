@@ -19,6 +19,10 @@ import {
   DocumentType,
 } from '../DocumentClassifier.js';
 import { RuleEngine, createRuleEngine } from '../RuleEngine.js';
+import { LoggerFactory } from '../../utils/LoggerFactory.js';
+
+// Create logger for document type detection pass
+const log = LoggerFactory.create('pii:pass:doctype');
 
 /**
  * Configuration for Document Type Pass
@@ -85,11 +89,11 @@ export class DocumentTypePass implements DetectionPass {
     const classification = this.classifier.classify(text);
 
     if (this.config.debug) {
-      console.log('[DocumentTypePass] Classification:', {
+      log.debug('Document classification result', {
         type: classification.type,
         confidence: classification.confidence.toFixed(2),
         language: classification.language,
-        features: classification.features.slice(0, 3),
+        featureCount: classification.features.length,
       });
     }
 

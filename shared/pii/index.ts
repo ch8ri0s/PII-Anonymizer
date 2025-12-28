@@ -163,6 +163,51 @@ export {
   createAggregator,
 } from './feedback/FeedbackAggregator.js';
 
+// Validators (Shared validation rules for PII entities)
+export {
+  // Types
+  type ValidatorEntityType,
+  type ValidatorEntity,
+  type ValidationResult as ValidatorValidationResult,
+  type ValidationRule as ValidatorValidationRule,
+  type AddressValidationResult,
+  // Swiss Address Validator
+  SwissAddressValidator,
+  validateSwissAddress,
+  validateSwissAddressFull,
+  // Swiss AVS Validator
+  SwissAvsValidator,
+  validateSwissAvs,
+  validateSwissAvsFull,
+  // IBAN Validator
+  IbanValidator,
+  validateIban,
+  validateIbanFull,
+  // Email Validator
+  EmailValidator,
+  validateEmail,
+  validateEmailFull,
+  // Phone Validator
+  PhoneValidator,
+  validatePhone,
+  validatePhoneFull,
+  // Date Validator
+  DateValidator,
+  validateDate,
+  validateDateFull,
+  // Swiss Postal Code Validator
+  SwissPostalCodeValidator,
+  validateSwissPostalCode,
+  validateSwissPostalCodeFull,
+  // VAT Number Validator
+  VatNumberValidator,
+  validateVatNumber,
+  validateVatNumberFull,
+  // Helper functions
+  getAllValidators,
+  getValidatorForType,
+} from './validators/index.js';
+
 // ML Detection Utilities (Story 8.10, 8.11, 8.12, 8.13, 8.14)
 export {
   // Story 8.10: Subword Token Merging

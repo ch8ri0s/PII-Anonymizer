@@ -14,6 +14,10 @@ import type {
   EntityType,
 } from '../types/detection.js';
 import { v4 as uuidv4 } from 'uuid';
+import { createLogger } from '../utils/logger.js';
+
+// Create logger for high-recall detection pass
+const log = createLogger('pii:pass:recall');
 import {
   isModelReady,
   isFallbackMode,
@@ -100,15 +104,20 @@ export class BrowserHighRecallPass implements DetectionPass {
     // Filter out entities that start within frontmatter AFTER merge
     // This ensures merged entities that expanded into frontmatter are excluded
     if (frontmatterEnd > 0) {
-      console.log('[BrowserHighRecallPass] Frontmatter end position:', frontmatterEnd);
-      console.log('[BrowserHighRecallPass] Merged entities:', mergedResults.length);
+      log.debug('Frontmatter detection', {
+        frontmatterEnd,
+        mergedEntityCount: mergedResults.length,
+      });
 
-      // Log all ADDRESS entities for debugging
+      // Log address entity count for debugging (no PII text logged)
       const addressEntities = mergedResults.filter(e => e.type === 'SWISS_ADDRESS' || e.type === 'ADDRESS' || e.type === 'EU_ADDRESS');
-      console.log('[BrowserHighRecallPass] ADDRESS entities:', JSON.stringify(addressEntities.map(e => ({ type: e.type, text: e.text.substring(0, 50), start: e.start, end: e.end }))));
+      log.debug('Address entities found', { count: addressEntities.length });
 
       const entitiesInFrontmatter = mergedResults.filter(e => e.start < frontmatterEnd);
-      console.log('[BrowserHighRecallPass] Entities in frontmatter (will be removed):', entitiesInFrontmatter.map(e => ({ type: e.type, text: e.text.substring(0, 30), start: e.start })));
+      log.debug('Entities in frontmatter (will be removed)', {
+        count: entitiesInFrontmatter.length,
+        types: entitiesInFrontmatter.map(e => e.type),
+      });
     }
     let filteredResults = mergedResults.filter(e => e.start >= frontmatterEnd);
 
@@ -136,9 +145,7 @@ export class BrowserHighRecallPass implements DetectionPass {
       const afterCount = filteredResults.length;
       if (beforeCount !== afterCount) {
         const totalFiltered = beforeCount - afterCount;
-        console.log(
-          `[BrowserHighRecallPass] DenyList filtered ${totalFiltered} entities`,
-        );
+        log.debug('DenyList filtered entities', { count: totalFiltered });
       }
     }
 
@@ -182,7 +189,7 @@ export class BrowserHighRecallPass implements DetectionPass {
     const validation = validateMLInput(text);
     if (!validation.valid) {
       // Log validation error without PII content
-      console.warn('[BrowserHighRecallPass] ML input validation failed:', {
+      log.warn('ML input validation failed', {
         error: validation.error,
         textLength: text?.length ?? 0,
       });
@@ -195,7 +202,7 @@ export class BrowserHighRecallPass implements DetectionPass {
     // Log warnings if any
     if (validation.warnings?.length) {
       validation.warnings.forEach((w) =>
-        console.warn('[BrowserHighRecallPass] ML input warning:', w),
+        log.warn('ML input warning', { warning: w }),
       );
     }
 
@@ -231,7 +238,7 @@ export class BrowserHighRecallPass implements DetectionPass {
 
     // Handle retry failure
     if (!retryResult.success) {
-      console.error('[BrowserHighRecallPass] ML detection failed after retries:', {
+      log.error('ML detection failed after retries', {
         attempts: retryResult.attempts,
         totalDurationMs: retryResult.totalDurationMs,
         error: retryResult.error?.message,
@@ -258,7 +265,7 @@ export class BrowserHighRecallPass implements DetectionPass {
 
     // Log retry info if multiple attempts were needed
     if (retryResult.attempts > 1) {
-      console.warn('[BrowserHighRecallPass] ML detection succeeded after retry:', {
+      log.warn('ML detection succeeded after retry', {
         attempts: retryResult.attempts,
         totalDurationMs: retryResult.totalDurationMs,
       });

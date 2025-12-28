@@ -21,6 +21,10 @@ import {
   DocumentType,
 } from '@pii/DocumentClassifier';
 import { BrowserRuleEngine, createBrowserRuleEngine } from './BrowserRuleEngine';
+import { createLogger } from '../utils/logger.js';
+
+// Create logger for document type detection pass
+const log = createLogger('pii:pass:doctype');
 
 /**
  * Configuration for Browser Document Type Pass
@@ -85,11 +89,11 @@ export class BrowserDocumentTypePass implements DetectionPass {
     const classification = this.classifier.classify(text);
 
     if (this.config.debug) {
-      console.log('[BrowserDocumentTypePass] Classification:', {
+      log.debug('Document classification result', {
         type: classification.type,
         confidence: classification.confidence.toFixed(2),
         language: classification.language,
-        features: classification.features.slice(0, 3),
+        featureCount: classification.features.length,
       });
     }
 

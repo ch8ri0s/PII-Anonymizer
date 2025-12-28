@@ -11,6 +11,8 @@
  * Works alongside ML-based detection for comprehensive coverage.
  */
 
+import { validateSwissAddress } from './validators/index.js';
+
 export interface PIIMatch {
   text: string;
   type: string;
@@ -213,7 +215,7 @@ export class SwissEuDetector {
       SWISS_ADDRESS: {
         name: 'ADDRESS',
         pattern: /\b\d{4}[^\S\n]+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ-']+(?:[^\S\n]+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ-']+)?\b/g,
-        validate: (match, context) => this.validateSwissAddress(match, context),
+        validate: (match, context) => this.validateSwissAddressInternal(match, context),
       },
 
       // Street Address with Number (Swiss/EU format: "Street Name Number")
@@ -525,33 +527,10 @@ export class SwissEuDetector {
 
   /**
    * Validate Swiss address (postal code + city)
+   * Delegates to the SwissAddressValidator for comprehensive year false-positive detection.
    */
-  private validateSwissAddress(address: string, fullText = ''): boolean {
-    const postalCode = parseInt(address.substring(0, 4), 10);
-    if (postalCode < 1000 || postalCode > 9999) return false;
-
-    const city = address.substring(4).trim();
-    if (city.length < 3) return false;
-
-    // Exclude year-like patterns
-    if (postalCode >= 1900 && postalCode <= 2099) {
-      const yearExclusionPattern = /^(19|20)\d{2}\s+(and|or|was|is|to|by|in|at|for|from|the|a|an|pour|et|ou|de|du|le|la|les|en|und|der|die|das|für|von|bis|im|am)\b/i;
-      if (yearExclusionPattern.test(address)) return false;
-
-      if (fullText) {
-        const posInText = fullText.indexOf(address);
-        if (posInText > 0) {
-          const before = fullText.substring(Math.max(0, posInText - 6), posInText);
-          if (/\d{1,2}\.\d{1,2}\.$/.test(before)) return false;
-        }
-      }
-    }
-
-    const firstWord = city.split(/[\s\n]/)[0] || '';
-    const commonNonCities = ['pour', 'and', 'oder', 'from', 'with', 'date', 'fondation', 'collective'];
-    if (firstWord && commonNonCities.includes(firstWord.toLowerCase())) return false;
-
-    return true;
+  private validateSwissAddressInternal(address: string, fullText = ''): boolean {
+    return validateSwissAddress(address, fullText);
   }
 
   /**

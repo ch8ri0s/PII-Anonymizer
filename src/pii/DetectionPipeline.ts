@@ -8,6 +8,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
 import type {
   Entity,
   DetectionPass,
@@ -49,6 +50,9 @@ const DEFAULT_CONFIG: PipelineConfig = {
  * Manages the multi-pass detection process, sequencing passes
  * and aggregating results.
  */
+// Create logger for pipeline orchestration
+const log = LoggerFactory.create('pii:pipeline');
+
 export class DetectionPipeline {
   private passes: DetectionPass[] = [];
   private config: PipelineConfig;
@@ -172,7 +176,10 @@ export class DetectionPipeline {
           `Pass ${pass.name} complete: ${entities.length} entities (${passResult.durationMs}ms)`,
         );
       } catch (error) {
-        console.error(`Error in pass ${pass.name}:`, error);
+        log.error('Pass execution failed', {
+          pass: pass.name,
+          error: error instanceof Error ? error.message : String(error),
+        });
         // Continue with next pass on error
       }
     }
@@ -360,7 +367,7 @@ export class DetectionPipeline {
    */
   private log(message: string): void {
     if (this.config.debug) {
-      console.log(`[DetectionPipeline] ${message}`);
+      log.debug(message);
     }
   }
 }

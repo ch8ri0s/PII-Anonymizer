@@ -10,9 +10,13 @@ import { Entity } from '../types/detection.js';
 import { DocumentType, DocumentClassification } from './DocumentClassifier.js';
 import { InvoiceRules, createInvoiceRules } from './rules/InvoiceRules.js';
 import { LetterRules, createLetterRules } from './rules/LetterRules.js';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+// Create logger for rule engine
+const log = LoggerFactory.create('pii:rules');
 
 /**
  * Rule configuration for a document type
@@ -179,12 +183,12 @@ export class RuleEngine {
         config = this.mergeConfigs(config, fileConfig);
 
         if (this.debug) {
-          console.log(`[RuleEngine] Loaded configuration from ${configPath}`);
+          log.debug('Loaded configuration', { configPath });
         }
       }
     } catch {
       if (this.debug) {
-        console.warn(`[RuleEngine] Failed to load config from ${configPath}, using defaults`);
+        log.warn('Failed to load config, using defaults', { configPath });
       }
     }
 

@@ -15,6 +15,10 @@ import type {
   EntityType,
 } from '../../types/detection.js';
 import { generateEntityId } from '../DetectionPipeline.js';
+import { LoggerFactory } from '../../utils/LoggerFactory.js';
+
+// Create logger for high-recall detection pass
+const log = LoggerFactory.create('pii:pass:recall');
 import {
   type PatternDef,
   buildHighRecallPatterns,
@@ -130,9 +134,7 @@ export class HighRecallPass implements DetectionPass {
         // Log for debugging when entities are filtered
         const totalFiltered = beforeCount - afterCount;
         if (context.config?.debug) {
-          console.log(
-            `[HighRecallPass] DenyList filtered ${totalFiltered} entities`,
-          );
+          log.debug('DenyList filtered entities', { count: totalFiltered });
         }
       }
     }
@@ -158,7 +160,7 @@ export class HighRecallPass implements DetectionPass {
     const validation = validateMLInput(text);
     if (!validation.valid) {
       // Log validation error without PII content
-      console.warn('[HighRecallPass] ML input validation failed:', {
+      log.warn('ML input validation failed', {
         error: validation.error,
         textLength: text?.length ?? 0,
       });
@@ -171,7 +173,7 @@ export class HighRecallPass implements DetectionPass {
     // Log warnings if any
     if (validation.warnings?.length) {
       validation.warnings.forEach((w) =>
-        console.warn('[HighRecallPass] ML input warning:', w),
+        log.warn('ML input warning', { warning: w }),
       );
     }
 
@@ -207,7 +209,7 @@ export class HighRecallPass implements DetectionPass {
 
     // Handle retry failure
     if (!retryResult.success) {
-      console.error('[HighRecallPass] ML detection failed after retries:', {
+      log.error('ML detection failed after retries', {
         attempts: retryResult.attempts,
         totalDurationMs: retryResult.totalDurationMs,
         error: retryResult.error?.message,
@@ -234,7 +236,7 @@ export class HighRecallPass implements DetectionPass {
 
     // Log retry info if multiple attempts were needed
     if (retryResult.attempts > 1) {
-      console.warn('[HighRecallPass] ML detection succeeded after retry:', {
+      log.warn('ML detection succeeded after retry', {
         attempts: retryResult.attempts,
         totalDurationMs: retryResult.totalDurationMs,
       });

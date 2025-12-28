@@ -241,10 +241,11 @@ export class RecognizerRegistry {
           name: recognizer.config.name,
           error: errorMessage,
         });
-        console.error(
-          `Recognizer "${recognizer.config.name}" failed:`,
-          errorMessage
-        );
+        // eslint-disable-next-line no-console -- Shared module: use console for environment-agnostic error logging
+        console.error(`[pii:recognizers] Recognizer failed`, {
+          recognizer: recognizer.config.name,
+          error: errorMessage,
+        });
       }
     }
 

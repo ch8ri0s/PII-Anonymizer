@@ -15,6 +15,10 @@ import {
   normalizeCity,
   isValidSwissPostalCodeFormat,
 } from '../../../shared/dist/pii/index.js';
+import { createLogger } from '../utils/logger.js';
+
+// Create logger for postal database
+const log = createLogger('pii:postal');
 
 // Re-export types for consumers
 export type { SwissPostalCode, PostalLookupResult };
@@ -75,7 +79,9 @@ export class BrowserSwissPostalDatabase {
       this.processData(data);
       this.initialized = true;
     } catch (error) {
-      console.warn('Failed to load Swiss postal database:', error);
+      log.warn('Failed to load Swiss postal database', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Initialize with empty data - validation will use range checking only
       this.initialized = true;
     }
