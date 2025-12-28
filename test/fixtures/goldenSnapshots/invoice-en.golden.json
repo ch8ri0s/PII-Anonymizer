@@ -56,20 +56,6 @@
     "confidence": 0.7839999999999999
   },
   {
-    "text": "Invoice Number",
-    "type": "PERSON_NAME",
-    "start": 161,
-    "end": 175,
-    "confidence": 0.9799999999999998
-  },
-  {
-    "text": "Invoice Date",
-    "type": "PERSON_NAME",
-    "start": 188,
-    "end": 200,
-    "confidence": 0.8633333333333331
-  },
-  {
     "text": "24/12/2025",
     "type": "DATE",
     "start": 202,
@@ -77,39 +63,11 @@
     "confidence": 0.9286666666666665
   },
   {
-    "text": "Due Date",
-    "type": "PERSON_NAME",
-    "start": 213,
-    "end": 221,
-    "confidence": 0.8633333333333331
-  },
-  {
     "text": "23/01/2026",
     "type": "DATE",
     "start": 223,
     "end": 233,
     "confidence": 0.8119999999999998
-  },
-  {
-    "text": "Software Module Development",
-    "type": "PERSON_NAME",
-    "start": 312,
-    "end": 339,
-    "confidence": 0.41999999999999993
-  },
-  {
-    "text": "Project Management",
-    "type": "PERSON_NAME",
-    "start": 374,
-    "end": 392,
-    "confidence": 0.41999999999999993
-  },
-  {
-    "text": "Payment Information",
-    "type": "PERSON_NAME",
-    "start": 505,
-    "end": 524,
-    "confidence": 0.7699999999999999
   },
   {
     "text": "CH36 0880 8001 2345 6789 0",

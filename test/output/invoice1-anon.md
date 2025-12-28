@@ -1,7 +1,9 @@
 ---
 source: invoice1.txt
 sourceFormat: txt
-processed: [ADDRESS_1]: Xenova/distilbert-base-multilingual-cased-ner-hrl
+processed: 2025-12-28T22:58:48.380Z
+anonymised: true
+piiModel: Xenova/distilbert-base-multilingual-cased-ner-hrl
 ---
 # invoice1
 

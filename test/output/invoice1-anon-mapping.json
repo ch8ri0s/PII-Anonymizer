@@ -1,6 +1,6 @@
 {
   "version": "4.0",
-  "timestamp": "2025-12-28T20:41:45.994Z",
+  "timestamp": "2025-12-28T22:58:48.409Z",
   "model": "Xenova/distilbert-base-multilingual-cased-ner-hrl",
   "documentType": "UNKNOWN",
   "detectionMethods": [
@@ -13,65 +13,9 @@
     "Pass 5: Consolidation & Entity Linking (Epic 8)"
   ],
   "entities": {
-    "2025-12-28T20:41:45.955Z\nanonymised: true\npiiModel": "[ADDRESS_1]",
     "ABC Corp": "ORGANIZATION_1",
     "John Smith": "PERSON_NAME_1"
   },
   "entityLinks": {},
-  "addresses": [
-    {
-      "placeholder": "[ADDRESS_1]",
-      "type": "ADDRESS",
-      "originalText": "2025-12-28T20:41:45.955Z\nanonymised: true\npiiModel",
-      "logicalId": null,
-      "components": {
-        "street": "rue\npiiModel",
-        "number": "2025-12",
-        "postal": null,
-        "city": null,
-        "country": null
-      },
-      "confidence": 0.23529411764705882,
-      "patternMatched": "NONE",
-      "scoringFactors": [
-        {
-          "name": "Component Completeness",
-          "score": 0.4,
-          "maxScore": 1,
-          "matched": false,
-          "description": "2 unique component types (missing: postal code, city)"
-        },
-        {
-          "name": "Pattern Match",
-          "score": 0,
-          "maxScore": 0.3,
-          "matched": false,
-          "description": "Pattern: NONE (unknown format)"
-        },
-        {
-          "name": "Postal Code Validation",
-          "score": 0,
-          "maxScore": 0.2,
-          "matched": false,
-          "description": "No postal code found"
-        },
-        {
-          "name": "City Validation",
-          "score": 0,
-          "maxScore": 0.1,
-          "matched": false,
-          "description": "No city found"
-        },
-        {
-          "name": "Country Presence",
-          "score": 0,
-          "maxScore": 0.1,
-          "matched": false,
-          "description": "No country specified"
-        }
-      ],
-      "flaggedForReview": true,
-      "autoAnonymize": false
-    }
-  ]
+  "addresses": []
 }

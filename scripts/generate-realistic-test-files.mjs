@@ -832,3 +832,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 export { generateAllFiles, generateInvoice, generateLetter, generateContract, generateBill, generateHRDocument, generateSupportEmail, generateCSV };
 
 
+
+
+
+

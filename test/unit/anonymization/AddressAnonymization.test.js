@@ -79,13 +79,17 @@ Empfänger: Rue de la Gare 5, 1003 Lausanne`;
       const mappingData = await fs.readFile(mappingPath, 'utf8');
       const mapping = JSON.parse(mappingData);
 
-      // Check for sequential address numbering
+      // Check for sequential address numbering within each type
+      // Note: ADDRESS and SWISS_ADDRESS have separate counters, so both may have _1
       const addressEntries = mapping.addresses || [];
       if (addressEntries.length >= 2) {
         const placeholders = addressEntries.map(a => a.placeholder);
-        // Should have sequential numbering
+        // Should have at least one address placeholder with _1
         expect(placeholders.some(p => p.includes('_1]'))).to.equal(true);
-        expect(placeholders.some(p => p.includes('_2]'))).to.equal(true);
+        // Either _2 from same type, or another _1 from different type (ADDRESS vs SWISS_ADDRESS)
+        const hasSecondOfType = placeholders.some(p => p.includes('_2]'));
+        const hasTwoTypes = new Set(addressEntries.map(a => a.type)).size >= 2;
+        expect(hasSecondOfType || hasTwoTypes).to.equal(true);
       }
     });
 
