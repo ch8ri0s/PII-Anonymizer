@@ -62,6 +62,10 @@ import {
   toFeedbackAction,
   FeedbackAggregator,
 } from '@shared/feedback';
+import { createLogger } from '../utils/logger';
+
+// Logger for feedback service
+const log = createLogger('feedback:logger');
 
 // Module-level singleton state
 let settings: FeedbackSettings | null = null;
@@ -86,7 +90,7 @@ function loadSettings(): FeedbackSettings {
       return settings;
     }
   } catch (error) {
-    console.warn('Failed to load feedback settings, using defaults:', error);
+    log.warn('Failed to load feedback settings, using defaults', { error: String(error) });
   }
 
   settings = { ...DEFAULT_FEEDBACK_SETTINGS };
@@ -103,7 +107,7 @@ function saveSettings(): void {
     settings.updatedAt = new Date().toISOString();
     localStorage.setItem(FEEDBACK_SETTINGS_KEY, JSON.stringify(settings));
   } catch (error) {
-    console.error('Failed to save feedback settings:', error);
+    log.error('Failed to save feedback settings', { error: String(error) });
   }
 }
 
@@ -230,7 +234,7 @@ export async function logCorrection(input: LogCorrectionInput): Promise<LogResul
     return { success: true, entryId: entry.id };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Failed to log correction:', errorMessage);
+    log.error('Failed to log correction', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 }
@@ -299,7 +303,7 @@ export async function getStatistics(): Promise<FeedbackStatistics> {
 
     return stats;
   } catch (error) {
-    console.error('Failed to get statistics:', error);
+    log.error('Failed to get statistics', { error: String(error) });
     return stats;
   }
 }
@@ -318,7 +322,7 @@ export async function getRecentCorrections(limit: number = 10): Promise<Correcti
   try {
     return await getRecentEntries(limit);
   } catch (error) {
-    console.error('Failed to get recent corrections:', error);
+    log.error('Failed to get recent corrections', { error: String(error) });
     return [];
   }
 }
@@ -345,7 +349,7 @@ export async function runRotation(
     }
     return deleted;
   } catch (error) {
-    console.error('Failed to run rotation:', error);
+    log.error('Failed to run rotation', { error: String(error) });
     return 0;
   }
 }
@@ -363,11 +367,11 @@ export async function initFeedbackLogger(): Promise<void> {
   try {
     const deleted = await runRotation();
     if (deleted > 0) {
-      console.log(`Feedback logger: Rotated ${deleted} old entries`);
+      log.info('Rotated old entries', { deleted });
     }
   } catch (error) {
     // Non-fatal - just log and continue
-    console.warn('Feedback logger rotation failed:', error);
+    log.warn('Rotation failed', { error: String(error) });
   }
 }
 
@@ -424,7 +428,7 @@ export async function getAllFeedbackEvents(): Promise<FeedbackEvent[]> {
     const entries = await getAllEntries();
     return entries.map(e => toFeedbackEvent(e));
   } catch (error) {
-    console.error('Failed to get feedback events:', error);
+    log.error('Failed to get feedback events', { error: String(error) });
     return [];
   }
 }
@@ -455,10 +459,10 @@ export async function deleteAllFeedbackData(): Promise<number> {
   try {
     const count = await deleteAllEntries();
     invalidateStatisticsCache();
-    console.log(`Deleted ${count} feedback entries`);
+    log.info('Deleted feedback entries', { count });
     return count;
   } catch (error) {
-    console.error('Failed to delete feedback data:', error);
+    log.error('Failed to delete feedback data', { error: String(error) });
     return 0;
   }
 }
@@ -476,7 +480,7 @@ export async function getTotalEntryCount(): Promise<number> {
   try {
     return await getEntryCount();
   } catch (error) {
-    console.error('Failed to get entry count:', error);
+    log.error('Failed to get entry count', { error: String(error) });
     return 0;
   }
 }
@@ -509,7 +513,7 @@ export async function applyRetentionPolicy(
     if (currentCount > maxEvents) {
       const countDeleted = await deleteOldestEntries(maxEvents);
       deletedCount += countDeleted;
-      console.log(`Deleted ${countDeleted} oldest entries to enforce limit (${maxEvents})`);
+      log.info('Deleted oldest entries to enforce limit', { countDeleted, maxEvents });
     }
 
     if (deletedCount > 0) {
@@ -518,7 +522,7 @@ export async function applyRetentionPolicy(
 
     return deletedCount;
   } catch (error) {
-    console.error('Failed to apply retention policy:', error);
+    log.error('Failed to apply retention policy', { error: String(error) });
     return 0;
   }
 }

@@ -15,6 +15,10 @@ import {
   type ReviewCallbacks,
 } from '../components';
 import { downloadZip } from '../utils/download';
+import { createLogger } from '../utils/logger';
+
+// Logger for review UI
+const log = createLogger('ui:review');
 
 /**
  * Get anonymized base name from filename.
@@ -67,7 +71,7 @@ export function initReviewUI(reviewConfig: ReviewUIConfig = {}): void {
   downloadBtn = document.getElementById('download-btn') as HTMLButtonElement;
 
   if (!reviewSection || !reviewContainer) {
-    console.error('[ReviewUI] Required elements not found');
+    log.error('Required elements not found');
     return;
   }
 
@@ -152,7 +156,7 @@ export async function startReview(
   try {
     await loadDocument(content, {}, fileName);
   } catch (error) {
-    console.error('[ReviewUI] Error loading document:', error);
+    log.error('Error loading document', { error: (error as Error).message });
     updateDetectionStatus('error', (error as Error).message);
   }
 }
@@ -235,7 +239,7 @@ function handleDownload(): void {
   files.set(mappingFilename, mappingContent);
 
   void downloadZip(files, `${anonBaseName}_anon.zip`).catch((error: Error) => {
-    console.error('[ReviewUI] Failed to download files:', error);
+    log.error('Failed to download files', { error: error.message });
   });
 }
 

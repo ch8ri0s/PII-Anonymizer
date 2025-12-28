@@ -6,6 +6,10 @@
 
 import type { FileInfo } from '../types';
 import { isSupported } from '../converters';
+import { createLogger } from '../utils/logger';
+
+// Logger for upload UI
+const log = createLogger('ui:upload');
 
 export interface UploadUIConfig {
   onFilesChange?: (files: Map<string, FileInfo>) => void;
@@ -39,7 +43,7 @@ export function initUploadUI(uploadConfig: UploadUIConfig = {}): void {
   processBtn = document.getElementById('process-btn') as HTMLButtonElement;
 
   if (!uploadZone || !fileInput) {
-    console.error('[UploadUI] Required elements not found');
+    log.error('Required elements not found');
     return;
   }
 
@@ -100,7 +104,7 @@ function setupEventHandlers(): void {
 function addFiles(newFiles: File[]): void {
   for (const file of newFiles) {
     if (!isSupported(file)) {
-      console.warn(`Unsupported file: ${file.name}`);
+      log.warn('Unsupported file', { fileName: file.name });
       continue;
     }
 

@@ -11,6 +11,10 @@
  */
 
 import { registerSW } from 'virtual:pwa-register';
+import { createLogger } from '../utils/logger';
+
+// Logger for PWA manager
+const log = createLogger('pwa:manager');
 
 /** BeforeInstallPromptEvent interface (not in standard TypeScript DOM lib) */
 interface BeforeInstallPromptEvent extends Event {
@@ -141,7 +145,7 @@ function handleBeforeInstallPrompt(event: Event): void {
   installState.isInstallable = true;
   notifyInstallStateChange();
 
-  console.log('[PWA] Install prompt available');
+  log.debug('Install prompt available');
 }
 
 /**
@@ -156,7 +160,7 @@ function handleAppInstalled(): void {
   installState.isInstalled = true;
   notifyInstallStateChange();
 
-  console.log('[PWA] App installed successfully');
+  log.info('App installed successfully');
 }
 
 /**
@@ -166,7 +170,7 @@ function handleOnlineStatusChange(): void {
   offlineState.isOnline = navigator.onLine;
   notifyOfflineStateChange();
 
-  console.log(`[PWA] Network status: ${offlineState.isOnline ? 'online' : 'offline'}`);
+  log.info('Network status changed', { isOnline: offlineState.isOnline });
 }
 
 /**
@@ -194,25 +198,25 @@ export function initPWAManager(): void {
       onNeedRefresh() {
         updateState.needsUpdate = true;
         notifyUpdateStateChange();
-        console.log('[PWA] New content available, refresh needed');
+        log.info('New content available, refresh needed');
       },
       onOfflineReady() {
         offlineState.isOfflineReady = true;
         notifyOfflineStateChange();
-        console.log('[PWA] App ready to work offline');
+        log.info('App ready to work offline');
       },
       onRegistered(registration) {
-        console.log('[PWA] Service worker registered', registration);
+        log.debug('Service worker registered', { scope: registration?.scope });
       },
       onRegisterError(error) {
-        console.error('[PWA] Service worker registration failed:', error);
+        log.error('Service worker registration failed', { error: String(error) });
       },
     });
   } catch (error) {
-    console.warn('[PWA] Service worker registration skipped:', error);
+    log.warn('Service worker registration skipped', { error: String(error) });
   }
 
-  console.log('[PWA] Manager initialized', {
+  log.info('Manager initialized', {
     platform: installState.platform,
     isInstalled: installState.isInstalled,
     isOnline: offlineState.isOnline,
@@ -233,7 +237,7 @@ export function destroyPWAManager(): void {
   offlineStateCallbacks = [];
   updateStateCallbacks = [];
 
-  console.log('[PWA] Manager destroyed');
+  log.debug('Manager destroyed');
 }
 
 /**
@@ -244,7 +248,7 @@ export function destroyPWAManager(): void {
  */
 export async function promptInstall(): Promise<boolean> {
   if (!deferredInstallPrompt) {
-    console.warn('[PWA] No install prompt available');
+    log.warn('No install prompt available');
     return false;
   }
 
@@ -261,11 +265,11 @@ export async function promptInstall(): Promise<boolean> {
   if (outcome === 'accepted') {
     installState.isInstallable = false;
     notifyInstallStateChange();
-    console.log('[PWA] User accepted install prompt');
+    log.info('User accepted install prompt');
     return true;
   }
 
-  console.log('[PWA] User dismissed install prompt');
+  log.info('User dismissed install prompt');
   return false;
 }
 
@@ -274,7 +278,7 @@ export async function promptInstall(): Promise<boolean> {
  */
 export async function applyUpdate(): Promise<void> {
   if (!updateSW) {
-    console.warn('[PWA] No update function available');
+    log.warn('No update function available');
     return;
   }
 
@@ -292,16 +296,16 @@ export async function applyUpdate(): Promise<void> {
  */
 export async function requestPersistentStorage(): Promise<boolean> {
   if (!navigator.storage?.persist) {
-    console.warn('[PWA] Storage persistence API not available');
+    log.warn('Storage persistence API not available');
     return false;
   }
 
   try {
     const persisted = await navigator.storage.persist();
-    console.log(`[PWA] Storage persistence ${persisted ? 'granted' : 'denied'}`);
+    log.info('Storage persistence result', { persisted });
     return persisted;
   } catch (error) {
-    console.error('[PWA] Failed to request storage persistence:', error);
+    log.error('Failed to request storage persistence', { error: String(error) });
     return false;
   }
 }
@@ -321,7 +325,7 @@ export async function getStorageEstimate(): Promise<{ quota: number; usage: numb
       usage: estimate.usage ?? 0,
     };
   } catch (error) {
-    console.error('[PWA] Failed to get storage estimate:', error);
+    log.error('Failed to get storage estimate', { error: String(error) });
     return null;
   }
 }

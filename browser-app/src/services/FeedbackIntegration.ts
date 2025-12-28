@@ -13,6 +13,10 @@
 import type { EntityWithSelection } from '../components/EntitySidebar';
 import type { LogCorrectionInput, EntitySource } from '../types/feedback';
 import { logCorrection, isEnabled, isAvailable } from './FeedbackLogger';
+import { createLogger } from '../utils/logger';
+
+// Logger for feedback integration
+const log = createLogger('feedback:integration');
 
 /**
  * Maximum context length to capture around an entity
@@ -135,10 +139,10 @@ export async function logDismiss(entity: EntityWithSelection): Promise<void> {
 
     const result = await logCorrection(input);
     if (!result.success && result.error !== 'Logging disabled') {
-      console.warn('Failed to log dismiss:', result.error);
+      log.warn('Failed to log dismiss', { error: result.error });
     }
   } catch (error) {
-    console.warn('Error logging dismiss:', error);
+    log.warn('Error logging dismiss', { error: String(error) });
   }
 }
 
@@ -174,10 +178,10 @@ export async function logAdd(
 
     const result = await logCorrection(input);
     if (!result.success && result.error !== 'Logging disabled') {
-      console.warn('Failed to log add:', result.error);
+      log.warn('Failed to log add', { error: result.error });
     }
   } catch (error) {
-    console.warn('Error logging add:', error);
+    log.warn('Error logging add', { error: String(error) });
   }
 }
 
@@ -233,7 +237,7 @@ export async function handleSelectionChanges(entities: EntityWithSelection[]): P
     try {
       await Promise.all(dismissPromises);
     } catch (error) {
-      console.warn('Error logging dismissals:', error);
+      log.warn('Error logging dismissals', { error: String(error) });
     }
   }
 }

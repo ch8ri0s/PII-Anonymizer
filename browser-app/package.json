@@ -24,7 +24,8 @@
     "test:e2e:webkit": "playwright test --project=webkit",
     "test:e2e:report": "playwright show-report",
     "test:all": "npm run test && npm run test:e2e",
-    "playwright:install": "playwright install --with-deps"
+    "playwright:install": "playwright install --with-deps",
+    "prepare": "husky"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",

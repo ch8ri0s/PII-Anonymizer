@@ -14,6 +14,10 @@ import {
   isIOS,
   type PWAInstallState,
 } from './PWAManager';
+import { createLogger } from '../utils/logger';
+
+// Logger for PWA install banner
+const log = createLogger('pwa:install');
 
 // Module state
 let bannerElement: HTMLElement | null = null;
@@ -419,7 +423,7 @@ export function initInstallBanner(): void {
     showBanner();
   }
 
-  console.log('[PWA] Install banner initialized');
+  log.debug('Install banner initialized');
 }
 
 /**

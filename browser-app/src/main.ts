@@ -41,6 +41,10 @@ import {
   setModelCached,
   requestPersistentStorage,
 } from './pwa';
+import { createLogger } from './utils/logger';
+
+// Logger for main application
+const log = createLogger('app');
 
 // Application state
 const state = {
@@ -97,20 +101,20 @@ async function initializeModel(): Promise<void> {
       state.modelReady = true;
       setModelCached(true);
       showSuccess();
-      console.log('[PII Anonymizer] ML model loaded successfully');
+      log.info('ML model loaded successfully');
     } else if (result.fallbackMode) {
       state.modelReady = false;
       showFallbackMode();
-      console.log('[PII Anonymizer] Using regex-only mode');
+      log.info('Using regex-only mode');
     } else {
       state.modelReady = false;
       showError(result.error || 'Failed to load model');
-      console.error('[PII Anonymizer] Model loading failed:', result.error);
+      log.error('Model loading failed', { error: result.error });
     }
   } catch {
     state.modelReady = false;
     showFallbackMode();
-    console.log('[PII Anonymizer] Using regex-only mode');
+    log.info('Using regex-only mode');
   }
 
   refreshProcessButton();
@@ -122,7 +126,7 @@ async function initializeModel(): Promise<void> {
 function handleCancelModelLoad(): void {
   cancelLoading();
   state.modelReady = false;
-  console.log('[PII Anonymizer] Model loading cancelled');
+  log.info('Model loading cancelled');
 }
 
 /**
@@ -188,7 +192,7 @@ async function handleProcessFiles(files: Map<string, FileInfo>): Promise<void> {
     // Notify PWA that a file was processed (triggers install prompt after success)
     notifyFileProcessed();
   } catch (error) {
-    console.error('[PII Anonymizer] Processing error:', error);
+    log.error('Processing error', { error: (error as Error).message });
     updateDetectionStatus('error', (error as Error).message);
   }
 

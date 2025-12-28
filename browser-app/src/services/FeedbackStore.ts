@@ -16,6 +16,10 @@ import {
   CORRECTIONS_STORE_NAME,
   DEFAULT_RETENTION_MONTHS,
 } from '../types/feedback';
+import { createLogger } from '../utils/logger';
+
+// Logger for feedback store
+const log = createLogger('feedback:store');
 
 /** Database instance singleton */
 let dbInstance: IDBDatabase | null = null;
@@ -79,7 +83,7 @@ export async function openDatabase(): Promise<IDBDatabase> {
       };
 
       dbInstance.onerror = (event) => {
-        console.error('Database error:', (event.target as IDBRequest).error);
+        log.error('Database error', { error: String((event.target as IDBRequest).error) });
       };
 
       resolve(dbInstance);
@@ -401,12 +405,12 @@ export async function deleteDatabase(retries: number = 3): Promise<void> {
     request.onblocked = () => {
       // Database is blocked by another connection - retry after a delay
       if (retries > 0) {
-        console.warn(`Database deletion blocked - retrying (${retries} attempts left)`);
+        log.warn('Database deletion blocked - retrying', { retries });
         setTimeout(() => {
           deleteDatabase(retries - 1).then(resolve).catch(reject);
         }, 100);
       } else {
-        console.warn('Database deletion blocked - close all connections first');
+        log.warn('Database deletion blocked - close all connections first');
         // Resolve anyway to prevent test hangs - the database will be cleaned on next run
         resolve();
       }

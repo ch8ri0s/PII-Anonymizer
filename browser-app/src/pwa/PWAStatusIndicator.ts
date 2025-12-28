@@ -16,6 +16,10 @@ import {
   type PWAOfflineState,
   type PWAUpdateState,
 } from './PWAManager';
+import { createLogger } from '../utils/logger';
+
+// Logger for PWA status indicator
+const log = createLogger('pwa:status');
 
 // Module state
 let indicatorElement: HTMLElement | null = null;
@@ -339,7 +343,7 @@ export function initStatusIndicator(containerSelector: string = '.review-header-
     containerElement.appendChild(indicatorElement);
   } else {
     // Store for later mounting
-    console.log('[PWA] Status indicator created, waiting for container');
+    log.debug('Status indicator created, waiting for container');
   }
 
   // Subscribe to state changes
@@ -352,7 +356,7 @@ export function initStatusIndicator(containerSelector: string = '.review-header-
     showUpdateBanner();
   }
 
-  console.log('[PWA] Status indicator initialized');
+  log.debug('Status indicator initialized');
 }
 
 /**
