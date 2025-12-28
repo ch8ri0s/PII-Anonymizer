@@ -4,10 +4,11 @@
  * Validation rules for PII entity formats (Pass 2).
  * Re-exports validators from shared module for platform compatibility.
  *
+ * Uses singleton pattern from shared module - validators are instantiated
+ * once and cached for the lifetime of the application.
+ *
  * @module src/pii/validators
  */
-
-import type { EntityType } from '../../types/detection.js';
 
 // Re-export all validators from shared (compiled)
 export {
@@ -16,6 +17,7 @@ export {
   type ValidatorEntity,
   type ValidationResult as SharedValidationResult,
   type ValidationRule as SharedValidationRule,
+  type ValidationContext,
   type AddressValidationResult,
   // Swiss Address Validator
   SwissAddressValidator,
@@ -49,44 +51,13 @@ export {
   VatNumberValidator,
   validateVatNumber,
   validateVatNumberFull,
+  // Singleton functions
+  getAllValidators,
+  getValidatorForType,
+  _resetValidatorsCache,
 } from '../../../shared/dist/pii/validators/index.js';
 
-// Import for local use
-import {
-  SwissAddressValidator,
-  SwissAvsValidator,
-  IbanValidator,
-  EmailValidator,
-  PhoneValidator,
-  DateValidator,
-  SwissPostalCodeValidator,
-  VatNumberValidator,
-} from '../../../shared/dist/pii/validators/index.js';
+import type { ValidationRule as SharedValidationRule } from '../../../shared/dist/pii/validators/index.js';
 
-import type { ValidationRule } from '../../../shared/dist/pii/validators/index.js';
-
-/**
- * Get all validators
- */
-export function getAllValidators(): ValidationRule[] {
-  return [
-    new SwissAddressValidator(),
-    new SwissAvsValidator(),
-    new IbanValidator(),
-    new EmailValidator(),
-    new PhoneValidator(),
-    new DateValidator(),
-    new SwissPostalCodeValidator(),
-    new VatNumberValidator(),
-  ];
-}
-
-/**
- * Get validator for specific entity type
- */
-export function getValidatorForType(
-  type: EntityType,
-): ValidationRule | undefined {
-  const validators = getAllValidators();
-  return validators.find((v) => v.entityType === type);
-}
+// Re-export the ValidationRule type for use by FormatValidationPass
+export type { SharedValidationRule as ValidationRule };
