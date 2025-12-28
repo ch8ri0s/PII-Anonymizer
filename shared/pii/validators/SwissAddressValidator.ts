@@ -9,23 +9,7 @@
  * @module shared/pii/validators/SwissAddressValidator
  */
 
-/**
- * Month names in multiple languages for date detection
- */
-const MONTH_NAMES = new Set([
-  // English
-  'january', 'february', 'march', 'april', 'may', 'june',
-  'july', 'august', 'september', 'october', 'november', 'december',
-  // French
-  'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre',
-  // German
-  'januar', 'februar', 'märz', 'maerz', 'april', 'juni',
-  'juli', 'august', 'september', 'oktober', 'november', 'dezember',
-  // Italian
-  'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
-]);
+import { MONTH_NAMES } from './locale-data.js';
 
 /**
  * Words that commonly follow years but are NOT city names
@@ -76,6 +60,7 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
+import { CONFIDENCE } from './confidence.js';
 
 /**
  * Validation result with confidence and optional reason
@@ -100,7 +85,7 @@ export function validateSwissAddressFull(address: string, fullText = ''): Addres
   if (postalCode < 1000 || postalCode > 9999) {
     return {
       isValid: false,
-      confidence: 0.3,
+      confidence: CONFIDENCE.FAILED,
       reason: `Postal code ${postalCode} outside Swiss range (1000-9999)`,
     };
   }
@@ -109,7 +94,7 @@ export function validateSwissAddressFull(address: string, fullText = ''): Addres
   if (city.length < 3) {
     return {
       isValid: false,
-      confidence: 0.3,
+      confidence: CONFIDENCE.FAILED,
       reason: `City name too short: "${city}"`,
     };
   }
@@ -128,7 +113,7 @@ export function validateSwissAddressFull(address: string, fullText = ''): Addres
   if (firstWord && NON_CITY_WORDS.has(firstWord.toLowerCase())) {
     return {
       isValid: false,
-      confidence: 0.4,
+      confidence: CONFIDENCE.INVALID_FORMAT,
       reason: `"${firstWord}" is not a valid city name`,
     };
   }
@@ -136,7 +121,7 @@ export function validateSwissAddressFull(address: string, fullText = ''): Addres
   // Valid Swiss address
   return {
     isValid: true,
-    confidence: 0.82,
+    confidence: CONFIDENCE.KNOWN_VALID,
   };
 }
 
@@ -159,7 +144,7 @@ function checkYearFalsePositive(
   if (KNOWN_SWISS_CITIES_IN_YEAR_RANGE.has(firstWord)) {
     return {
       isValid: true,
-      confidence: 0.85,
+      confidence: CONFIDENCE.STANDARD,
       reason: `Known Swiss city: "${firstWord}"`,
     };
   }
@@ -168,7 +153,7 @@ function checkYearFalsePositive(
   if (MONTH_NAMES.has(firstWord)) {
     return {
       isValid: false,
-      confidence: 0.2,
+      confidence: CONFIDENCE.FALSE_POSITIVE,
       reason: `Year followed by month name "${firstWord}"`,
     };
   }
@@ -177,7 +162,7 @@ function checkYearFalsePositive(
   if (NON_CITY_WORDS.has(firstWord)) {
     return {
       isValid: false,
-      confidence: 0.3,
+      confidence: CONFIDENCE.FAILED,
       reason: `Year followed by non-city word "${firstWord}"`,
     };
   }
@@ -193,7 +178,7 @@ function checkYearFalsePositive(
       if (DATE_PREFIX_PATTERN.test(before)) {
         return {
           isValid: false,
-          confidence: 0.2,
+          confidence: CONFIDENCE.FALSE_POSITIVE,
           reason: 'Preceded by date pattern (DD.MM. or DD/MM)',
         };
       }
@@ -202,7 +187,7 @@ function checkYearFalsePositive(
       if (DATE_CONTEXT_KEYWORDS.test(before)) {
         return {
           isValid: false,
-          confidence: 0.3,
+          confidence: CONFIDENCE.FAILED,
           reason: 'Preceded by date-related keyword',
         };
       }
@@ -220,7 +205,7 @@ function checkYearFalsePositive(
         if (!hasStreetContext) {
           return {
             isValid: false,
-            confidence: 0.4,
+            confidence: CONFIDENCE.INVALID_FORMAT,
             reason: 'Year at sentence boundary without street context',
           };
         }
@@ -231,7 +216,7 @@ function checkYearFalsePositive(
   // Passed all year false-positive checks
   return {
     isValid: true,
-    confidence: 0.75, // Slightly lower confidence for year-range postal codes
+    confidence: CONFIDENCE.MODERATE, // Slightly lower confidence for year-range postal codes
   };
 }
 
@@ -253,10 +238,22 @@ export function validateSwissAddress(address: string, fullText = ''): boolean {
  * Implements ValidationRule interface for use in validation pipelines.
  */
 export class SwissAddressValidator implements ValidationRule {
+  /** Maximum address input length (reasonable address length) */
+  static readonly MAX_LENGTH = 200;
+
   entityType: ValidatorEntityType = 'SWISS_ADDRESS';
   name = 'SwissAddressValidator';
 
   validate(entity: ValidatorEntity, context?: string): ValidationResult {
+    // SECURITY: Check length before processing to prevent ReDoS
+    if (entity.text.length > SwissAddressValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${SwissAddressValidator.MAX_LENGTH})`,
+      };
+    }
+
     const result = validateSwissAddressFull(entity.text, context || '');
     return {
       isValid: result.isValid,

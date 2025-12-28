@@ -2,7 +2,7 @@
  * Date Validator (Shared)
  *
  * Validates date values in European formats (DD.MM.YYYY, DD/MM/YYYY).
- * Supports German, French, and English month names.
+ * Supports German, French, English, and Italian month names.
  *
  * @module shared/pii/validators/DateValidator
  */
@@ -13,22 +13,8 @@ import type {
   ValidationRule,
   ValidatorEntityType,
 } from './types.js';
-
-/**
- * Month name mappings for German, French, English
- * Note: Some names are shared across languages (april, september, november)
- */
-const MONTHS: Record<string, number> = {
-  // English
-  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
-  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
-  // German (excluding duplicates: april, august, september, november are same as English)
-  januar: 1, februar: 2, märz: 3, mai: 5, juni: 6,
-  juli: 7, oktober: 10, dezember: 12,
-  // French (excluding duplicates)
-  janvier: 1, février: 2, mars: 3, avril: 4, juin: 6,
-  juillet: 7, août: 8, septembre: 9, octobre: 10, novembre: 11, décembre: 12,
-};
+import { CONFIDENCE } from './confidence.js';
+import { MONTH_NAME_TO_NUMBER } from './locale-data.js';
 
 /**
  * Parsed date result
@@ -57,13 +43,13 @@ function parseDate(text: string): ParsedDate | null {
     };
   }
 
-  // Month name format (German/French/English)
+  // Month name format (German/French/English/Italian)
   const monthNameMatch = text
     .toLowerCase()
     .match(/(\d{1,2})\.?\s*([a-zäöüéè]+)\s*(\d{2,4})/);
   if (monthNameMatch && monthNameMatch[1] && monthNameMatch[2] && monthNameMatch[3]) {
     const monthName = monthNameMatch[2];
-    const monthNum = MONTHS[monthName];
+    const monthNum = MONTH_NAME_TO_NUMBER[monthName];
     if (monthNum) {
       let year = parseInt(monthNameMatch[3], 10);
       if (year < 100) {
@@ -86,10 +72,22 @@ function parseDate(text: string): ParsedDate | null {
  * Validates dates in European formats.
  */
 export class DateValidator implements ValidationRule {
+  /** Maximum date input length (longest date format) */
+  static readonly MAX_LENGTH = 50;
+
   entityType: ValidatorEntityType = 'DATE';
   name = 'DateValidator';
 
   validate(entity: ValidatorEntity): ValidationResult {
+    // SECURITY: Check length before processing to prevent ReDoS
+    if (entity.text.length > DateValidator.MAX_LENGTH) {
+      return {
+        isValid: false,
+        confidence: CONFIDENCE.FAILED,
+        reason: `Input exceeds maximum length (${DateValidator.MAX_LENGTH})`,
+      };
+    }
+
     const text = entity.text;
 
     // Try to parse the date
@@ -98,7 +96,7 @@ export class DateValidator implements ValidationRule {
     if (!parsed) {
       return {
         isValid: false,
-        confidence: 0.4,
+        confidence: CONFIDENCE.INVALID_FORMAT,
         reason: 'Could not parse date',
       };
     }
@@ -109,7 +107,7 @@ export class DateValidator implements ValidationRule {
     if (month < 1 || month > 12) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: `Invalid month: ${month}`,
       };
     }
@@ -119,7 +117,7 @@ export class DateValidator implements ValidationRule {
     if (day < 1 || day > daysInMonth) {
       return {
         isValid: false,
-        confidence: 0.3,
+        confidence: CONFIDENCE.FAILED,
         reason: `Invalid day: ${day} for month ${month}`,
       };
     }
@@ -128,14 +126,14 @@ export class DateValidator implements ValidationRule {
     if (year < 1900 || year > 2100) {
       return {
         isValid: false,
-        confidence: 0.4,
+        confidence: CONFIDENCE.INVALID_FORMAT,
         reason: `Year out of range: ${year}`,
       };
     }
 
     return {
       isValid: true,
-      confidence: 0.85,
+      confidence: CONFIDENCE.STANDARD,
     };
   }
 }
