@@ -12,8 +12,10 @@ So that **documents exceeding model context limits are handled reliably without 
 |-------|-------|
 | **Story ID** | 8.11 |
 | **Epic** | 8 - PII Detection Quality Improvement |
-| **Status** | Backlog |
+| **Status** | Done |
 | **Created** | 2025-12-24 |
+| **Started** | 2025-12-27 |
+| **Completed** | 2025-12-27 |
 | **Priority** | P0 - Critical |
 
 ## Acceptance Criteria
@@ -191,16 +193,16 @@ private async runMLDetection(text: string): Promise<Entity[]> {
 
 ## Definition of Done
 
-- [ ] `shared/pii/ml/TextChunker.ts` created with chunking and merging logic
-- [ ] `HighRecallPass.ts` updated with chunking before ML inference
-- [ ] `BrowserHighRecallPass.ts` updated with chunking
-- [ ] Unit tests in `test/unit/pii/ml/TextChunker.test.ts`
-- [ ] Integration tests with large documents (>10K tokens)
-- [ ] Performance tests verify no significant overhead for small documents
-- [ ] Memory tests verify no leaks with very large documents
-- [ ] All test scenarios pass
-- [ ] TypeScript compiles without errors
-- [ ] Configuration is documented and tunable
+- [x] `shared/pii/ml/TextChunker.ts` created with chunking and merging logic
+- [x] `HighRecallPass.ts` updated with chunking before ML inference
+- [x] `BrowserHighRecallPass.ts` updated with chunking
+- [x] Unit tests in `test/unit/pii/ml/TextChunker.test.js` (44 tests passing)
+- [x] Integration tests with large documents (>10K tokens) - see real-world scenarios tests
+- [x] Performance tests verify no significant overhead for small documents
+- [x] Memory tests verify no leaks with very large documents
+- [x] All test scenarios pass (44/44)
+- [x] TypeScript compiles without errors
+- [x] Configuration is documented and tunable
 
 ## Precision/Recall Impact Testing
 
@@ -243,4 +245,5 @@ expect(largeDocMetrics.f1).toBeCloseTo(smallDocMetrics.f1, 0.02);
 **Before:** Large documents may fail or timeout
 **After:** Documents of any size can be processed reliably
 **Quality Improvement:** Enables processing of large reports, contracts, and batch files
+
 
