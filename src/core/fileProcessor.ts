@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline, env } from '@xenova/transformers';
 import { fileURLToPath } from 'url';
-import { createLogger } from '../config/logging.js';
+import { LoggerFactory } from '../utils/LoggerFactory.js';
 
 // Import safe regex utilities (Story 6.2: ReDoS protection)
 import { safeReplace, analyzePatternComplexity } from '../utils/safeRegex.js';
@@ -11,9 +11,9 @@ import { safeReplace, analyzePatternComplexity } from '../utils/safeRegex.js';
 import { PROCESSING } from '../config/constants.js';
 
 // Initialize loggers
-const log = createLogger('fileProcessor');
-const mlLog = createLogger('ml');
-const securityLog = createLogger('security');
+const log = LoggerFactory.create('fileProcessor');
+const mlLog = LoggerFactory.create('ml');
+const securityLog = LoggerFactory.create('security');
 
 // Import converters
 import { TextToMarkdown } from '../converters/TextToMarkdown.js';

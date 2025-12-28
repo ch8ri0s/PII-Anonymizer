@@ -154,21 +154,25 @@ function createConsoleLogger(scope: string): Logger {
   return {
     debug(message: string, metadata?: Record<string, unknown>): void {
       if (shouldLog('debug', scope)) {
+        // eslint-disable-next-line no-console
         console.debug(formatMessage(scope, message, metadata));
       }
     },
     info(message: string, metadata?: Record<string, unknown>): void {
       if (shouldLog('info', scope)) {
+        // eslint-disable-next-line no-console
         console.info(formatMessage(scope, message, metadata));
       }
     },
     warn(message: string, metadata?: Record<string, unknown>): void {
       if (shouldLog('warn', scope)) {
+        // eslint-disable-next-line no-console
         console.warn(formatMessage(scope, message, metadata));
       }
     },
     error(message: string, metadata?: Record<string, unknown>): void {
       if (shouldLog('error', scope)) {
+        // eslint-disable-next-line no-console
         console.error(formatMessage(scope, message, metadata));
       }
     },
