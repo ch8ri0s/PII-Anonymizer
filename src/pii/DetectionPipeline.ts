@@ -132,6 +132,17 @@ export class DetectionPipeline {
       );
     }
 
+    // Detect YAML frontmatter region - entities within will be filtered out later
+    // (We don't strip it here to preserve offset consistency across all passes)
+    let frontmatterEnd = 0;
+    if (processText.startsWith('---')) {
+      const closeMatch = processText.substring(3).match(/\n---\n/);
+      if (closeMatch && closeMatch.index !== undefined) {
+        frontmatterEnd = 3 + closeMatch.index + 4; // Position after closing ---\n
+        this.log(`Detected frontmatter region (0-${frontmatterEnd} chars)`);
+      }
+    }
+
     // Initialize pipeline context
     const context: PipelineContext = {
       documentId: docId,
@@ -187,6 +198,16 @@ export class DetectionPipeline {
     // Story 8.7: Map entity offsets back to original text coordinates
     if (normalizationResult && normalizationResult.indexMap.length > 0) {
       entities = this.mapEntitiesToOriginal(entities, normalizationResult, text);
+    }
+
+    // Filter out entities that fall within YAML frontmatter region
+    if (frontmatterEnd > 0) {
+      const beforeFilter = entities.length;
+      entities = entities.filter((e) => e.start >= frontmatterEnd);
+      const filtered = beforeFilter - entities.length;
+      if (filtered > 0) {
+        this.log(`Filtered ${filtered} entities within frontmatter`);
+      }
     }
 
     // Post-processing: deduplicate and flag for review

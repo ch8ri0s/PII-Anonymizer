@@ -323,6 +323,11 @@ export class HighRecallPass implements DetectionPass {
         // Skip very short matches (likely false positives)
         if (matchText.length < MIN_MATCH_LENGTH) continue;
 
+        // Apply pattern-specific validation if defined
+        if (patternDef.validate && !patternDef.validate(matchText)) {
+          continue;
+        }
+
         entities.push({
           id: generateEntityId(),
           type: patternDef.type,

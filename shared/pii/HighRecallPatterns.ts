@@ -314,6 +314,12 @@ const PERSON_NAME_EXCLUSIONS = new Set([
   'fondation', 'collective', 'case', 'postale', 'notre', 'votre',
   'scanning', 'assurances', 'technologies', 'visiteurs', 'direct',
   'contact', 'information', 'details', 'address', 'email', 'phone',
+  // Invoice/document structure terms (not person names)
+  'invoice', 'number', 'date', 'due', 'payment', 'total', 'amount',
+  'description', 'quantity', 'price', 'unit', 'subtotal', 'tax', 'vat',
+  'software', 'module', 'development', 'project', 'management', 'services',
+  'consulting', 'support', 'maintenance', 'license', 'subscription',
+  'order', 'reference', 'customer', 'client', 'billing', 'shipping',
   // Geographic terms
   'zurich', 'zürich', 'geneve', 'geneva', 'bern', 'basel', 'lausanne',
   'suisse', 'switzerland', 'schweiz',

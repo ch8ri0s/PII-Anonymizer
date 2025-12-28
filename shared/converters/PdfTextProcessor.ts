@@ -65,12 +65,6 @@ export class PdfTextProcessor {
 
     // Check if this is a formal letter layout
     const isLetter = this.isLetterLayout(items);
-    console.log('[PdfTextProcessor] processTextItems called, isLetter:', isLetter, 'items:', items.length);
-    // Debug: Log items containing apostrophe-like characters
-    const apostropheItems = items.filter(i => i.str.includes("'") || i.str.includes("'") || i.str.includes("ʼ") || i.str.includes("d") || i.str.includes("adhésion"));
-    if (apostropheItems.length > 0) {
-      console.log('[PdfTextProcessor] Items with d/apostrophe/adhésion:', apostropheItems.slice(0, 10).map(i => ({ str: i.str, x: Math.round(i.x) })));
-    }
 
     if (isLetter) {
       return this.processLetterLayout(items);
@@ -376,10 +370,8 @@ export class PdfTextProcessor {
    * Apply all text spacing fixes
    */
   fixTextSpacing(text: string): string {
-    console.log('[PdfTextProcessor] fixTextSpacing INPUT:', JSON.stringify(text.substring(0, 300)));
     text = this.fixBrokenSpacing(text);
     text = this.fixMergedWords(text);
-    console.log('[PdfTextProcessor] fixTextSpacing OUTPUT:', JSON.stringify(text.substring(0, 300)));
     return text;
   }
 
@@ -388,14 +380,6 @@ export class PdfTextProcessor {
    * Handles: "mes dames" → "mesdames", "Conform ément" → "Conformément"
    */
   fixBrokenSpacing(text: string): string {
-    console.log('[PdfTextProcessor] fixBrokenSpacing called, text length:', text.length);
-    // Check for any apostrophe pattern in input - log first 500 chars
-    console.log('[PdfTextProcessor] INPUT text sample:', JSON.stringify(text.substring(0, 500)));
-    // Check for apostrophe patterns specifically
-    const apostropheIdx = text.search(/[dlnc]\s+['ʼ']\s+/i);
-    if (apostropheIdx >= 0) {
-      console.log('[PdfTextProcessor] Found apostrophe pattern at:', apostropheIdx, text.substring(apostropheIdx, apostropheIdx + 20));
-    }
     // Known broken words (specific fixes)
     const knownBrokenWords: { [key: string]: string } = {
       'mes dames': 'mesdames',
@@ -420,22 +404,9 @@ export class PdfTextProcessor {
     // Match various apostrophe characters:
     // ' U+0027 (straight apostrophe), ' U+2019 (right single quote), ʼ U+02BC (modifier)
     // Single letter elisions (d', l', n', c', m', t', s', j', q')
-    const beforeApostrophe = text;
     text = text.replace(/\b([dlncmtsqjDLNCMTSQJ])\s*['\u2019\u02BC]\s*([a-zA-Zà-öø-ÿÀ-ÖØ-Ÿ])/g, "$1'$2");
     // Two-letter elisions (qu')
     text = text.replace(/\b(qu|Qu|QU)\s*['\u2019\u02BC]\s*([a-zA-Zà-öø-ÿÀ-ÖØ-Ÿ])/g, "$1'$2");
-    if (beforeApostrophe !== text) {
-      console.log('[PdfTextProcessor] Apostrophe fix applied');
-      // Find what was changed
-      const idx = beforeApostrophe.indexOf("d '");
-      if (idx >= 0) {
-        console.log('[PdfTextProcessor] BEFORE:', beforeApostrophe.substring(idx, idx + 30));
-        console.log('[PdfTextProcessor] AFTER:', text.substring(idx, idx + 30));
-      }
-    } else if (beforeApostrophe.includes("d '") || beforeApostrophe.includes("l '") || beforeApostrophe.includes("n '")) {
-      console.log('[PdfTextProcessor] WARNING: Apostrophe pattern found but not fixed!');
-      console.log('[PdfTextProcessor] Sample:', beforeApostrophe.substring(0, 200));
-    }
 
     // Pattern 3: Fix broken words that end with common suffixes
     text = text.replace(/\b([a-zà-öø-ÿ]{2,})\s+([a-zà-öø-ÿ]{1,5})\b/g, (match, part1, part2) => {
