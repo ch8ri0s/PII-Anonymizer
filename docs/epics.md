@@ -22,12 +22,13 @@ This document provides the epic and story breakdown for A5-PII-Anonymizer v3.0 e
 | Epic 3 | Document-Type Detection | 4 | FR-2.11 |
 | Epic 4 | User Review Workflow | 4 | FR-3.5, FR-5.7, FR-5.8 |
 | Epic 5 | Confidence Scoring & Feedback | 3 | Quality improvement |
-| Epic 6 | Infrastructure & Developer Experience | 8 | DX-1-4, SEC-1-2, UX-1, BUG-1 |
+| Epic 6 | Infrastructure & Developer Experience | 7 | DX-2-4, SEC-1-2, UX-1, BUG-1 |
 | Epic 7 | Browser Migration | 8 | FR-6.1-6.6, FR-5.8, FR-5.9 (browser) |
 | Epic 8 | PII Detection Quality Improvement | 6 | FR-2.12 (Presidio patterns) |
 | Epic 9 | UI Harmonization (Tailwind + shadcn) | 6 | DX-5, UX-2 |
+| Epic 10 | Console-to-Logger Migration | 10 | DX-6, DX-7, SEC-3 |
 
-**Total:** 9 Epics, 48 Stories
+**Total:** 10 Epics, 57 Stories
 
 ---
 
@@ -778,30 +779,13 @@ Epic 1 (Multi-Pass) ────────┬──> Epic 2 (Address Modeling)
 
 ### Story 6.1: Factory Central Logger
 
-As a **developer maintaining the codebase**,
-I want **a centralized logging factory with consistent configuration**,
-So that **all modules use the same logging patterns and levels can be controlled centrally**.
+> **⚠️ MOVED TO EPIC 10** - This story has been absorbed into Epic 10: Console-to-Logger Migration as Stories 10.1-10.10, which provide comprehensive coverage including browser-app adaptation, Web Worker support, ESLint enforcement, aggressive test migration, and CI/CD integration.
 
-**Acceptance Criteria:**
+**Status:** Moved to Epic 10
 
-**Given** any module in the application
-**When** it needs to log messages
-**Then** it imports the central logger factory and creates a scoped logger
+**Original Scope:** Centralized logging factory with consistent configuration.
 
-**And** logger supports levels: debug, info, warn, error
-**And** log format includes: timestamp, level, scope, message
-**And** log level can be configured globally (via env or settings)
-**And** existing `createLogger` calls are migrated to use the factory
-**And** logger works in both main process and renderer process
-
-**Prerequisites:** None (infrastructure story)
-
-**Technical Notes:**
-- Consolidate existing `src/utils/logger.ts` into factory pattern
-- Support scoped loggers: `LoggerFactory.create('module-name')`
-- Add log level filtering based on environment/config
-- Ensure Electron IPC compatibility for renderer logging
-- Consider structured logging (JSON format) for production
+**New Location:** See Epic 10, Stories 10.1-10.10 for expanded implementation.
 
 ---
 
@@ -1620,5 +1604,464 @@ Story 9.3 (Primitives) ──> Story 9.4 (Composites)
 | Bundle size increase | Tree-shaking, code splitting |
 | Framework lock-in | Keep components vanilla TS |
 | Migration effort | Incremental stories, clear boundaries |
+
+---
+
+## Epic 10: Console-to-Logger Migration
+
+**Goal:** Complete migration from direct `console.*` calls to LoggerFactory across the entire codebase, with ESLint enforcement, browser-app support, Web Worker logging, and CI/CD integration to prevent regression.
+
+**User Value:** Developers get consistent, filterable, PII-safe logging with proper levels across all application contexts (Electron main, renderer, browser-app, Web Workers). Production users benefit from cleaner logs, better debugging support, and no accidental PII exposure in log files.
+
+**FRs Covered:** DX-6 (Logging Standardization), SEC-3 (PII-Safe Logging)
+
+**Note:** This epic absorbs and expands Story 6.1 (Factory Central Logger) from Epic 6.
+
+**Current State Analysis:**
+- **LoggerFactory.ts exists** at `src/utils/LoggerFactory.ts` with scoped loggers, log levels, PII redaction
+- **976 console.* calls** across 125 files (783 log, 94 warn, 91 error, 6 debug, 2 info)
+- **Top offenders in src/:** rendererI18n.ts (11), logging.ts (10), i18nService.ts (8)
+- **Deprecated files:** `src/utils/logger.ts`, `src/config/logging.ts` need removal
+- **No ESLint rule** preventing new console.* usage
+- **Browser-app** needs LoggerFactory adaptation (currently Electron-focused)
+- **Web Workers** (ML inference) have no logging strategy
+
+---
+
+### Story 10.1: ESLint Console Restriction Rule
+
+As a **developer writing new code**,
+I want **ESLint to flag any direct console.* usage**,
+So that **all new logging goes through LoggerFactory and we don't regress**.
+
+**Acceptance Criteria:**
+
+**Given** any TypeScript or JavaScript file in `src/`
+**When** developer uses `console.log`, `console.warn`, `console.error`, `console.debug`, or `console.info`
+**Then** ESLint reports an error with message: "Use LoggerFactory.create('scope') instead of console.*"
+
+**And** rule is configured as "error" (not warning) to block commits
+**And** test files (`test/**`) are initially excluded (migrated in Story 10.8)
+**And** build scripts and config files are excluded
+**And** auto-fix suggestion points to LoggerFactory import
+
+**Prerequisites:** None (can be implemented immediately)
+
+**Technical Notes:**
+- Add `no-console` rule to `.eslintrc.js` with custom message
+- Configure: `"no-console": ["error", { "allow": [] }]`
+- Add override for test files initially: `files: ['test/**']` with `no-console: off`
+- Run `npm run lint` to get full violation count before migration
+- Consider `eslint-plugin-no-console-log` for better error messages
+
+---
+
+### Story 10.2: LoggerFactory Browser-App Adaptation
+
+As a **developer working on the browser-app**,
+I want **LoggerFactory to work correctly in pure browser context (no Electron)**,
+So that **browser-app can use the same logging patterns as Electron app**.
+
+**Acceptance Criteria:**
+
+**Given** code running in browser-app (Vite/PWA, no Electron)
+**When** `LoggerFactory.create('scope')` is called
+**Then** logger instance is created successfully without errors
+
+**And** log messages appear in browser DevTools console with proper formatting
+**And** log levels are respected (debug filtered in production)
+**And** PII redaction works in browser context
+**And** no errors about missing `electron-log` module
+**And** graceful detection: `isElectron()` vs `isBrowser()` context
+**And** console-only output (no file persistence in browser - acceptable per requirements)
+
+**Prerequisites:** None (foundation for browser logging)
+
+**Technical Notes:**
+- Current LoggerFactory has electron-log dependency - needs conditional import
+- Add environment detection: `typeof window !== 'undefined' && !window.process`
+- Create browser-specific formatter matching electron-log output style
+- Test in: browser-app dev server, production build, Vitest (jsdom)
+- Ensure no Node.js APIs leak into browser bundle (check Vite build)
+
+---
+
+### Story 10.3: Web Worker Logger Implementation
+
+As a **developer debugging ML inference issues**,
+I want **LoggerFactory to work inside Web Workers**,
+So that **ML model loading and inference can be logged consistently**.
+
+**Acceptance Criteria:**
+
+**Given** code running in a Web Worker (e.g., `pii.worker.ts` for ML inference)
+**When** `LoggerFactory.create('ml:worker')` is called
+**Then** logger instance is created successfully
+
+**And** log messages are posted to main thread via `postMessage`
+**And** main thread LoggerFactory receives and formats worker logs
+**And** worker logs appear in DevTools with `[Worker]` prefix
+**And** log levels are synchronized between worker and main thread
+**And** PII redaction works in worker context
+**And** no performance impact on ML inference (async logging)
+
+**Prerequisites:** Story 10.2 (browser LoggerFactory works)
+
+**Technical Notes:**
+- Web Workers have no `console` connection to DevTools in some browsers
+- Implement `WorkerLoggerTransport` that uses `postMessage`
+- Main thread listens for log messages and routes to LoggerFactory
+- Consider batching worker logs to reduce message overhead
+- Test with: `browser-app/src/workers/` (if exists) or create test worker
+- Reference: Epic 7 Story 7.3 mentions Web Worker for ML inference
+
+---
+
+### Story 10.4: i18n Module Logger Migration
+
+As a **developer debugging internationalization issues**,
+I want **all i18n modules to use LoggerFactory with 'i18n' scope**,
+So that **i18n logging can be filtered and controlled independently**.
+
+**Acceptance Criteria:**
+
+**Given** the i18n modules (4 files, 25 console calls)
+**When** migration is complete
+**Then** all console.* calls are replaced with LoggerFactory usage:
+
+| File | Console Calls | Logger Scope |
+|------|---------------|--------------|
+| `src/i18n/rendererI18n.ts` | 11 | `i18n:renderer` |
+| `src/i18n/i18nService.ts` | 8 | `i18n:service` |
+| `src/i18n/localeFormatter.ts` | 4 | `i18n:formatter` |
+| `src/i18n/languageDetector.ts` | 2 | `i18n:detector` |
+
+**And** log levels are appropriate:
+  - Initialization success → `log.info()`
+  - Missing translation keys → `log.warn()`
+  - Language detection results → `log.debug()`
+  - Load/parse errors → `log.error()`
+
+**And** renderer process logging works correctly
+**And** existing functionality unchanged
+**And** ESLint passes with no console violations
+
+**Prerequisites:** Story 10.2 (browser/renderer LoggerFactory works)
+
+**Technical Notes:**
+- rendererI18n.ts runs in renderer process - uses browser LoggerFactory
+- Batch initialization logs to reduce noise: single info log with summary
+- Test: `LoggerFactory.setScopeLevel('i18n', 'debug')` enables verbose mode
+- Verify i18n works correctly after migration (run i18n tests)
+
+---
+
+### Story 10.5: PII Detection Module Logger Migration
+
+As a **developer debugging PII detection issues**,
+I want **all PII detection modules to use LoggerFactory with 'pii' scope**,
+So that **detection logging is filterable and PII is automatically redacted**.
+
+**Acceptance Criteria:**
+
+**Given** the PII detection modules
+**When** migration is complete
+**Then** all console.* calls are replaced with LoggerFactory usage:
+
+| File | Logger Scope |
+|------|--------------|
+| `src/pii/DetectionPipeline.ts` | `pii:pipeline` |
+| `src/pii/passes/HighRecallPass.ts` | `pii:pass:recall` |
+| `src/pii/passes/DocumentTypePass.ts` | `pii:pass:doctype` |
+| `src/pii/RuleEngine.ts` | `pii:rules` |
+| Any other `src/pii/**/*.ts` files | `pii:<module>` |
+
+**And** PII values in log messages are automatically redacted by LoggerFactory
+**And** detection metrics logged at info level: `log.info('Detection complete', { entities: count, duration: ms })`
+**And** pattern match details logged at debug level (disabled in production)
+**And** validation failures logged at warn level
+
+**Prerequisites:** Story 10.4 (migration pattern established)
+
+**Technical Notes:**
+- CRITICAL: Verify PII redaction works - test with real Swiss AHV, IBAN, emails
+- Detection can be verbose - use debug level for per-entity logs
+- Add timing: `const start = Date.now(); ... log.debug('Pass done', { ms: Date.now() - start })`
+- Run accuracy tests after migration to ensure no regressions
+
+---
+
+### Story 10.6: Utility & UI Module Logger Migration
+
+As a **developer maintaining utility code**,
+I want **all utility and UI modules to use LoggerFactory with appropriate scopes**,
+So that **utility logging is consistent and filterable**.
+
+**Acceptance Criteria:**
+
+**Given** the utility and UI modules with console usage
+**When** migration is complete
+**Then** all console.* calls are replaced:
+
+| File | Logger Scope | Notes |
+|------|--------------|-------|
+| `src/utils/asyncTimeout.ts` | `utils:timeout` | 3 calls |
+| `src/utils/errorHandler.ts` | `utils:error` | 2 calls |
+| `src/utils/LoggerFactory.ts` | `logger:internal` | 4 calls (meta-logging) |
+| `src/ui/EntityReviewUI.ts` | `ui:review` | 1 call |
+
+**And** error handler uses `log.error()` with full stack traces
+**And** timeout warnings include duration: `log.warn('Operation timed out', { timeout: ms })`
+**And** UI interactions use debug level (minimal noise)
+**And** LoggerFactory internal errors go to console as last resort (bootstrap problem)
+
+**Prerequisites:** Story 10.5 (migration pattern established)
+
+**Technical Notes:**
+- errorHandler.ts: Ensure errors are properly serialized (Error objects don't stringify well)
+- LoggerFactory.ts: Keep 1-2 console.error for bootstrap failures (can't log if logger broken)
+- asyncTimeout.ts: Include operation name in timeout logs for debugging
+
+---
+
+### Story 10.7: Deprecated Logger Files Removal
+
+As a **developer maintaining the codebase**,
+I want **deprecated logging files removed**,
+So that **there's only one way to log (LoggerFactory) and no confusion**.
+
+**Acceptance Criteria:**
+
+**Given** deprecated logging files exist
+**When** removal is complete
+**Then**:
+
+1. `src/utils/logger.ts` is **deleted**
+2. `src/config/logging.ts` is **deleted**
+3. All imports of these files are updated to use LoggerFactory
+4. No runtime errors occur
+5. TypeScript compilation succeeds (`npm run typecheck`)
+6. All tests pass (`npm test`)
+7. ESLint passes (`npm run lint`)
+
+**And** LoggerFactory.ts is the **single source of truth** for logging
+**And** Any `createLogger()` calls migrated to `LoggerFactory.create()`
+**And** CLAUDE.md updated to remove references to deprecated files
+
+**Prerequisites:** Stories 10.4-10.6 (all src/ migrations complete)
+
+**Technical Notes:**
+- Both files are already marked `@deprecated` in JSDoc
+- Search: `grep -r "from.*logger" src/` and `grep -r "from.*logging" src/`
+- Check for re-exports in `src/index.ts` or similar barrel files
+- Update any imports in test files as well
+- Git: Single commit with clear message about deprecation removal
+
+---
+
+### Story 10.8: Aggressive Test File Logger Migration
+
+As a **developer running tests**,
+I want **test files to use a consistent logging strategy**,
+So that **test output is clean in CI and verbose when debugging locally**.
+
+**Acceptance Criteria:**
+
+**Given** test files in `test/` directory (783 console calls)
+**When** aggressive migration is complete
+**Then**:
+
+1. **Test helper created:** `test/helpers/testLogger.ts`
+   - Wraps LoggerFactory with test-friendly defaults
+   - Respects `LOG_LEVEL` environment variable
+   - Default level: `warn` (errors and warnings only)
+   - `LOG_LEVEL=debug` enables verbose output
+
+2. **Integration tests migrated:** `test/integration/**`
+   - All console.log → `testLogger.debug()`
+   - All console.warn → `testLogger.warn()`
+   - All console.error → `testLogger.error()`
+   - Progress/status messages → `testLogger.info()`
+
+3. **Unit tests migrated:** `test/unit/**`
+   - Same pattern as integration tests
+   - Keep only essential debug output
+
+4. **Fixture/expected output preserved:**
+   - `console.log` for test fixture output comparisons is OK
+   - Mark with comment: `// eslint-disable-next-line no-console -- test fixture output`
+
+5. **ESLint updated:**
+   - Remove test file exclusion from Story 10.1
+   - Tests now follow same rules as src/
+
+**And** CI runs with `LOG_LEVEL=error` (minimal output)
+**And** Local dev can use `LOG_LEVEL=debug npm test` for verbose
+**And** Test output is clean and readable
+
+**Prerequisites:** Story 10.7 (src/ migration complete)
+
+**Technical Notes:**
+- testLogger.ts example:
+  ```typescript
+  import { LoggerFactory } from '../src/utils/LoggerFactory';
+  const level = process.env.LOG_LEVEL || 'warn';
+  LoggerFactory.setLevel(level);
+  export const testLogger = LoggerFactory.create('test');
+  ```
+- Prioritize integration tests (most valuable to clean up)
+- Unit tests: Focus on noisy ones first (check `test/unit/pii/`, `test/unit/fileProcessor`)
+- ~783 calls is significant - may take multiple sessions
+
+---
+
+### Story 10.9: CI/CD Log Level Configuration
+
+As a **DevOps engineer managing CI pipelines**,
+I want **log levels configurable in CI/CD**,
+So that **pipeline logs are clean but debugging is possible when needed**.
+
+**Acceptance Criteria:**
+
+**Given** CI/CD pipeline (GitHub Actions or similar)
+**When** pipeline runs
+**Then**:
+
+1. **Default CI log level:** `error` (minimal noise)
+2. **Debug mode available:** Re-run with `LOG_LEVEL=debug` for troubleshooting
+3. **Test runs:** Use `LOG_LEVEL=error` by default
+4. **Build step:** Use `LOG_LEVEL=warn` (catch warnings)
+
+**And** environment variable `LOG_LEVEL` is documented
+**And** CI config updated (`.github/workflows/*.yml` or equivalent)
+**And** README documents how to enable verbose CI logging
+**And** Log level can be set per-job or per-step
+
+**Prerequisites:** Story 10.8 (test logging respects LOG_LEVEL)
+
+**Technical Notes:**
+- GitHub Actions: `env: LOG_LEVEL: error` at job level
+- Allow manual workflow dispatch with log level input
+- Consider: `LOG_LEVEL=debug` for nightly/scheduled runs
+- Document in CI config with comments
+
+---
+
+### Story 10.10: Logger Documentation & Developer Guide
+
+As a **developer joining the project**,
+I want **clear documentation on how to use LoggerFactory**,
+So that **I use logging correctly from day one**.
+
+**Acceptance Criteria:**
+
+**Given** a new developer reading the docs
+**When** they need to add logging
+**Then** documentation covers:
+
+1. **Quick start:**
+   ```typescript
+   import { LoggerFactory } from './utils/LoggerFactory';
+   const log = LoggerFactory.create('my-module');
+   log.info('Hello', { data: 'value' });
+   ```
+
+2. **Scope naming convention:**
+   - Format: `module:submodule` (e.g., `pii:pipeline`, `i18n:renderer`)
+   - Keep scopes consistent with directory structure
+
+3. **Log levels - when to use each:**
+   - `debug`: Detailed troubleshooting (disabled in production)
+   - `info`: Significant events, startup, completion
+   - `warn`: Recoverable issues, deprecations
+   - `error`: Failures requiring attention
+
+4. **PII safety:**
+   - Auto-redacted: emails, phones, IBANs, Swiss AHV
+   - Never log raw user data without redaction
+   - Use structured logging: `log.info('User', { id: 123 })` not `log.info('User 123')`
+
+5. **Context-specific guidance:**
+   - Main process: Full electron-log features
+   - Renderer: Console output with formatting
+   - Browser-app: Console only, no persistence
+   - Web Workers: Messages posted to main thread
+   - Tests: Use `testLogger` from test helpers
+
+6. **Configuration:**
+   - `LoggerFactory.setLevel('debug')` - global
+   - `LoggerFactory.setScopeLevel('pii', 'debug')` - per-scope
+   - `LOG_LEVEL=debug` environment variable
+
+**And** documentation added to `CLAUDE.md` under new "## Logging" section
+**And** JSDoc comments complete in `LoggerFactory.ts`
+**And** Example usage added to `README.md` or dedicated `docs/LOGGING.md`
+
+**Prerequisites:** Stories 10.1-10.9 (all migrations complete)
+
+**Technical Notes:**
+- Add to CLAUDE.md so AI assistants know the logging patterns
+- Include common mistakes / anti-patterns section
+- Add troubleshooting: "logs not appearing" checklist
+
+---
+
+## Epic 10 Dependencies
+
+```
+Story 10.1 (ESLint Rule) ──────────────────────────────────────────────┐
+                                                                        │
+Story 10.2 (Browser Adaptation) ──> Story 10.3 (Web Worker)            │
+         │                                                              │
+         v                                                              │
+Story 10.4 (i18n) ──> Story 10.5 (PII) ──> Story 10.6 (Utils/UI)       │
+                                                    │                   │
+                                                    v                   │
+                                           Story 10.7 (Deprecation)     │
+                                                    │                   │
+                                                    v                   │
+                                           Story 10.8 (Tests) <─────────┘
+                                                    │
+                                                    v
+                                           Story 10.9 (CI/CD)
+                                                    │
+                                                    v
+                                           Story 10.10 (Documentation)
+```
+
+---
+
+## Epic 10 Summary
+
+| Story | Focus | Scope |
+|-------|-------|-------|
+| 10.1 | ESLint enforcement | Prevents new violations |
+| 10.2 | Browser-app LoggerFactory | Make it work (not just verify) |
+| 10.3 | Web Worker logging | ML inference logging |
+| 10.4 | i18n modules | 25 console calls |
+| 10.5 | PII detection | ~10 console calls |
+| 10.6 | Utilities & UI | ~10 console calls |
+| 10.7 | Deprecated file removal | Cleanup |
+| 10.8 | Test files (aggressive) | 783 console calls |
+| 10.9 | CI/CD configuration | Pipeline integration |
+| 10.10 | Documentation | Developer onboarding |
+
+**Total:** 10 stories addressing ~830 console calls + infrastructure
+
+---
+
+## Epic 6 Update
+
+**Story 6.1 (Factory Central Logger)** is now **MOVED to Epic 10** and expanded into Stories 10.2-10.3. Mark Story 6.1 as "Moved to Epic 10" in Epic 6.
+
+---
+
+## FR Coverage Matrix (Epic 10)
+
+| FR ID | Description | Stories | Status |
+|-------|-------------|---------|--------|
+| DX-6 | Logging Standardization | 10.1-10.10 | Planned |
+| SEC-3 | PII-Safe Logging | 10.2, 10.3, 10.5 | Planned |
+| DX-7 | CI/CD Observability | 10.9 | Planned |
 
 ---

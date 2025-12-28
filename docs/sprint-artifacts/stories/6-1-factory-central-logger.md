@@ -2,6 +2,10 @@
 
 Status: done
 
+> **📌 EXPANDED IN EPIC 10** - This story established the LoggerFactory foundation. Epic 10 (Console-to-Logger Migration) expands on this work with Stories 10.1-10.10 covering: ESLint enforcement, browser-app adaptation, Web Worker logging, aggressive migration of remaining 976 console.* calls, CI/CD integration, and comprehensive documentation.
+>
+> See: `docs/sprint-artifacts/stories/10-*.md` for the expanded scope.
+
 ## Story
 
 As a **developer maintaining the codebase**,

@@ -33,6 +33,17 @@ A5-PII-Anonymizer/
 ├── tsconfig.json                # TypeScript configuration
 ├── tailwind.config.js           # Tailwind CSS config
 │
+├── shared/                      # [NEW] Shared code (Electron + Browser)
+│   ├── pii/                     # Shared PII detection modules
+│   │   ├── postprocessing/      # [NEW] Post-processing passes (Epic 8)
+│   │   │   └── ConsolidationPass.ts  # Story 8.8
+│   │   ├── preprocessing/       # Text normalization (Epic 8)
+│   │   │   ├── TextNormalizer.ts
+│   │   │   └── Lemmatizer.ts
+│   │   └── index.ts             # Shared exports
+│   └── test/                    # Shared test utilities
+│       └── accuracy.ts          # Precision/recall calculation
+│
 ├── src/
 │   ├── converters/              # Document format converters (TypeScript)
 │   │   ├── DocxToMarkdown.ts
@@ -52,9 +63,12 @@ A5-PII-Anonymizer/
 │   │   │   ├── SwissAvsValidator.ts
 │   │   │   ├── IbanValidator.ts
 │   │   │   └── PhoneValidator.ts
-│   │   └── rules/               # [NEW] Document-type rules (Epic 3)
-│   │       ├── InvoiceRules.ts
-│   │       └── LetterRules.ts
+│   │   ├── rules/               # [NEW] Document-type rules (Epic 3)
+│   │   │   ├── InvoiceRules.ts
+│   │   │   └── LetterRules.ts
+│   │   └── preprocessing/       # [NEW] Text preprocessing (Epic 8)
+│   │       ├── TextNormalizer.ts
+│   │       └── Lemmatizer.ts
 │   │
 │   ├── services/                # IPC handlers and services
 │   │   ├── filePreviewHandlers.ts
@@ -104,13 +118,16 @@ A5-PII-Anonymizer/
 ├── test/                        # Test suites
 │   ├── unit/
 │   │   ├── converters/
-│   │   ├── pii/                 # [NEW] Pipeline tests (Epic 1)
+│   │   ├── pii/                 # [NEW] Pipeline tests (Epic 1, 8)
 │   │   │   ├── DetectionPipeline.test.ts
 │   │   │   ├── AddressClassifier.test.ts
-│   │   │   └── DocumentClassifier.test.ts
+│   │   │   ├── DocumentClassifier.test.ts
+│   │   │   └── ConsolidationPass.test.js  # [NEW] Story 8.8
 │   │   └── i18n/
 │   ├── integration/
-│   │   └── pipeline.test.js     # [NEW] Multi-pass integration (Epic 1)
+│   │   ├── pipeline.test.js     # [NEW] Multi-pass integration (Epic 1)
+│   │   └── pii/
+│   │       └── ConsolidationIntegration.test.js  # [NEW] Story 8.8
 │   └── fixtures/
 │       ├── piiAnnotated/        # [NEW] Golden test dataset
 │       └── pdfTables.js
@@ -246,6 +263,197 @@ class DetectionPipeline {
    - Applies document-type-specific rules
    - Adjusts confidence based on context
    - Output: Final entity list
+
+5. **Pass 5 - Consolidation (Epic 8 - Story 8.8)**
+   - Resolves overlapping entity spans using priority table
+   - Consolidates address components into unified ADDRESS entities
+   - Links repeated entity occurrences with logical IDs
+   - Output: Clean, deduplicated entities with linking
+
+### Entity Consolidation Pass (Epic 8 - Story 8.8)
+
+**Purpose:** Post-processing pass that consolidates overlapping and fragmented entities into coherent units for consistent anonymization.
+
+**Components:**
+
+1. **ConsolidationPass** (`shared/pii/postprocessing/ConsolidationPass.ts`)
+   - Overlap resolution using entity type priority table
+   - Address component consolidation
+   - Entity linking with normalized/fuzzy text matching
+   - Configurable strategies (priority-only vs confidence-weighted)
+
+**Architecture:**
+
+```typescript
+interface ConsolidationPassConfig {
+  // Overlap resolution
+  enableOverlapResolution: boolean;      // @default true
+  overlapStrategy: 'priority-only' | 'confidence-weighted';  // @default 'confidence-weighted'
+
+  // Address consolidation
+  enableAddressConsolidation: boolean;   // @default true
+  addressMaxGap: number;                 // @default 50 (characters)
+  minAddressComponents: number;          // @default 2
+  showComponents: boolean;               // @default false (Option A)
+
+  // Entity linking
+  enableEntityLinking: boolean;          // @default true
+  linkingStrategy: 'exact' | 'normalized' | 'fuzzy';  // @default 'normalized'
+
+  // Priority table
+  entityTypePriority: Record<EntityType, number>;
+}
+
+interface ConsolidationResult {
+  entities: Entity[];
+  metadata: {
+    overlapsResolved: number;
+    addressesConsolidated: number;
+    entitiesLinked: number;
+    originalEntityCount: number;
+    durationMs: number;
+  };
+}
+```
+
+**Entity Type Priority Table:**
+
+| Type | Priority | Rationale |
+|------|----------|-----------|
+| SWISS_AVS | 100 | Highest: specific identifiers |
+| IBAN | 95 | Structured financial data |
+| QR_REFERENCE | 90 | Payment-specific |
+| VAT_NUMBER | 85 | Business identifier |
+| EMAIL | 80 | Structured format |
+| PHONE | 75 | Validated patterns |
+| SWISS_ADDRESS | 60 | Region-specific |
+| ADDRESS | 55 | General address |
+| PERSON_NAME | 50 | Common entity |
+| ORGANIZATION | 45 | Entity with context |
+| UNKNOWN | 0 | Fallback |
+
+**Entity Linking:**
+
+Repeated occurrences of the same entity receive a shared `logicalId` (e.g., `PERSON_1`, `ORGANIZATION_2`), enabling consistent anonymization across the document.
+
+Strategies:
+- **exact**: Only exact text matches are linked
+- **normalized**: Case-insensitive, whitespace-normalized matching (default)
+- **fuzzy**: Handles title variations (Mr/Herr/M.), typos
+
+**Integration:**
+
+The ConsolidationPass is registered with order 50, executing after AddressRelationshipPass (40). It operates in both Electron and Browser environments via the shared module.
+
+**Mapping File Integration:**
+
+The mapping file (v4.0) includes:
+- `entityLinks`: Maps logicalId to placeholder for repeated entities
+- `addresses[].logicalId`: Links repeated address occurrences
+
+### Text Normalization & Lemmatization (Epic 8 - Story 8.7)
+
+**Purpose:** Improve PII detection accuracy by normalizing obfuscated text and enhancing context word matching through lemmatization.
+
+**Components:**
+
+1. **TextNormalizer** (`shared/pii/preprocessing/TextNormalizer.ts`)
+   - Unicode normalization (NFKC)
+   - Whitespace normalization (zero-width character removal, NBSP conversion)
+   - Email de-obfuscation (EN/FR/DE patterns: `(at)`, `arobase`, `Klammeraffe`, etc.)
+   - Phone de-obfuscation (`(0)` prefix removal)
+   - Position mapping (indexMap) for accurate offset repair
+
+2. **SimpleLemmatizer** (`shared/pii/preprocessing/Lemmatizer.ts`)
+   - Lightweight suffix-stripping lemmatization (no NLP dependencies)
+   - Multi-language support (EN/FR/DE)
+   - Cached results for performance
+   - Following Presidio's LemmaContextAwareEnhancer pattern
+
+**Architecture:**
+
+```typescript
+interface NormalizationResult {
+  normalizedText: string;
+  indexMap: number[];  // normalizedIndex → originalIndex
+}
+
+class TextNormalizer {
+  normalize(input: string): NormalizationResult;
+  mapSpan(start: number, end: number, indexMap: number[]): { start: number; end: number };
+}
+
+interface Lemmatizer {
+  lemmatize(word: string, language?: string): string;
+}
+```
+
+**Processing Flow:**
+
+```
+Input: "Contact john (dot) doe (at) mail (dot) ch"
+                          │
+                          ▼
+              ┌─────────────────────┐
+              │   TextNormalizer    │
+              │  (Pre-detection)    │
+              └─────────────────────┘
+                          │
+                          ▼
+Normalized: "Contact john.doe@mail.ch"
+IndexMap:   [0,1,2,...,8,9,10,11,11,11,11,11,12,...]
+                          │
+                          ▼
+              ┌─────────────────────┐
+              │   PII Detection     │
+              │   (on normalized)   │
+              └─────────────────────┘
+                          │
+                          ▼
+Entity: EMAIL at positions [8, 24] in normalized text
+                          │
+                          ▼
+              ┌─────────────────────┐
+              │    mapSpan()        │
+              │ (offset repair)     │
+              └─────────────────────┘
+                          │
+                          ▼
+Mapped: EMAIL at positions [8, 43] in original text
+(Points to "john (dot) doe (at) mail (dot) ch")
+```
+
+**Lemmatization Context Enhancement:**
+
+```typescript
+// In ContextEnhancer
+const contextWords = this.extractContextWords(text, entity);
+const lemmas = contextWords.map(w => this.lemmatizer.lemmatize(w));
+
+// Matches "addresses" near ADDRESS entity → "address" lemma matches context word
+// Matches "Rechnungen" near AMOUNT entity → "Rechnung" lemma matches context word
+```
+
+**Supported De-obfuscation Patterns:**
+
+| Language | @ Patterns | . Patterns |
+|----------|------------|------------|
+| English | `(at)`, `[at]`, `{at}` | `(dot)`, `[dot]`, `{dot}` |
+| French | `arobase`, `(arobase)` | `point`, `(point)` |
+| German | `Klammeraffe`, `(Klammeraffe)` | `(Punkt)` |
+
+**Configuration:**
+
+```typescript
+const normalizer = new TextNormalizer({
+  handleEmails: true,           // Email de-obfuscation
+  handlePhones: true,           // Phone de-obfuscation
+  normalizeUnicode: true,       // NFKC normalization
+  normalizeWhitespace: true,    // Zero-width removal
+  normalizationForm: 'NFKC',    // Unicode form
+  supportedLocales: ['en', 'fr', 'de'],
+});
+```
 
 ### Address Component Linking (Epic 2)
 
@@ -781,8 +989,35 @@ npm run test:watch       # Watch mode for tests
 - (-) Increased complexity in anonymization logic
 - (-) Need to handle partial matches gracefully
 
+### ADR-006: Text Normalization as Pre-Detection Pass
+
+**Status:** Accepted
+**Context:** Obfuscated PII patterns (e.g., `john (at) example (dot) com`, `+41 (0) 79...`, IBANs with zero-width spaces) bypass standard detection.
+**Decision:** Implement a configurable TextNormalizer as a pre-detection pass that de-obfuscates text while maintaining position mapping for accurate entity offsets.
+**Consequences:**
+- (+) Detects previously missed obfuscated PII
+- (+) Position mapping preserves original text coordinates
+- (+) Configurable per-feature (email, phone, unicode, whitespace)
+- (+) Multi-language support (EN/FR/DE patterns)
+- (-) Additional processing overhead (mitigated by <10% impact)
+- (-) Conservative pattern matching to avoid false positives (standalone ` at ` excluded)
+
+### ADR-007: Lightweight Lemmatization for Context Matching
+
+**Status:** Accepted
+**Context:** Context word matching fails for plural/inflected forms (e.g., "addresses" near ADDRESS entity doesn't boost confidence).
+**Decision:** Implement suffix-stripping SimpleLemmatizer without external NLP dependencies, following Presidio's LemmaContextAwareEnhancer pattern.
+**Consequences:**
+- (+) Improved context word matching across word forms
+- (+) Zero external dependencies (no spaCy, NLTK)
+- (+) Fast execution with caching (~0.01ms per word)
+- (+) Multi-language support (EN/FR/DE suffix rules)
+- (-) Less accurate than full NLP lemmatization
+- (-) Manual suffix rules need maintenance
+
 ---
 
 _Generated by BMAD Decision Architecture Workflow v1.0_
 _Date: 2025-12-05_
+_Updated: 2025-12-26 (ADR-006, ADR-007 for Story 8.7)_
 _For: Olivier_

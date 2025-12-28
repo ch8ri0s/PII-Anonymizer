@@ -120,7 +120,7 @@ development_status:
   8-13-ml-error-recovery-with-retry-logic: done  # P1 High - transient error handling - APPROVED 2025-12-28 - 35 tests
   8-14-ml-performance-monitoring: done  # P1 High - inference metrics - APPROVED 2025-12-28
   8-15-web-worker-ml-inference: done  # P1 High - UI responsiveness - COMPLETED 2025-12-28 - 933 tests
-  8-16-runtime-context-injection: ready-for-dev  # P2 Medium - caller context hints - context created 2025-12-28
+  8-16-runtime-context-injection: done  # P2 Medium - caller context hints - COMPLETED 2025-12-28 - 38 tests
   8-17-external-recognizer-support: ready-for-dev  # P3 Low - Azure/AWS integration - context created 2025-12-28
   # Phase 3: Precision/Recall Quick Wins (COMPLETED)
   8-18-disable-amount-detection: done  # AMOUNT is not PII - eliminates 15 FPs
@@ -145,7 +145,7 @@ development_status:
   epic-10: contexted  # 10 stories - Tech spec created 2025-12-28
   10-1-eslint-console-restriction: ready-for-dev  # ESLint no-console rule enforcement - context created 2025-12-28
   10-2-loggerfactory-browser-adaptation: ready-for-dev  # Make LoggerFactory work in browser-app - context created 2025-12-28
-  10-3-web-worker-logger: backlog  # Web Worker logging via postMessage
+  10-3-web-worker-logger: ready-for-dev  # Web Worker logging via postMessage - context created 2025-12-28
   10-4-i18n-logger-migration: backlog  # 25 console calls in i18n modules
   10-5-pii-detection-logger-migration: backlog  # PII module logging with auto-redaction
   10-6-utility-ui-logger-migration: backlog  # Utils and UI module logging
