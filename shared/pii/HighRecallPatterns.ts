@@ -163,19 +163,21 @@ export function buildHighRecallPatterns(): PatternDef[] {
 
     // German/Austrian postal codes with city
     // Story 8.22: Require minimum 3-character city name
+    // Story 11.x: Fixed boundary - use [ \t] not \s, limit city words to 2
     {
       type: 'EU_ADDRESS',
       pattern:
-        /\b(?:D[-\s]?|A[-\s]?)?\d{5}\s+[A-ZÄÖÜ][a-zäöüß]{2,}(?:[-\s][A-Za-zäöüß]+)*/g,
+        /\b(?:D[-\s]?|A[-\s]?)?\d{5}[ \t]+[A-ZÄÖÜ][a-zäöüß]{2,}(?:-[A-Za-zäöüß]+){0,2}\b/g,
       priority: 3,
     },
 
     // French postal codes with city
     // Story 8.22: Require minimum 3-character city name
+    // Story 11.x: Fixed boundary - use [ \t] not \s, limit city words to 2
     {
       type: 'EU_ADDRESS',
       pattern:
-        /\b(?:F[-\s]?)?\d{5}\s+[A-ZÀÂÆÉÈÊËÏÎÔŒÙÛÜ][a-zàâæéèêëïîôœùûüÿç]{2,}(?:[-\s][A-Za-zàâæéèêëïîôœùûüÿç]+)*/g,
+        /\b(?:F[-\s]?)?\d{5}[ \t]+[A-ZÀÂÆÉÈÊËÏÎÔŒÙÛÜ][a-zàâæéèêëïîôœùûüÿç]{2,}(?:-[A-Za-zàâæéèêëïîôœùûüÿç]+){0,2}\b/g,
       priority: 3,
     },
 
@@ -207,10 +209,11 @@ export function buildHighRecallPatterns(): PatternDef[] {
     // Italian postal codes with city (5 digits, 00100-99999)
     // Matches: 6900 Lugano, 20121 Milano, 00187 Roma
     // Story 8.22: Require minimum 3-character city name
+    // Story 11.x: Fixed boundary - use [ \t] not \s, limit city words to 2
     {
       type: 'EU_ADDRESS',
       pattern:
-        /\b(?:I[-\s]?)?\d{5}\s+[A-ZÀÈÉÌÒÙ][a-zàèéìòù]{2,}(?:[-\s][A-Za-zàèéìòù]+)*\b/g,
+        /\b(?:I[-\s]?)?\d{5}[ \t]+[A-ZÀÈÉÌÒÙ][a-zàèéìòù]{2,}(?:-[A-Za-zàèéìòù]+){0,2}\b/g,
       priority: 3,
     },
 
