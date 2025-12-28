@@ -15,3 +15,7 @@ export {
   ContextScoringPass,
   createContextScoringPass,
 } from './ContextScoringPass.js';
+export {
+  ConsolidationPass,
+  createConsolidationPass,
+} from './ConsolidationPass.js';
