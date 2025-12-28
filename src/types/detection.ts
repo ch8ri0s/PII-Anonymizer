@@ -3,7 +3,21 @@
  *
  * Core types for the multi-pass PII detection architecture (Epic 1).
  * These types define the entity model, detection passes, and pipeline context.
+ *
+ * Note: ValidationRule and ValidationResult are imported from shared module
+ * for unified interface across Electron and browser-app.
  */
+
+import type {
+  ValidationRule as BaseValidationRule,
+  ValidationResult,
+  ValidationContext,
+  ValidatorEntity,
+  ValidatorEntityType,
+} from '../../shared/dist/pii/validators/types.js';
+
+// Re-export shared types for backward compatibility
+export type { ValidationResult, ValidationContext, ValidatorEntity, ValidatorEntityType };
 
 /**
  * Source of entity detection
@@ -452,8 +466,15 @@ export interface DetectionResult {
 
 /**
  * Validation rule for entity format validation (Pass 2)
+ *
+ * This is a specialized version of BaseValidationRule that uses
+ * the full Entity type from the main app. It extends the shared
+ * ValidationRule interface for compatibility.
+ *
+ * Note: Validators in shared/ use ValidatorEntity (minimal interface).
+ * Validators used directly in src/ can use this fuller Entity type.
  */
-export interface ValidationRule {
+export interface ValidationRule extends BaseValidationRule<Entity, EntityType> {
   /** Entity type this rule applies to */
   entityType: EntityType;
 
@@ -462,19 +483,11 @@ export interface ValidationRule {
 
   /**
    * Validate an entity
-   * @param entity - Entity to validate
+   * @param entity - Entity to validate (full Entity or minimal ValidatorEntity)
+   * @param context - Optional validation context
    * @returns Validation result
    */
-  validate(entity: Entity): ValidationResult;
-}
-
-/**
- * Result from entity validation
- */
-export interface ValidationResult {
-  isValid: boolean;
-  confidence: number;
-  reason?: string;
+  validate(entity: Entity, context?: ValidationContext | string): ValidationResult;
 }
 
 /**

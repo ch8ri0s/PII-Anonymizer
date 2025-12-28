@@ -11,9 +11,9 @@ import type {
   Entity,
   DetectionPass,
   PipelineContext,
-  ValidationRule,
   EntityType,
 } from '../../types/detection.js';
+import type { ValidationRule } from '../validators/index.js';
 import { getAllValidators } from '../validators/index.js';
 
 /**
@@ -30,7 +30,8 @@ export class FormatValidationPass implements DetectionPass {
   private validators: ValidationRule[];
 
   constructor(validators?: ValidationRule[]) {
-    this.validators = validators || getAllValidators();
+    // Copy the singleton array to allow local mutations via addValidator
+    this.validators = validators ? [...validators] : [...getAllValidators()];
   }
 
   /**
