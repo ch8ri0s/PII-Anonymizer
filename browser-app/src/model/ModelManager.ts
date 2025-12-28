@@ -418,7 +418,10 @@ export async function runInferenceInWorker(
     payload: { text },
   };
 
-  mlWorker!.postMessage(request);
+  if (!mlWorker) {
+    throw new Error('ML worker failed to initialize');
+  }
+  mlWorker.postMessage(request);
 
   return promise;
 }

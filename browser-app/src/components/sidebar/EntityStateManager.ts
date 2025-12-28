@@ -189,7 +189,12 @@ export class EntityStateManager {
 
     // Return the entity at the original position, or the first new entity
     const originalEntity = newEntities.find(e => e.start === start && e.end === end);
-    return originalEntity || newEntities[0] || this.entities.find(e => e.start === start && e.end === end)!;
+    const fallbackEntity = this.entities.find(e => e.start === start && e.end === end);
+    const result = originalEntity ?? newEntities[0] ?? fallbackEntity;
+    if (!result) {
+      throw new Error(`Failed to add manual entity at position ${start}-${end}`);
+    }
+    return result;
   }
 
   /**

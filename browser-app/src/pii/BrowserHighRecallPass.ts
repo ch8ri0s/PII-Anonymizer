@@ -189,8 +189,8 @@ export class BrowserHighRecallPass implements DetectionPass {
       return [];
     }
 
-    // Use validated/normalized text
-    const validatedText = validation.text!;
+    // Use validated/normalized text (text is guaranteed to exist when valid is true)
+    const validatedText = validation.text ?? text;
 
     // Log warnings if any
     if (validation.warnings?.length) {
@@ -264,7 +264,8 @@ export class BrowserHighRecallPass implements DetectionPass {
       });
     }
 
-    const chunkPredictions = retryResult.result!;
+    // Result is guaranteed to exist when success is true (guarded by early return above)
+    const chunkPredictions = retryResult.result ?? [];
 
     // Story 8.11: Merge predictions from all chunks with offset adjustment
     const allPredictions = mergeChunkPredictions(chunkPredictions, chunks);

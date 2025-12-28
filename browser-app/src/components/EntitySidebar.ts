@@ -106,7 +106,10 @@ export function addManualEntity(
   start: number,
   end: number,
 ): EntityWithSelection {
-  const entity = stateManager!.addManualEntity(text, type, start, end);
+  if (!stateManager) {
+    throw new Error('EntitySidebar not initialized. Call initializeSidebar() first.');
+  }
+  const entity = stateManager.addManualEntity(text, type, start, end);
   render();
   return entity;
 }
