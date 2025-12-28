@@ -4,6 +4,22 @@
  * Validation functions for PII entity detection used by both
  * Electron app and browser-app.
  *
+ * ## Adding a New Validator
+ *
+ * 1. Create your validator file (e.g., `MyValidator.ts`) with self-registration:
+ *    ```typescript
+ *    import { registerValidator } from './registry.js';
+ *    export class MyValidator implements ValidationRule { ... }
+ *    registerValidator(new MyValidator());
+ *    ```
+ *
+ * 2. Import and export your validator in this file:
+ *    ```typescript
+ *    export { MyValidator, validateMy } from './MyValidator.js';
+ *    ```
+ *
+ * That's it! Only 2 files needed (down from 5).
+ *
  * @module shared/pii/validators
  */
 
@@ -29,6 +45,15 @@ export {
   SUPPORTED_LANGUAGES,
 } from './locale-data.js';
 export type { SupportedLanguage } from './locale-data.js';
+
+// Registry (export for direct access if needed)
+export { validatorRegistry, registerValidator, ValidatorRegistry } from './registry.js';
+
+// ============================================================================
+// VALIDATOR IMPORTS - Each import triggers self-registration via registry
+// ============================================================================
+// Note: These imports must happen BEFORE getAllValidators()/getValidatorForType()
+// are called. The re-exports below ensure validators are loaded and registered.
 
 // Swiss Address Validator
 export {
@@ -74,8 +99,10 @@ export {
 } from './DateValidator.js';
 
 // Swiss Postal Code Validator
-// @internal - Not included in getAllValidators() registry. Exported for direct use only.
+// @internal - Not included in registry. Exported for direct use only.
 // Use SwissAddressValidator for registry-based address validation.
+// This validator shares entityType 'SWISS_ADDRESS' with SwissAddressValidator,
+// which would cause a Map key collision if registered.
 export {
   SwissPostalCodeValidator,
   validateSwissPostalCode,
@@ -89,37 +116,27 @@ export {
   validateVatNumberFull,
 } from './VatNumberValidator.js';
 
-// Import classes for getAllValidators
-// Note: SwissPostalCodeValidator is intentionally NOT imported here because it is
-// not included in the registry. It shares entityType 'SWISS_ADDRESS' with
-// SwissAddressValidator, which would cause a Map key collision in getValidatorForType().
-import { SwissAddressValidator } from './SwissAddressValidator.js';
-import { SwissAvsValidator } from './SwissAvsValidator.js';
-import { IbanValidator } from './IbanValidator.js';
-import { EmailValidator } from './EmailValidator.js';
-import { PhoneValidator } from './PhoneValidator.js';
-import { DateValidator } from './DateValidator.js';
-import { VatNumberValidator } from './VatNumberValidator.js';
+// ============================================================================
+// REGISTRY ACCESS FUNCTIONS
+// ============================================================================
+
+import { validatorRegistry } from './registry.js';
 import type { ValidationRule, ValidatorEntityType } from './types.js';
 
 /**
- * Cached validator instances (singleton pattern)
- * Validators are stateless, so a single instance per type is sufficient.
+ * Cached frozen array of validators (for backward compatibility)
+ * The registry holds the validators; this caches the frozen array form.
  */
 let validatorsCache: readonly ValidationRule[] | null = null;
 
 /**
- * Cached validator map for O(1) type lookups
- * Lazily initialized from validatorsCache on first getValidatorForType() call.
- */
-let validatorMap: Map<ValidatorEntityType, ValidationRule> | null = null;
-
-/**
- * Get all validators (singleton pattern)
+ * Get all validators (uses registry)
  *
- * Validators are instantiated once and cached for the lifetime
- * of the application. The returned array is frozen to prevent
- * accidental modification.
+ * Returns a frozen array of all registered validators. The array is
+ * cached for performance and frozen to prevent accidental modification.
+ *
+ * Validators are registered via self-registration when their modules
+ * are imported (see imports above).
  *
  * Note: SwissPostalCodeValidator is intentionally NOT included in this registry.
  * It shares entityType 'SWISS_ADDRESS' with SwissAddressValidator, which would
@@ -130,19 +147,34 @@ let validatorMap: Map<ValidatorEntityType, ValidationRule> | null = null;
  */
 export function getAllValidators(): readonly ValidationRule[] {
   if (!validatorsCache) {
-    validatorsCache = Object.freeze([
-      new SwissAddressValidator(),
-      new SwissAvsValidator(),
-      new IbanValidator(),
-      new EmailValidator(),
-      new PhoneValidator(),
-      new DateValidator(),
-      // SwissPostalCodeValidator intentionally NOT included - see @internal docs
-      new VatNumberValidator(),
-    ]);
+    validatorsCache = Object.freeze(validatorRegistry.getAll());
   }
   return validatorsCache;
 }
+
+/**
+ * Get validator for specific entity type (O(1) lookup via registry)
+ *
+ * Uses the registry's Map-based storage for constant-time lookups.
+ *
+ * @param type - The entity type to get validator for
+ * @returns The validator for the type, or undefined if not found
+ */
+export function getValidatorForType(
+  type: ValidatorEntityType,
+): ValidationRule | undefined {
+  return validatorRegistry.get(type);
+}
+
+// Import validator classes for manual re-registration after reset
+import { SwissAddressValidator } from './SwissAddressValidator.js';
+import { SwissAvsValidator } from './SwissAvsValidator.js';
+import { IbanValidator } from './IbanValidator.js';
+import { EmailValidator } from './EmailValidator.js';
+import { PhoneValidator } from './PhoneValidator.js';
+import { DateValidator } from './DateValidator.js';
+import { VatNumberValidator } from './VatNumberValidator.js';
+import { registerValidator } from './registry.js';
 
 /**
  * Reset validator cache (for testing only)
@@ -151,42 +183,35 @@ export function getAllValidators(): readonly ValidationRule[] {
  * beforeEach/afterEach hooks to ensure tests start with fresh
  * validator instances.
  *
+ * Note: This resets both the local cache AND the registry, then
+ * re-registers all validators with fresh instances.
+ *
  * @internal
  */
 export function _resetValidatorsCache(): void {
   validatorsCache = null;
-  validatorMap = null;
+  validatorRegistry._reset();
+
+  // Re-register validators with fresh instances
+  // ES module imports are cached, so we need to manually re-register
+  registerValidator(new SwissAddressValidator());
+  registerValidator(new SwissAvsValidator());
+  registerValidator(new IbanValidator());
+  registerValidator(new EmailValidator());
+  registerValidator(new PhoneValidator());
+  registerValidator(new DateValidator());
+  registerValidator(new VatNumberValidator());
 }
 
 /**
  * Reset validator map only (for testing only)
  *
- * This function resets only the validator map cache while preserving
- * the validators cache. Useful for testing map initialization behavior.
+ * This function resets only the local array cache while preserving
+ * the registry's registered validators. Useful for testing cache
+ * initialization behavior.
  *
  * @internal
  */
 export function _resetValidatorMap(): void {
-  validatorMap = null;
-}
-
-/**
- * Get validator for specific entity type (O(1) lookup)
- *
- * Uses a lazily-initialized Map for constant-time lookups.
- * The map is built from getAllValidators() on first call and
- * cached for subsequent lookups.
- *
- * @param type - The entity type to get validator for
- * @returns The validator for the type, or undefined if not found
- */
-export function getValidatorForType(
-  type: ValidatorEntityType,
-): ValidationRule | undefined {
-  if (!validatorMap) {
-    validatorMap = new Map(
-      getAllValidators().map((v) => [v.entityType as ValidatorEntityType, v]),
-    );
-  }
-  return validatorMap.get(type);
+  validatorsCache = null;
 }
