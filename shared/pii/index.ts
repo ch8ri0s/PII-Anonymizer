@@ -76,3 +76,152 @@ export {
   createContextEnhancer,
   DEFAULT_CONTEXT_ENHANCER_CONFIG,
 } from './context/ContextEnhancer.js';
+
+// Recognizer architecture (Story 8.5)
+export {
+  // Types
+  type PatternDefinition,
+  type RecognizerConfig,
+  type RecognizerMatch,
+  type RecognizerSpecificity,
+  type RegistryGlobalConfig,
+  type Recognizer,
+  type RecognizerFilter,
+  type RegistryAnalysisResult,
+  DEFAULT_RECOGNIZER_CONFIG,
+  DEFAULT_REGISTRY_CONFIG,
+  // Base class
+  BaseRecognizer,
+  // Registry
+  RecognizerRegistry,
+  // YAML Loader
+  type YamlRecognizerConfig,
+  type YamlRecognizerDef,
+  type YamlPatternDef,
+  GenericRecognizer,
+  parseYamlConfig,
+  yamlDefToConfig,
+  createRecognizersFromConfig,
+  loadRecognizersFromYaml,
+  validateYamlConfig,
+} from './recognizers/index.js';
+
+// Country-specific recognizers
+export { AvsRecognizer } from './countries/ch/index.js';
+
+// Preprocessing (Story 8.7)
+export {
+  type NormalizationResult,
+  type TextNormalizerOptions,
+  TextNormalizer,
+  createTextNormalizer,
+  defaultNormalizer,
+  type Lemmatizer,
+  type LemmatizerLanguage,
+  SimpleLemmatizer,
+  createLemmatizer,
+  defaultLemmatizer,
+  SUPPORTED_LEMMATIZER_LANGUAGES,
+} from './preprocessing/index.js';
+
+// Postprocessing (Story 8.8)
+export {
+  type ConsolidationEntityType,
+  type ConsolidationEntity,
+  type OverlapStrategy,
+  type LinkingStrategy,
+  type ConsolidationPassConfig,
+  type ConsolidationResult,
+  ConsolidationPass,
+  createConsolidationPass,
+  DEFAULT_ENTITY_PRIORITY,
+  DEFAULT_CONFIG as DEFAULT_CONSOLIDATION_CONFIG,
+} from './postprocessing/ConsolidationPass.js';
+
+// Feedback Learning Loop (Story 8.9)
+export {
+  type FeedbackAction,
+  type FeedbackSource,
+  type EntityPosition,
+  type FeedbackEntity,
+  type FeedbackEvent,
+  type AggregatedPattern,
+  type FeedbackSummary,
+  type RetentionSettings,
+  type ExportMode,
+  type ExportOptions,
+  type AggregationResult,
+  DEFAULT_RETENTION_SETTINGS,
+  MAX_CONTEXT_LENGTH,
+  LEGACY_ACTION_MAP,
+  toFeedbackAction,
+} from './feedback/types.js';
+
+export {
+  type AggregationOptions,
+  FeedbackAggregator,
+  createAggregator,
+} from './feedback/FeedbackAggregator.js';
+
+// ML Detection Utilities (Story 8.10, 8.11, 8.12, 8.13, 8.14)
+export {
+  // Story 8.10: Subword Token Merging
+  type MLToken,
+  type MLTokenAlt,
+  type MergedEntity,
+  type MergeConfig,
+  mergeSubwordTokens,
+  mergeTokens,
+  extractEntityType,
+  isInsideToken,
+  isBeginningToken,
+  normalizeToken,
+  SubwordTokenMerger,
+  createSubwordTokenMerger,
+  DEFAULT_MERGE_CONFIG,
+  // Story 8.11: Document Chunking
+  type ChunkConfig,
+  type TextChunk,
+  type ChunkPrediction,
+  chunkText,
+  mergeChunkPredictions,
+  needsChunking,
+  estimateTokenCount,
+  splitIntoSentences,
+  TextChunker,
+  createTextChunker,
+  DEFAULT_CHUNK_CONFIG,
+  // Story 8.12: ML Input Validation
+  type ValidationConfig,
+  type ValidationResult,
+  validateMLInput,
+  isValidMLInput,
+  getValidationError,
+  MLInputValidator,
+  createMLInputValidator,
+  DEFAULT_VALIDATION_CONFIG,
+  // Story 8.13: ML Error Recovery with Retry Logic
+  type RetryConfig,
+  type RetryResult,
+  withRetry,
+  isRetryableError,
+  calculateDelay,
+  MLRetryHandler,
+  createMLRetryHandler,
+  DEFAULT_RETRY_CONFIG,
+  // Story 8.14: ML Performance Monitoring
+  type MLInferenceMetrics,
+  type AggregatedMetrics,
+  type MetricsConfig,
+  recordMLMetrics,
+  getAggregatedMetrics,
+  exportMetrics,
+  clearMetrics,
+  getMetricsCount,
+  aggregateMetrics,
+  createInferenceMetrics,
+  getGlobalCollector,
+  MLMetricsCollector,
+  createMLMetricsCollector,
+  DEFAULT_METRICS_CONFIG,
+} from './ml/index.js';
