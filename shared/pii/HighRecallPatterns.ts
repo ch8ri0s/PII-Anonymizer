@@ -152,10 +152,11 @@ export function buildHighRecallPatterns(): PatternDef[] {
     // ISO timestamps (year followed by T or -) to avoid false positives in frontmatter
     // Story 8.22: Require minimum 3-character city name to reduce false positives
     // Story 10.x: Added validation to filter year false positives (e.g., "2024 Attestation")
+    // Story 11.x: Fixed boundary - use [ \t] not \s, limit city words to 2, stop at newlines
     {
       type: 'SWISS_ADDRESS',
       pattern:
-        /\b(?:CH[-\s]?)?[1-9]\d{3}(?![-T])\s+[A-ZÄÖÜ][a-zäöüé]{2,}(?:[-\s][A-Za-zäöüé]+)*/g,
+        /\b(?:CH[-\s]?)?[1-9]\d{3}(?![-T])[ \t]+[A-ZÄÖÜ][a-zäöüé]{2,}(?:-[A-Za-zäöüé]+){0,2}\b/g,
       priority: 3,
       validate: validateSwissAddress,
     },
