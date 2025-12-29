@@ -1,6 +1,6 @@
 {
   "version": "4.0",
-  "timestamp": "2025-12-28T22:58:48.470Z",
+  "timestamp": "2025-12-29T07:42:19.402Z",
   "model": "Xenova/distilbert-base-multilingual-cased-ner-hrl",
   "documentType": "UNKNOWN",
   "detectionMethods": [

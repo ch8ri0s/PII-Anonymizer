@@ -277,13 +277,14 @@ export function buildHighRecallPatterns(): PatternDef[] {
     // These patterns look for names in common contexts to reduce false positives
 
     // Names in "FirstName LastName" pattern (European names with accents)
-    // Must have at least 2 parts, each starting with uppercase
+    // Must have exactly 2 parts, each starting with uppercase
     // Uses [ ]+ instead of \s+ to avoid matching across newlines
-    // Avoid matching common words and frontmatter content
+    // Story 11.x: Removed optional third part to prevent merging adjacent names
+    // (e.g., "Sandro Meyer Oliver Gürtler" should be 2 names, not 1)
     {
       type: 'PERSON_NAME',
       pattern:
-        /\b([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})[ ]+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})(?:[ ]+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})?\b/g,
+        /\b[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,}[ ]+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,}\b/g,
       priority: 7,
       validate: validatePersonName,
     },

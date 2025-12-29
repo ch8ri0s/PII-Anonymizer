@@ -104,7 +104,16 @@
 │   ├── unit/
 │   └── integration/
 │
-└── dist/                     # Compiled TypeScript
+├── dist/                     # Compiled TypeScript (src/)
+│
+└── shared/                   # Shared code between Electron and browser-app
+    ├── pii/                  # Shared PII detection (validators, patterns)
+    │   └── validators/       # 8 validators with registry pattern
+    ├── converters/           # Shared document converters
+    ├── types/                # Shared TypeScript types
+    ├── utils/                # Shared utilities
+    ├── dist/                 # Compiled shared TypeScript
+    └── tsconfig.json         # Separate TypeScript config
 ```
 
 ## Development Workflow
@@ -130,14 +139,16 @@ npm run dev
 ```bash
 npm run dev              # Run Electron app in development
 npm run typecheck        # Type-check TypeScript without emitting files
-npm run compile          # Compile TypeScript once
-npm run compile:watch    # Watch TypeScript changes
+npm run compile          # Compile TypeScript once (src/)
+npm run compile:watch    # Watch TypeScript changes (src/)
+npm run compile:shared   # Smart compile shared/ (only if changed)
+npm run compile:shared:force  # Force recompile shared/
 npm run lint             # Run ESLint on all files
 npm run lint:fix         # Run ESLint and auto-fix issues
 npm run lint:check       # Run ESLint with zero warnings allowed
 npm run css:build        # Build Tailwind CSS once
 npm run css:watch        # Watch CSS changes
-npm test                 # Run all tests
+npm test                 # Run all tests (auto-compiles shared/)
 npm run test:watch       # Watch test files
 npm run test:i18n        # Run i18n tests only
 ```
@@ -374,6 +385,54 @@ npm run css:build  # Rebuild Tailwind
 ```bash
 npm run test:watch  # Watch mode for debugging
 ```
+
+**Shared folder not compiled (tests fail with "Cannot find module"):**
+```bash
+npm run compile:shared       # Smart recompile (checks timestamps)
+npm run compile:shared:force # Force full recompile
+```
+Note: `npm test` automatically runs `compile:shared` before tests via the `pretest` hook.
+
+## Shared Folder Workflow
+
+The `shared/` directory contains code shared between the Electron app (`src/`) and the browser-app PWA (`browser-app/`). It has its own TypeScript configuration and compiles to `shared/dist/`.
+
+### Key Points
+
+1. **Separate Compilation:** `shared/` has its own `tsconfig.json` and compiles independently from `src/`
+2. **Auto-Compile on Test:** Running `npm test` automatically checks if shared files need recompilation
+3. **Smart Compilation:** The `compile:shared` script only recompiles when source files are newer than compiled output
+
+### When to Recompile Shared
+
+You need to recompile `shared/` when:
+- You modify any `.ts` file in `shared/`
+- You add new files to `shared/`
+- Tests fail with "Cannot find module" errors pointing to `shared/dist/`
+
+### Commands
+
+```bash
+npm run compile:shared        # Check timestamps, compile only if needed
+npm run compile:shared:force  # Force full recompile regardless of timestamps
+npm test                      # Auto-runs compile:shared before tests
+```
+
+### Manual Compilation (Alternative)
+
+If you need to compile manually without the smart script:
+```bash
+cd shared && npx tsc
+```
+
+### Troubleshooting
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| "Cannot find module 'shared/dist/...'" | Stale or missing compiled JS | Run `npm run compile:shared` |
+| Tests pass locally but fail in CI | Different file timestamps | CI always runs `pretest` hook |
+| Type errors in shared/ | TypeScript issues | Run `cd shared && npx tsc` to see errors |
+
 
 ## Logging
 

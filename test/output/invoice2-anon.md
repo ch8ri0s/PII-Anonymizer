@@ -1,7 +1,7 @@
 ---
 source: invoice2.txt
 sourceFormat: txt
-processed: 2025-12-28T22:58:48.411Z
+processed: 2025-12-29T07:42:19.351Z
 anonymised: true
 piiModel: Xenova/distilbert-base-multilingual-cased-ner-hrl
 ---

@@ -28,10 +28,10 @@
     "confidence": 1
   },
   {
-    "text": "8001 Zürich\nTéléphone",
+    "text": "8001 Zürich",
     "type": "SWISS_ADDRESS",
     "start": 162,
-    "end": 183,
+    "end": 173,
     "confidence": 0.9799999999999999
   },
   {

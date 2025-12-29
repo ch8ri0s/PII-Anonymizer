@@ -45,13 +45,33 @@ export class FileProcessor {
 
     onProgress?.(50, 'Detecting PII...');
 
-    // Detect PII (async - supports both ML and regex modes)
-    const piiMatches = await this.detector.detect(markdown);
+    // Detect PII using multi-pass pipeline (includes format validation)
+    // This filters false positives like years mistaken for postal codes
+    const detectionResult = await this.detector.detectWithPipeline(markdown, {
+      onProgress: (progress, stage) => {
+        // Map pipeline progress (0-100) to our range (50-70)
+        const mappedProgress = 50 + (progress * 0.2);
+        onProgress?.(mappedProgress, stage);
+      },
+    });
+
+    // Filter entities by minimum confidence (0.5 = 50%)
+    // This removes low-confidence detections like year false positives
+    const MIN_CONFIDENCE = 0.5;
+    const piiMatches = detectionResult.entities
+      .filter(e => e.confidence >= MIN_CONFIDENCE)
+      .map(e => ({
+        text: e.text,
+        type: e.type,
+        start: e.start,
+        end: e.end,
+        confidence: e.confidence,
+        source: e.source,
+      }));
 
     onProgress?.(70, 'Anonymizing...');
 
     // Anonymize using shared session and functions
-    // Cast to PIIMatch[] - ExtendedPIIMatch is structurally compatible (has all required fields)
     const { anonymizedMarkdown, mappingTable } = anonymizeMarkdown(
       markdown,
       piiMatches as unknown as import('@core/index').PIIMatch[],

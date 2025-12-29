@@ -381,7 +381,8 @@ export class AddressClassifier {
     for (const postal of postalCodes) {
       // Look for capitalized word(s) after postal code
       const afterPostal = text.substring(postal.end, postal.end + 50);
-      const cityMatch = afterPostal.match(/^\s*([A-ZÄÖÜ][a-zäöüéèàâêîôûç]+(?:\s+[a-zäöüéèàâêîôûç]+)?)/);
+      // Match city name after postal code - use [ \t] not \s to avoid matching across newlines
+      const cityMatch = afterPostal.match(/^[ \t]*([A-ZÄÖÜ][a-zäöüéèàâêîôûç]+(?:[ \t]+[a-zäöüéèàâêîôûç]+)?)/);
 
       if (cityMatch) {
         const capturedCity = cityMatch[1];

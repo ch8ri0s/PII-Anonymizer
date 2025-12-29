@@ -89,6 +89,16 @@ export function validateSwissAddressFull(
     : context;
 
   const { fullText = '', position } = ctx;
+
+  // Story 11.x: Reject if address contains URL patterns (over-spanning boundary issue)
+  if (/\bwww\b|\.ch\b|\.com\b|http/i.test(address)) {
+    return {
+      isValid: false,
+      confidence: CONFIDENCE.FAILED,
+      reason: 'Address contains URL pattern',
+    };
+  }
+
   const postalCode = parseInt(address.substring(0, 4), 10);
 
   // Basic postal code range check

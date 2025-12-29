@@ -116,6 +116,17 @@ export class AddressLinker {
       const textBetween = text.substring(previous.end, current.start);
       const hasNewline = /[\r\n]/.test(textBetween);
 
+      // Story 11.x: Don't group across paragraph breaks (double newlines or blank lines)
+      const hasParagraphBreak = /\n\s*\n/.test(textBetween);
+      if (hasParagraphBreak) {
+        // Start new group - paragraph breaks indicate separate address blocks
+        if (currentGroup.length >= this.config.minComponents) {
+          groups.push(currentGroup);
+        }
+        currentGroup = [current];
+        continue;
+      }
+
       // Use expanded threshold if newline is present
       const threshold = hasNewline
         ? this.config.newlineThreshold
@@ -431,6 +442,14 @@ export class AddressLinker {
         // Check if candidate is within distance of last component in group
         const distance = candidate.start - lastInGroup.end;
 
+        // Story 11.x: Don't group across paragraph breaks (double newlines or blank lines)
+        const textBetween = text.substring(lastInGroup.end, candidate.start);
+        const hasParagraphBreak = /\n\s*\n/.test(textBetween);
+        if (hasParagraphBreak) {
+          // Paragraph break - stop grouping with this seed
+          break;
+        }
+
         if (distance <= this.config.proximityThreshold && distance >= 0) {
           // Check if adding this component makes sense
           if (this.isValidAddition(group, candidate)) {
@@ -506,6 +525,11 @@ export class AddressLinker {
     const start = firstComponent.start;
     const end = lastComponent.end;
     const fullText = text.substring(start, end);
+
+    // Story 11.x: Reject if address text contains URL patterns (over-spanning)
+    if (/\bwww\b|\.ch\b|\.com\b|http/i.test(fullText)) {
+      return null;
+    }
 
     // Extract component values
     const streetComp = sorted.find(c => c.type === 'STREET_NAME');
