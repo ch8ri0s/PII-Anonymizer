@@ -99,3 +99,23 @@ browser-app/dev-dist/
 
 # Story context files (generated)
 docs/sprint-artifacts/stories/*.context.xml
+
+# Compiled TypeScript in shared/ (keep source, ignore output)
+shared/pii/validators/*.js
+shared/pii/validators/*.js.map
+shared/pii/validators/*.d.ts
+shared/pii/validators/*.d.ts.map
+
+# Compiled TypeScript in src/utils/
+src/utils/*.js
+src/utils/*.d.ts
+
+# Local secrets/config
+.tresor/
+
+# Husky hooks in browser-app (should use root .husky)
+browser-app/.husky/
+
+# Temporary test scripts
+test-frontmatter.mjs
+test-pdf-pipeline.mjs
