@@ -283,6 +283,10 @@ export class AddressClassifier {
 
       // Validate Swiss postal code range
       if (this.isValidSwissPostalCode(codeNum)) {
+        // Skip if this looks like part of a date (preceded by DD.MM. or DD/MM)
+        if (this.isPrecededByDatePattern(text, match.index)) {
+          continue;
+        }
         components.push({
           type: 'POSTAL_CODE',
           text: fullMatch,
@@ -335,6 +339,10 @@ export class AddressClassifier {
       const codeNum = parseInt(code, 10);
       // Austrian codes are 1000-9999 but different from Swiss
       if (codeNum >= 1000 && codeNum <= 9999 && !this.isAlreadyFound(components, match.index)) {
+        // Skip if this looks like part of a date (preceded by DD.MM. or DD/MM)
+        if (this.isPrecededByDatePattern(text, match.index)) {
+          continue;
+        }
         components.push({
           type: 'POSTAL_CODE',
           text: match[0],
@@ -498,6 +506,24 @@ export class AddressClassifier {
    */
   private isAlreadyFound(components: AddressComponent[], position: number): boolean {
     return components.some(c => position >= c.start && position < c.end);
+  }
+
+  /**
+   * Check if the position is preceded by a date pattern (DD.MM. or DD/MM)
+   * This helps filter out false positives where years in dates (e.g., "07.06.2024")
+   * are incorrectly detected as postal codes.
+   */
+  private isPrecededByDatePattern(text: string, position: number): boolean {
+    if (position < 6) return false; // Need at least DD.MM. before
+
+    // Look back 8 characters for date patterns
+    const before = text.substring(Math.max(0, position - 8), position);
+
+    // Match patterns like "07.06.", "7.6.", "07/06/", "7/6/"
+    // The year portion (e.g., 2024) follows immediately after
+    const datePrefixPattern = /(?:\d{1,2}[./]\d{1,2}[./]?)$/;
+
+    return datePrefixPattern.test(before);
   }
 
   /**
