@@ -56,9 +56,22 @@ const state = {
 const processor = new FileProcessor();
 
 /**
+ * Set the app version in the footer
+ */
+function setAppVersion(): void {
+  const versionEl = document.getElementById('app-version');
+  if (versionEl) {
+    versionEl.textContent = `v${__APP_VERSION__}`;
+  }
+}
+
+/**
  * Initialize the application
  */
 async function init(): Promise<void> {
+  // Set version in footer
+  setAppVersion();
+
   // Initialize PWA functionality
   initPWAManager();
   initInstallBanner();
