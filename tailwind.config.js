@@ -1,15 +1,23 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Extend shared preset for unified design tokens
+  presets: [require('./shared/tailwind-preset')],
+
   content: [
     "./index.html",
     "./src/**/*.{js,ts}",
     "./renderer.js",
     "./*.html"
   ],
+
   theme: {
     extend: {
+      // Electron-specific overrides (if any)
+      // Keep backward compatibility with existing primary scale
       colors: {
-        primary: {
+        // Legacy primary scale for backward compatibility
+        // New code should use semantic colors from preset (primary, secondary, etc.)
+        'primary-legacy': {
           50: '#f0f9ff',
           100: '#e0f2fe',
           200: '#bae6fd',
@@ -22,10 +30,8 @@ module.exports = {
           900: '#0c4a6e',
         }
       },
-      fontFamily: {
-        mono: ['Monaco', 'Consolas', 'Courier New', 'monospace']
-      }
     }
   },
+
   plugins: []
-}
+};

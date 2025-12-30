@@ -1,0 +1,191 @@
+/**
+ * PII Anonymizer - Shared Design Tokens
+ * CSS Variables for theming across Electron and Browser apps
+ *
+ * Color format: HSL values without commas (Tailwind 3.x requirement)
+ * Usage: hsl(var(--primary)) or with opacity: hsl(var(--primary) / 0.5)
+ */
+
+:root {
+  /* Light theme (default) */
+
+  /* Base colors */
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+
+  /* Muted/Subtle colors */
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  /* Primary - Blue (main brand color) */
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary - Neutral */
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  /* Accent - Highlight color */
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  /* Destructive - Error/Danger */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Success - Green */
+  --success: 142 76% 36%;
+  --success-foreground: 210 40% 98%;
+
+  /* Warning - Amber/Yellow */
+  --warning: 38 92% 50%;
+  --warning-foreground: 222.2 47.4% 11.2%;
+
+  /* Info - Cyan */
+  --info: 199 89% 48%;
+  --info-foreground: 210 40% 98%;
+
+  /* Border and Input */
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+
+  /* Card backgrounds */
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 47.4% 11.2%;
+
+  /* Popover/Dropdown backgrounds */
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 47.4% 11.2%;
+
+  /* Border radius */
+  --radius: 0.5rem;
+
+  /* ========================
+   * Entity Type Colors (PII Detection)
+   * Aligned with browser-app EntityTypeConfig.ts
+   * ======================== */
+
+  /* PERSON_NAME - Purple */
+  --entity-person: 271 91% 65%;
+  --entity-person-bg: 271 91% 95%;
+
+  /* ORGANIZATION - Blue */
+  --entity-organization: 217 91% 60%;
+  --entity-organization-bg: 217 91% 95%;
+
+  /* ADDRESS - Green */
+  --entity-address: 142 76% 36%;
+  --entity-address-bg: 142 76% 95%;
+
+  /* EMAIL - Cyan */
+  --entity-email: 189 94% 43%;
+  --entity-email-bg: 189 94% 95%;
+
+  /* PHONE - Orange */
+  --entity-phone: 24 95% 53%;
+  --entity-phone-bg: 24 95% 95%;
+
+  /* DATE - Yellow */
+  --entity-date: 48 96% 53%;
+  --entity-date-bg: 48 96% 92%;
+
+  /* IBAN - Indigo */
+  --entity-iban: 239 84% 67%;
+  --entity-iban-bg: 239 84% 95%;
+
+  /* SWISS_AVS/AHV - Red */
+  --entity-avs: 0 84% 60%;
+  --entity-avs-bg: 0 84% 95%;
+
+  /* POSTAL_CODE - Teal */
+  --entity-postal: 173 80% 40%;
+  --entity-postal-bg: 173 80% 95%;
+
+  /* URL - Slate */
+  --entity-url: 215 16% 47%;
+  --entity-url-bg: 215 16% 95%;
+}
+
+/* Dark theme */
+.dark {
+  /* Base colors */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+
+  /* Muted/Subtle colors */
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  /* Primary - Blue (brighter for dark mode) */
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+
+  /* Secondary - Darker neutral */
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  /* Accent */
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  /* Destructive - Muted red for dark mode */
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Success - Muted green */
+  --success: 142 70% 30%;
+  --success-foreground: 210 40% 98%;
+
+  /* Warning - Muted amber */
+  --warning: 38 85% 40%;
+  --warning-foreground: 210 40% 98%;
+
+  /* Info - Muted cyan */
+  --info: 199 80% 40%;
+  --info-foreground: 210 40% 98%;
+
+  /* Border and Input */
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 48%;
+
+  /* Card backgrounds */
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  /* Popover/Dropdown backgrounds */
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  /* Entity Type Colors - Slightly adjusted for dark mode visibility */
+  --entity-person: 271 91% 70%;
+  --entity-person-bg: 271 60% 20%;
+
+  --entity-organization: 217 91% 65%;
+  --entity-organization-bg: 217 60% 20%;
+
+  --entity-address: 142 76% 45%;
+  --entity-address-bg: 142 50% 15%;
+
+  --entity-email: 189 94% 50%;
+  --entity-email-bg: 189 60% 15%;
+
+  --entity-phone: 24 95% 60%;
+  --entity-phone-bg: 24 60% 15%;
+
+  --entity-date: 48 96% 60%;
+  --entity-date-bg: 48 60% 15%;
+
+  --entity-iban: 239 84% 72%;
+  --entity-iban-bg: 239 60% 20%;
+
+  --entity-avs: 0 84% 65%;
+  --entity-avs-bg: 0 60% 15%;
+
+  --entity-postal: 173 80% 50%;
+  --entity-postal-bg: 173 50% 15%;
+
+  --entity-url: 215 20% 60%;
+  --entity-url-bg: 215 20% 20%;
+}

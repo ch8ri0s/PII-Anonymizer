@@ -2,11 +2,20 @@
  * PII Anonymizer - Browser Edition
  * Main CSS Entry Point
  *
- * Imports all modular stylesheets in the correct order.
- * For production, consider using a bundler to combine these.
+ * Uses Tailwind CSS with shared design tokens from the Electron app.
+ * Custom styles are imported for backward compatibility during migration.
  */
 
+/* Import shared design tokens (CSS variables) - must be first */
+@import '../../../shared/ui-components/styles/variables.css';
+
+/* Import custom styles before Tailwind so they can be used as @apply sources */
 @import './base.css';
 @import './utilities.css';
 @import './components.css';
 @import './layout.css';
+
+/* Tailwind CSS - after all @imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,0 +1,62 @@
+{
+  "name": "@a5-pii/ui-components",
+  "version": "0.1.0",
+  "description": "Shared UI component library for PII Anonymizer (Electron & Browser)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./primitives": {
+      "import": "./dist/primitives/index.js",
+      "types": "./dist/primitives/index.d.ts"
+    },
+    "./composites": {
+      "import": "./dist/composites/index.js",
+      "types": "./dist/composites/index.d.ts"
+    },
+    "./entity": {
+      "import": "./dist/entity/index.js",
+      "types": "./dist/entity/index.d.ts"
+    },
+    "./styles/*": "./styles/*"
+  },
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^3.0.0"
+  },
+  "keywords": [
+    "ui",
+    "components",
+    "tailwind",
+    "shadcn",
+    "pii",
+    "anonymizer"
+  ],
+  "author": "A5 Team",
+  "license": "MIT"
+}
