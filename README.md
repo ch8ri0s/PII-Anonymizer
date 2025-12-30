@@ -1,24 +1,23 @@
-# Softcom PII Anonymiser
+# PII Anonymizer
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ch8ri0s/A5-PII-Anonymizer)
 [![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20Browser%20PWA-lightgrey.svg)](https://github.com/ch8ri0s/A5-PII-Anonymizer)
 [![i18n](https://img.shields.io/badge/languages-EN%20|%20FR%20|%20DE-green.svg)](./I18N_GUIDE.md)
 
-> A companion **browser PWA** with the same core capabilities lives in `browser-app/` (see its README for browser-specific details).
-
-**Open source desktop and browser application for anonymising documents into LLM-ready Markdown with comprehensive PII detection and multilingual support.**
+**Open source desktop (Electron) and browser (PWA) application for anonymising documents into LLM-ready Markdown with comprehensive PII detection and multilingual support.**
 
 ---
 
 ## 🎯 What It Does
 
-Converts sensitive documents (Word, Excel, PDF, CSV, TXT) into clean, anonymised Markdown files ready for use with Large Language Models (ChatGPT, Claude, Gemini, etc.). All processing happens **100% locally** on your machine - no cloud, no API calls, complete privacy.
+Converts sensitive documents (Word, Excel, PDF, CSV, TXT) into clean, anonymised Markdown files ready for use with Large Language Models (ChatGPT, Claude, Gemini, etc.). All processing happens **100% locally** - no cloud, no API calls, complete privacy.
 
 ### ✨ Key Features
 
+✅ **Dual Platform** - Electron desktop app + Browser PWA (same core capabilities)
 ✅ **LLM-Ready Markdown Output** - Clean, structured format perfect for AI workflows
-✅ **100% Local Processing** - Your data never leaves your computer
+✅ **100% Local Processing** - Your data never leaves your device
 ✅ **Multi-Format Support** - DOCX, PDF, Excel, CSV, TXT
 ✅ **Entity Mapping** - JSON file mapping anonymised tokens back to originals
 ✅ **Multilingual UI** - English, French, German with automatic detection
@@ -29,67 +28,25 @@ Converts sensitive documents (Word, Excel, PDF, CSV, TXT) into clean, anonymised
 
 ---
 
-## 🌍 Multilingual Support (NEW in v2.0)
-
-The application automatically detects your system language and provides a fully translated interface:
-
-- 🇬🇧 **English** - Default language
-- 🇫🇷 **Français** - Complete French translation
-- 🇩🇪 **Deutsch** - Complete German translation
-
-**Features:**
-- Automatic OS language detection
-- One-click language switching via dropdown
-- Locale-specific date/time/number formatting
-- Persistent language preference
-- 88 fully translated UI elements
-
-[📖 Read the i18n Implementation Guide →](./I18N_GUIDE.md)
-
----
-
-## 📜 License
-
-**MIT License** - Free and open source
-
-```
-Copyright (c) 2024 Agentic A5 (Original A5-PII-Anonymizer)
-Copyright (c) 2025 Softcom (Enhancements and i18n)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
-**What this means:**
-- ✅ Free for personal, educational, and commercial use
-- ✅ Modify and distribute freely
-- ✅ No usage restrictions
-- ✅ Attribution appreciated but not required
-
-**Full License:** [LICENSE](./LICENSE)
-
----
-
 ## 🚀 Quick Start
 
-### Option 1: Download Pre-Built App
+### Option 1: Browser PWA (No Installation Required)
 
-1. Download for your platform:
-   - **macOS**: `Softcom-PII-Anonymiser-mac.dmg`
-   - **Windows**: `Softcom-PII-Anonymiser-win.exe`
-   - **Linux**: `Softcom-PII-Anonymiser-linux.AppImage`
+Visit the deployed PWA at your hosted URL, or run locally:
 
-2. Install and run
-3. On first launch, the PII detection model downloads automatically (~500MB)
+```bash
+cd browser-app
+npm install
+npm run dev         # Opens in browser at http://localhost:5173
+```
 
-### Option 2: Build Desktop App from Source
+**Features:**
+- Same capabilities as desktop app
+- 100% client-side processing using Web Workers
+- Installable PWA (Add to Home Screen) with offline support
+- Works on any modern browser (Chrome, Firefox, Safari, Edge)
+
+### Option 2: Desktop App (Electron)
 
 ```bash
 # Clone repository
@@ -108,25 +65,7 @@ npm run build:win    # Windows
 npm run build:linux  # Linux
 ```
 
-### Option 3: Run the Browser PWA (Experimental, same core pipeline)
-
-The project also includes a **browser-based PWA** in `browser-app/` which reuses the same converters, PII detection pipeline, and i18n layer, but runs fully in the browser (no install required).
-
-```bash
-cd browser-app
-npm install
-npm run dev         # Start Vite dev server (opens in browser)
-```
-
-Key characteristics:
-- **Same capabilities** as the desktop app for single/batch file anonymisation
-- **100% client-side processing** using Web Workers and `@xenova/transformers`
-- **Installable PWA** (Add to Home Screen) with offline model cache
-- Tested end‑to‑end across Chromium, Firefox, and WebKit (`browser-app/e2e`)
-
-> Note: Very large files or older devices may perform better with the desktop app due to Electron’s Node.js filesystem access and memory profile.
-
-### Basic Usage (Desktop & Browser)
+### Basic Usage
 
 1. **Drop files** or click to browse
 2. **Preview** file content and metadata
@@ -135,16 +74,36 @@ Key characteristics:
    - `filename-anon.md` - Anonymised Markdown
    - `filename-mapping.json` - Entity mapping
 
-### Desktop vs Browser PWA
+---
 
-| Aspect | Desktop App (Electron) | Browser PWA (`browser-app/`) |
-|--------|------------------------|------------------------------|
-| Installation | DMG/EXE/AppImage | No install required (visit URL, optional “Add to Home Screen”) |
-| Processing | 100% local, Node.js filesystem access | 100% client-side, browser APIs + Web Workers |
-| Performance | Best for very large files and long runs | Excellent on modern browsers; constrained by browser memory limits |
-| Updates | Via installer / auto‑update | Deployed like any web app / static hosting |
-| Offline Model Cache | Local filesystem | IndexedDB / browser cache |
-| Feature Parity | Full | Matches core pipeline (converters, PII detection, batch, i18n) |
+## 📊 Desktop vs Browser PWA
+
+| Aspect | Desktop App (Electron) | Browser PWA |
+|--------|------------------------|-------------|
+| Installation | DMG/EXE/AppImage | No install (visit URL) |
+| Processing | 100% local, Node.js | 100% client-side, Web Workers |
+| Performance | Best for large files | Excellent on modern browsers |
+| Offline | Always works | Works after first load |
+| Updates | Via installer | Automatic (web deploy) |
+| Feature Parity | Full | Full (same core pipeline) |
+
+---
+
+## 🌍 Multilingual Support
+
+The application automatically detects your system language:
+
+- 🇬🇧 **English** - Default language
+- 🇫🇷 **Français** - Complete French translation
+- 🇩🇪 **Deutsch** - Complete German translation
+
+**Features:**
+- Automatic OS language detection
+- One-click language switching
+- Locale-specific date/time/number formatting
+- Persistent language preference
+
+[📖 Read the i18n Implementation Guide →](./I18N_GUIDE.md)
 
 ---
 
@@ -233,16 +192,32 @@ IBAN: IBAN_1
 
 ---
 
-## 🧱 Architecture Overview (Desktop & Browser)
+## 🧱 Architecture Overview
 
-Both the Electron app and the browser PWA share the same **core architecture**:
+Both Electron and Browser PWA share the same **core architecture**:
 
-- **Shared core modules** (converters, PII detection pipeline, types, utilities) live in `src/` and `shared/`, and are reused by both runtimes.
-- **Desktop app** wires these into `main.js`, `fileProcessor.js`, and `renderer.js` with a secure `preload.cjs` bridge and IPC services in `src/services/`.
-- **Browser PWA** wires the same pipeline into `browser-app/src/` (`processing/`, `pii/`, `converters/`, `workers/`, `ui/`, `pwa/`) using Web Workers and `@xenova/transformers` in browser mode.
-- **i18n and UX** are kept consistent via shared JSON locale files (`/locales`, `browser-app/public/locales`) and parallel UI components, so behaviour and wording match across desktop and web.
+```
+├── shared/                  # Shared code (validators, patterns, types)
+│   └── pii/                 # PII detection core
+│       ├── validators/      # Entity validators
+│       ├── context/         # Context enhancement
+│       └── ml/              # ML utilities
+│
+├── src/                     # Electron app
+│   ├── converters/          # Format converters
+│   ├── pii/                 # Detection pipeline
+│   ├── i18n/                # Internationalization
+│   └── services/            # IPC handlers
+│
+├── browser-app/             # Browser PWA
+│   └── src/
+│       ├── converters/      # Browser converters
+│       ├── pii/             # Browser detection passes
+│       ├── workers/         # Web Workers for ML
+│       └── ui/              # UI components
+```
 
-For more details, see `docs/architecture.md` and `specs/browser-migration/MIGRATION_PLAN.md`.
+For more details, see `docs/architecture.md`.
 
 ---
 
@@ -292,36 +267,18 @@ Share anonymised documents with external reviewers without privacy concerns.
 
 ## 🛠️ Development
 
-### Project Structure
-
-```
-├── src/
-│   ├── converters/           # Format converters
-│   ├── i18n/                 # Internationalization
-│   ├── services/             # IPC handlers
-│   └── pii/                  # PII detection
-├── locales/                  # Translation files (EN/FR/DE)
-├── test/                     # Test suites (139 tests)
-├── fileProcessor.js          # Core processing
-├── main.js                   # Electron main process
-├── renderer.js               # UI logic
-└── i18n-init.js              # i18n initialization
-```
-
 ### Running Tests
 
 ```bash
-# All tests
+# Electron app tests (2294 tests)
 npm test
+
+# Browser app tests (1021 tests)
+cd browser-app && npm test
 
 # i18n tests only
 npm run test:i18n
-
-# Translation coverage
-npm run test:i18n:coverage
 ```
-
-**Test Results:** ✅ 139/139 passing
 
 ### Logging
 
@@ -339,7 +296,7 @@ const log = createLogger('my-module');
 log.info('Processing started', { itemCount: 10 });
 ```
 
-**See:** [CLAUDE.md § Logging](./CLAUDE.md#logging) for full documentation including scope naming, log levels, PII safety, and troubleshooting.
+**See:** [CLAUDE.md § Logging](./CLAUDE.md#logging) for full documentation.
 
 ### Building
 
@@ -360,9 +317,6 @@ npm run build:linux      # Linux only
 - `mammoth` ^1.11.0 - DOCX extraction
 - `pdf-parse` ^1.1.1 - PDF parsing
 - `turndown` ^7.2.2 - HTML to Markdown
-- `marked` ^17.0.0 - Markdown validation
-
-**Zero External Dependencies for i18n** - Custom JSON-based solution
 
 ---
 
@@ -393,11 +347,10 @@ Contributions welcome! This project is open source under MIT License.
 ## 📞 Support & Contact
 
 - **Issues:** Open an issue on GitHub
-- **Email:** [contact@softcom.pro](mailto:contact@softcom.pro)
 - **Documentation:**
   - [i18n Guide](./I18N_GUIDE.md)
   - [Security Audit](./SECURITY_AUDIT.md)
-  - [Implementation Summary](./I18N_IMPLEMENTATION_SUMMARY.md)
+  - [Architecture](./docs/architecture.md)
 
 ---
 
@@ -406,18 +359,6 @@ Contributions welcome! This project is open source under MIT License.
 ### Original Project
 
 Based on **[A5-PII-Anonymizer](https://github.com/AgenticA5/A5-PII-Anonymizer)** by Agentic A5
-- Original MIT License
-- Core PII detection architecture
-- Multi-format document conversion
-
-### v2.0 Enhancements by Softcom
-
-- ✨ Multilingual UI (EN/FR/DE)
-- 🎨 Modern redesigned interface
-- 📄 File preview and metadata display
-- 🔒 Enhanced security audit
-- ⚡ Performance optimizations
-- 🧪 Comprehensive test suite
 
 ### Open Source Components
 
@@ -430,19 +371,24 @@ Based on **[A5-PII-Anonymizer](https://github.com/AgenticA5/A5-PII-Anonymizer)**
 
 ## 📈 Version History
 
-### v2.0.0 (2025-11-12) - Softcom Edition
+### v1.2.0 (2025-12)
 
+- 🐛 **FIX:** DATE entities no longer lost to postal code detection
+- ✨ **NEW:** Comprehensive DATE detection E2E tests
+- ✨ **NEW:** Cross-platform behavior consistency tests
+
+### v2.0.0 (2025-11)
+
+- ✨ **NEW:** Browser PWA with same capabilities as desktop
 - ✨ **NEW:** Complete French and German translations
 - ✨ **NEW:** Automatic OS language detection
-- ✨ **NEW:** Language selector dropdown
 - ✨ **NEW:** File preview panel with metadata
 - ✨ **NEW:** Modern card-based UI redesign
-- ✨ **NEW:** Comprehensive test suite (139 tests)
+- ✨ **NEW:** Comprehensive test suite (3000+ tests)
 - 🔒 **IMPROVED:** Security audit and fixes
-- ⚡ **IMPROVED:** Performance optimizations (10-100x faster)
-- 📚 **IMPROVED:** Complete documentation
+- ⚡ **IMPROVED:** Performance optimizations
 
-### v1.0.0 (2024) - Agentic A5
+### v1.0.0 (2024)
 
 - Initial release with PII detection
 - Multi-format document support
@@ -450,16 +396,26 @@ Based on **[A5-PII-Anonymizer](https://github.com/AgenticA5/A5-PII-Anonymizer)**
 
 ---
 
-## 📝 License Summary
+## 📜 License
 
-**MIT License** - Simple and permissive
+**MIT License** - Free and open source
 
-✅ **Commercial use**
-✅ **Modification**
-✅ **Distribution**
-✅ **Private use**
-⚠️ **No warranty**
-⚠️ **No liability**
+```
+Copyright (c) 2024 Agentic A5 (Original A5-PII-Anonymizer)
+Copyright (c) 2025 Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+```
+
+✅ **Commercial use** | ✅ **Modification** | ✅ **Distribution** | ✅ **Private use**
 
 [Full License Text →](./LICENSE)
 
@@ -467,5 +423,4 @@ Based on **[A5-PII-Anonymizer](https://github.com/AgenticA5/A5-PII-Anonymizer)**
 
 **Made with ❤️ for privacy-conscious LLM users**
 
-**Softcom** | Privacy-First Document Processing
 Based on **A5-PII-Anonymizer** by Agentic A5
