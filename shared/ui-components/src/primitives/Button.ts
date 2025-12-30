@@ -160,6 +160,11 @@ export function Button(props: ButtonProps): HTMLButtonElement {
   button.type = type;
   button.disabled = disabled;
 
+  // Set aria-disabled for screen readers (complements disabled attribute)
+  if (disabled) {
+    button.setAttribute('aria-disabled', 'true');
+  }
+
   if (ariaLabel) {
     button.setAttribute('aria-label', ariaLabel);
   }
@@ -202,6 +207,11 @@ export function updateButton(
 
   if (typeof disabled === 'boolean') {
     button.disabled = disabled;
+    if (disabled) {
+      button.setAttribute('aria-disabled', 'true');
+    } else {
+      button.removeAttribute('aria-disabled');
+    }
   }
 
   if (className !== undefined || variant !== undefined || size !== undefined) {

@@ -145,6 +145,8 @@ export interface InputFieldProps extends InputProps {
   icon?: HTMLElement | SVGElement;
   /** Icon position */
   iconPosition?: 'left' | 'right';
+  /** Test ID for the field container */
+  fieldTestId?: string;
 }
 
 /**
@@ -178,12 +180,18 @@ export function InputField(props: InputFieldProps): HTMLDivElement {
     icon,
     iconPosition = 'left',
     id,
+    fieldTestId,
     ...inputProps
   } = props;
 
   const fieldId = id || `input-${Math.random().toString(36).substring(7)}`;
+  const descriptionId = `${fieldId}-description`;
   const container = document.createElement('div');
   container.className = 'space-y-2';
+
+  if (fieldTestId) {
+    container.setAttribute('data-testid', fieldTestId);
+  }
 
   // Label
   if (label) {
@@ -230,17 +238,31 @@ export function InputField(props: InputFieldProps): HTMLDivElement {
       inputProps.className
     ),
   });
+
+  // Add aria-describedby if there's helper text or error
+  if (error || helperText) {
+    input.setAttribute('aria-describedby', descriptionId);
+  }
+
+  // Add aria-invalid if there's an error
+  if (error) {
+    input.setAttribute('aria-invalid', 'true');
+  }
+
   inputWrapper.appendChild(input);
   container.appendChild(inputWrapper);
 
   // Error or helper text
   if (error) {
     const errorEl = document.createElement('p');
+    errorEl.id = descriptionId;
     errorEl.className = 'text-sm text-destructive';
+    errorEl.setAttribute('role', 'alert');
     errorEl.textContent = error;
     container.appendChild(errorEl);
   } else if (helperText) {
     const helperEl = document.createElement('p');
+    helperEl.id = descriptionId;
     helperEl.className = 'text-sm text-muted-foreground';
     helperEl.textContent = helperText;
     container.appendChild(helperEl);

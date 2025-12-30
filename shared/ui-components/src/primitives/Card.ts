@@ -43,6 +43,8 @@ export interface CardHeaderProps {
   actions?: HTMLElement;
   /** Additional CSS classes */
   className?: string;
+  /** Test ID for testing */
+  testId?: string;
 }
 
 /**
@@ -55,6 +57,8 @@ export interface CardContentProps {
   className?: string;
   /** Whether to apply padding */
   noPadding?: boolean;
+  /** Test ID for testing */
+  testId?: string;
 }
 
 /**
@@ -65,6 +69,8 @@ export interface CardFooterProps {
   children?: HTMLElement | HTMLElement[] | string;
   /** Additional CSS classes */
   className?: string;
+  /** Test ID for testing */
+  testId?: string;
 }
 
 /**
@@ -107,9 +113,14 @@ export function Card(props: CardProps = {}): HTMLDivElement {
  * Creates a Card header element.
  */
 export function CardHeader(props: CardHeaderProps = {}): HTMLDivElement {
-  const { title, subtitle, actions, className } = props;
+  const { title, subtitle, actions, className, testId } = props;
 
   const header = document.createElement('div');
+
+  if (testId) {
+    header.setAttribute('data-testid', testId);
+  }
+
   header.className = cn(
     'px-6',
     'py-4',
@@ -159,9 +170,14 @@ export function CardHeader(props: CardHeaderProps = {}): HTMLDivElement {
  * Creates a Card content element.
  */
 export function CardContent(props: CardContentProps = {}): HTMLDivElement {
-  const { children, className, noPadding = false } = props;
+  const { children, className, noPadding = false, testId } = props;
 
   const content = document.createElement('div');
+
+  if (testId) {
+    content.setAttribute('data-testid', testId);
+  }
+
   content.className = cn(
     noPadding ? '' : 'px-6 py-5',
     className
@@ -184,9 +200,14 @@ export function CardContent(props: CardContentProps = {}): HTMLDivElement {
  * Creates a Card footer element.
  */
 export function CardFooter(props: CardFooterProps = {}): HTMLDivElement {
-  const { children, className } = props;
+  const { children, className, testId } = props;
 
   const footer = document.createElement('div');
+
+  if (testId) {
+    footer.setAttribute('data-testid', testId);
+  }
+
   footer.className = cn(
     'px-6',
     'py-4',

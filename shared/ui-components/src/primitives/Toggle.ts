@@ -162,6 +162,8 @@ export interface ToggleFieldProps extends ToggleProps {
   description?: string;
   /** Label position */
   labelPosition?: 'left' | 'right';
+  /** Test ID for the field container */
+  fieldTestId?: string;
 }
 
 /**
@@ -186,6 +188,7 @@ export function ToggleField(props: ToggleFieldProps): HTMLDivElement {
     description,
     labelPosition = 'left',
     id,
+    fieldTestId,
     ...toggleProps
   } = props;
 
@@ -195,6 +198,10 @@ export function ToggleField(props: ToggleFieldProps): HTMLDivElement {
     'flex items-center justify-between gap-4',
     labelPosition === 'right' && 'flex-row-reverse'
   );
+
+  if (fieldTestId) {
+    container.setAttribute('data-testid', fieldTestId);
+  }
 
   // Label and description
   const labelContainer = document.createElement('div');

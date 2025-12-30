@@ -149,16 +149,28 @@ export interface EntityBadgeProps extends VariantProps<typeof entityBadgeVariant
   label: string;
   icon?: HTMLElement | SVGElement;
   className?: string;
+  /** Accessible label */
+  ariaLabel?: string;
+  /** Test ID for testing */
+  testId?: string;
 }
 
 /**
  * Creates an entity type badge with PII-specific colors.
  */
 export function EntityTypeBadge(props: EntityBadgeProps): HTMLSpanElement {
-  const { label, icon, className, entityType } = props;
+  const { label, icon, className, entityType, ariaLabel, testId } = props;
 
   const badge = document.createElement('span');
   badge.className = cn(entityBadgeVariants({ entityType }), className);
+
+  if (ariaLabel) {
+    badge.setAttribute('aria-label', ariaLabel);
+  }
+
+  if (testId) {
+    badge.setAttribute('data-testid', testId);
+  }
 
   if (icon) {
     const iconClone = icon.cloneNode(true) as HTMLElement | SVGElement;

@@ -83,6 +83,8 @@ export interface CheckboxFieldProps extends CheckboxProps {
   label: string;
   /** Description text shown below label */
   description?: string;
+  /** Test ID for the field container */
+  fieldTestId?: string;
 }
 
 /**
@@ -101,11 +103,15 @@ export interface CheckboxFieldProps extends CheckboxProps {
  * ```
  */
 export function CheckboxField(props: CheckboxFieldProps): HTMLDivElement {
-  const { label, description, id, ...checkboxProps } = props;
+  const { label, description, id, fieldTestId, ...checkboxProps } = props;
 
   const fieldId = id || `checkbox-${Math.random().toString(36).substring(7)}`;
   const container = document.createElement('div');
   container.className = 'flex items-start gap-3';
+
+  if (fieldTestId) {
+    container.setAttribute('data-testid', fieldTestId);
+  }
 
   // Checkbox
   const checkbox = Checkbox({ ...checkboxProps, id: fieldId });
