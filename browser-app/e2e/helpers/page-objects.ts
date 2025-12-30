@@ -3,10 +3,22 @@
  *
  * Encapsulates UI interactions and selectors for maintainable tests.
  * Follows the Page Object pattern for clean test code.
+ *
+ * Uses shared TEST_IDS constants for consistency with UI components.
  */
 
 import { Page, Locator, expect } from '@playwright/test';
 import { TestFile } from '../fixtures/test-files';
+import {
+  TEST_IDS,
+  testIdSelector,
+  HEADER_TEST_IDS,
+  MODEL_TEST_IDS,
+  UPLOAD_TEST_IDS,
+  PROCESSING_TEST_IDS,
+  RESULTS_TEST_IDS,
+  REVIEW_TEST_IDS,
+} from '@shared/ui-components';
 
 /**
  * Main application page object
@@ -57,45 +69,45 @@ export class PIIAnonymizerPage {
   constructor(page: Page) {
     this.page = page;
 
-    // Header - use data-testid for reliable selection
-    this.heading = page.locator('[data-testid="app-title"]');
-    this.privacyBadge = page.locator('[data-testid="privacy-badge"]');
+    // Header - use shared test ID constants
+    this.heading = page.locator(testIdSelector(HEADER_TEST_IDS.APP_TITLE));
+    this.privacyBadge = page.locator(testIdSelector(HEADER_TEST_IDS.PRIVACY_BADGE));
 
     // Model loading
-    this.modelStatus = page.locator('[data-testid="model-status"]');
-    this.modelProgress = page.locator('[data-testid="model-progress"]');
-    this.modelProgressText = page.locator('[data-testid="model-progress-text"]');
+    this.modelStatus = page.locator(testIdSelector(MODEL_TEST_IDS.STATUS));
+    this.modelProgress = page.locator(testIdSelector(MODEL_TEST_IDS.PROGRESS));
+    this.modelProgressText = page.locator(testIdSelector(MODEL_TEST_IDS.PROGRESS_TEXT));
 
     // Upload zone
-    this.uploadZone = page.locator('[data-testid="upload-zone"]');
-    this.fileInput = page.locator('[data-testid="file-input"]');
+    this.uploadZone = page.locator(testIdSelector(UPLOAD_TEST_IDS.ZONE));
+    this.fileInput = page.locator(testIdSelector(UPLOAD_TEST_IDS.FILE_INPUT));
 
     // File list
-    this.fileList = page.locator('[data-testid="file-list"]');
-    this.filesContainer = page.locator('[data-testid="files-container"]');
-    this.processButton = page.locator('[data-testid="process-btn"]');
+    this.fileList = page.locator(testIdSelector(UPLOAD_TEST_IDS.FILE_LIST));
+    this.filesContainer = page.locator(testIdSelector(UPLOAD_TEST_IDS.FILES_CONTAINER));
+    this.processButton = page.locator(testIdSelector(TEST_IDS.BUTTON.PROCESS));
 
     // Processing
-    this.processingStatus = page.locator('[data-testid="processing-status"]');
-    this.processingContainer = page.locator('[data-testid="processing-container"]');
+    this.processingStatus = page.locator(testIdSelector(PROCESSING_TEST_IDS.STATUS));
+    this.processingContainer = page.locator(testIdSelector(PROCESSING_TEST_IDS.CONTAINER));
 
     // Results
-    this.resultsSection = page.locator('[data-testid="results-section"]');
-    this.resultsContainer = page.locator('[data-testid="results-container"]');
-    this.downloadAllButton = page.locator('[data-testid="download-all-btn"]');
+    this.resultsSection = page.locator(testIdSelector(RESULTS_TEST_IDS.SECTION));
+    this.resultsContainer = page.locator(testIdSelector(RESULTS_TEST_IDS.CONTAINER));
+    this.downloadAllButton = page.locator(testIdSelector(RESULTS_TEST_IDS.DOWNLOAD_ALL_BTN));
 
     // PII summary
-    this.piiSummary = page.locator('[data-testid="pii-summary"]');
-    this.piiStats = page.locator('[data-testid="pii-stats"]');
+    this.piiSummary = page.locator(testIdSelector(RESULTS_TEST_IDS.PII_SUMMARY));
+    this.piiStats = page.locator(testIdSelector(RESULTS_TEST_IDS.PII_STATS));
 
     // Review section (new entity review flow)
-    this.reviewSection = page.locator('[data-testid="review-section"]');
-    this.reviewContainer = page.locator('[data-testid="review-container"]');
-    this.reviewTitle = page.locator('[data-testid="review-title"]');
-    this.currentFileName = page.locator('[data-testid="current-file-name"]');
-    this.detectionStatus = page.locator('[data-testid="detection-status"]');
-    this.backButton = page.locator('[data-testid="back-btn"]');
-    this.downloadButton = page.locator('[data-testid="download-btn"]');
+    this.reviewSection = page.locator(testIdSelector(REVIEW_TEST_IDS.SECTION));
+    this.reviewContainer = page.locator(testIdSelector(REVIEW_TEST_IDS.CONTAINER));
+    this.reviewTitle = page.locator(testIdSelector(REVIEW_TEST_IDS.TITLE));
+    this.currentFileName = page.locator(testIdSelector(REVIEW_TEST_IDS.CURRENT_FILE_NAME));
+    this.detectionStatus = page.locator(testIdSelector(REVIEW_TEST_IDS.DETECTION_STATUS));
+    this.backButton = page.locator(testIdSelector(REVIEW_TEST_IDS.BACK_BTN));
+    this.downloadButton = page.locator(testIdSelector(REVIEW_TEST_IDS.DOWNLOAD_BTN));
   }
 
   /**
@@ -180,7 +192,7 @@ export class PIIAnonymizerPage {
    * Get number of files in the file list
    */
   async getFileCount(): Promise<number> {
-    const items = await this.filesContainer.locator('[data-testid="file-item"]').count();
+    const items = await this.filesContainer.locator(testIdSelector(UPLOAD_TEST_IDS.FILE_ITEM)).count();
     return items;
   }
 
@@ -189,9 +201,9 @@ export class PIIAnonymizerPage {
    */
   async removeFile(index: number) {
     const removeButton = this.filesContainer
-      .locator('[data-testid="file-item"]')
+      .locator(testIdSelector(UPLOAD_TEST_IDS.FILE_ITEM))
       .nth(index)
-      .locator('[data-testid="file-item-remove"]');
+      .locator(testIdSelector(UPLOAD_TEST_IDS.FILE_ITEM_REMOVE));
     await removeButton.click();
   }
 
@@ -213,8 +225,8 @@ export class PIIAnonymizerPage {
 
     // Wait for detection status to show "complete" or for entities to load
     await this.page.waitForFunction(
-      () => {
-        const statusEl = document.querySelector('[data-testid="detection-status"]');
+      (selector) => {
+        const statusEl = document.querySelector(selector);
         if (!statusEl) return false;
 
         const text = statusEl.textContent || '';
@@ -224,6 +236,7 @@ export class PIIAnonymizerPage {
                text.includes('Complete') ||
                statusEl.classList.contains('complete');
       },
+      testIdSelector(REVIEW_TEST_IDS.DETECTION_STATUS),
       { timeout },
     );
   }
@@ -403,3 +416,6 @@ export class PIIAnonymizerPage {
     return errors;
   }
 }
+
+// Re-export TEST_IDS for use in individual test files
+export { TEST_IDS, testIdSelector };

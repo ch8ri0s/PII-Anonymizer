@@ -20,6 +20,10 @@
  * @example
  * // Import entity components (Story 9.5)
  * import { EntityBadge, EntitySidebar } from '@a5-pii/ui-components/entity';
+ *
+ * @example
+ * // Import test IDs for E2E tests
+ * import { TEST_IDS, testIdSelector } from '@a5-pii/ui-components';
  */
 
 // Core utilities
@@ -33,3 +37,6 @@ export * from './composites/index.js';
 
 // Entity-specific components (Story 9.5)
 export * from './entity/index.js';
+
+// Test ID constants for E2E testing
+export * from './testIds.js';

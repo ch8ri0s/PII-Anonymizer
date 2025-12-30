@@ -24,7 +24,9 @@
       "@utils/*": ["../src/utils/*"],
       "@shared-test/*": ["../shared/test/*"],
       "@shared/feedback": ["../shared/pii/feedback/index.ts"],
-      "@shared/feedback/*": ["../shared/pii/feedback/*"]
+      "@shared/feedback/*": ["../shared/pii/feedback/*"],
+      "@shared/ui-components": ["../shared/ui-components/src/index.ts"],
+      "@shared/ui-components/*": ["../shared/ui-components/src/*"]
     }
   },
   "include": ["src", "test", "e2e"]
