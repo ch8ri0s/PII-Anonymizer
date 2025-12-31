@@ -11,8 +11,7 @@
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import * as fs from 'fs';
-import * as path from 'path';
-import { testLogger, createTestLogger } from '../helpers/testLogger';
+import { createTestLogger } from '../helpers/testLogger';
 
 // Import browser-app components
 import { PdfConverter } from '../../src/converters/PdfConverter';

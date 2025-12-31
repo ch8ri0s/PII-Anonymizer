@@ -3,45 +3,139 @@
  *
  * Handles text replacement and mapping generation for PII anonymization.
  * Extracted from PreviewPanel for better separation of concerns.
+ *
+ * Uses numbered entity tokens (e.g., [DATE_1], [DATE_2]) for consistent
+ * anonymization across the document per Story 8.8 requirements.
  */
 
 import type { EntityWithSelection } from '../EntitySidebar';
 
 /**
- * Replacement token configuration by entity type
+ * Base type mapping for entity type normalization
  */
-const REPLACEMENT_TOKENS: Record<string, string> = {
-  PERSON: '[PERSON]',
-  PERSON_NAME: '[PERSON]',
-  ORGANIZATION: '[ORG]',
-  ORG: '[ORG]',
-  ADDRESS: '[ADDRESS]',
-  STREET_ADDRESS: '[ADDRESS]',
-  EMAIL: '[EMAIL]',
-  PHONE: '[PHONE]',
-  DATE: '[DATE]',
-  MONEY: '[MONEY]',
-  IBAN: '[IBAN]',
-  SSN: '[SSN]',
-  AVS: '[AVS]',
-  PASSPORT: '[PASSPORT]',
-  LICENSE: '[LICENSE]',
-  CREDIT_CARD: '[CC]',
-  IP_ADDRESS: '[IP]',
-  URL: '[URL]',
-  OTHER: '[REDACTED]',
+const TYPE_NORMALIZATION: Record<string, string> = {
+  PERSON: 'PERSON',
+  PERSON_NAME: 'PERSON',
+  ORGANIZATION: 'ORG',
+  ORG: 'ORG',
+  ADDRESS: 'ADDRESS',
+  STREET_ADDRESS: 'ADDRESS',
+  EMAIL: 'EMAIL',
+  PHONE: 'PHONE',
+  DATE: 'DATE',
+  MONEY: 'MONEY',
+  IBAN: 'IBAN',
+  SSN: 'SSN',
+  AVS: 'AVS',
+  PASSPORT: 'PASSPORT',
+  LICENSE: 'LICENSE',
+  CREDIT_CARD: 'CC',
+  IP_ADDRESS: 'IP',
+  URL: 'URL',
 };
 
 /**
- * Get replacement token for an entity type
+ * Normalize entity type to standard base type
  */
-export function getReplacementToken(type: string): string {
-  return REPLACEMENT_TOKENS[type.toUpperCase()] || '[REDACTED]';
+function normalizeType(type: string): string {
+  return TYPE_NORMALIZATION[type.toUpperCase()] || type.toUpperCase();
+}
+
+/**
+ * Session for tracking entity → numbered token mappings
+ * Creates consistent numbered tokens like [DATE_1], [DATE_2] for each unique entity value
+ */
+export class AnonymizationSession {
+  private counters: Record<string, number> = {};
+  private textToToken: Map<string, string> = new Map();
+
+  /**
+   * Get or create a numbered token for an entity
+   * Same entity text always gets the same token within a session
+   */
+  getOrCreateToken(entityText: string, entityType: string): string {
+    // Normalize text for comparison (case-insensitive, trimmed)
+    const normalizedText = entityText.toLowerCase().trim();
+
+    // Check if we already have a token for this text
+    const existingToken = this.textToToken.get(normalizedText);
+    if (existingToken) {
+      return existingToken;
+    }
+
+    // Normalize the type
+    const baseType = normalizeType(entityType);
+
+    // Initialize counter for this type if needed
+    if (!this.counters[baseType]) {
+      this.counters[baseType] = 1;
+    }
+
+    // Generate numbered token
+    const token = `[${baseType}_${this.counters[baseType]++}]`;
+    this.textToToken.set(normalizedText, token);
+
+    return token;
+  }
+
+  /**
+   * Get the mapping of entity text to tokens
+   */
+  getMapping(): Map<string, string> {
+    return new Map(this.textToToken);
+  }
+
+  /**
+   * Reset the session state
+   */
+  reset(): void {
+    this.counters = {};
+    this.textToToken.clear();
+  }
+}
+
+// Shared session instance for consistent numbering within a document
+let currentSession: AnonymizationSession | null = null;
+
+/**
+ * Get or create the current anonymization session
+ */
+export function getAnonymizationSession(): AnonymizationSession {
+  if (!currentSession) {
+    currentSession = new AnonymizationSession();
+  }
+  return currentSession;
+}
+
+/**
+ * Reset the anonymization session (call when loading a new document)
+ */
+export function resetAnonymizationSession(): void {
+  if (currentSession) {
+    currentSession.reset();
+  }
+  currentSession = null;
+}
+
+/**
+ * Get replacement token for an entity
+ * Uses the session to track and generate numbered tokens
+ */
+export function getReplacementToken(type: string, text?: string): string {
+  if (!text) {
+    // Fallback for backwards compatibility - generate unnumbered token
+    const baseType = normalizeType(type);
+    return `[${baseType}]`;
+  }
+
+  const session = getAnonymizationSession();
+  return session.getOrCreateToken(text, type);
 }
 
 /**
  * Apply anonymization to content by replacing selected entities
  * Entities are replaced from end to start to preserve position offsets
+ * Uses numbered tokens (e.g., [DATE_1], [DATE_2]) for consistent replacement
  */
 export function applyAnonymization(
   content: string,
@@ -54,7 +148,8 @@ export function applyAnonymization(
 
   let result = content;
   for (const entity of selectedEntities) {
-    const replacement = getReplacementToken(entity.type);
+    // Pass entity text to get numbered token
+    const replacement = getReplacementToken(entity.type, entity.text);
     result = result.slice(0, entity.start) + replacement + result.slice(entity.end);
   }
 
@@ -63,6 +158,7 @@ export function applyAnonymization(
 
 /**
  * Generate mapping markdown document
+ * Uses numbered tokens consistent with applyAnonymization
  */
 export function generateMappingMarkdown(
   filename: string,
@@ -89,7 +185,8 @@ export function generateMappingMarkdown(
 
     for (const entity of selected) {
       const escapedOriginal = entity.text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
-      const replacement = getReplacementToken(entity.type);
+      // Use numbered token consistent with applyAnonymization
+      const replacement = getReplacementToken(entity.type, entity.text);
       const source = entity.source || 'REGEX';
       const confidence = entity.source === 'MANUAL' ? '100%' : `${Math.round((entity.confidence || 0) * 100)}%`;
       lines.push(`| ${escapedOriginal} | ${replacement} | ${entity.type} | ${source} | ${confidence} |`);

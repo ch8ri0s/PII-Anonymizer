@@ -9,6 +9,9 @@ export {
   generateMappingMarkdown,
   copyToClipboard,
   getReplacementToken,
+  resetAnonymizationSession,
+  getAnonymizationSession,
+  AnonymizationSession,
 } from './AnonymizationEngine';
 
 export {

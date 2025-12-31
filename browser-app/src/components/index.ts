@@ -111,6 +111,9 @@ export {
   generateMappingMarkdown,
   copyToClipboard,
   getReplacementToken,
+  resetAnonymizationSession,
+  getAnonymizationSession,
+  AnonymizationSession,
 } from './preview/AnonymizationEngine';
 
 export {
