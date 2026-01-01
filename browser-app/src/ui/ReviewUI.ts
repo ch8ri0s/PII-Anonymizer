@@ -3,6 +3,8 @@
  *
  * Handles the entity review section: header, status, download button,
  * and integration with EntityReviewController.
+ *
+ * Uses AnonymizationEngine for consistent numbered entity tokens.
  */
 
 import type { EntityWithSelection } from '../components/EntitySidebar';
@@ -13,6 +15,9 @@ import {
   getPreviewAllEntities,
   destroyEntityReviewController,
   type ReviewCallbacks,
+  applyAnonymization,
+  generateMappingMarkdown,
+  resetAnonymizationSession,
 } from '../components';
 import { downloadZip } from '../utils/download';
 import { createLogger } from '../utils/logger';
@@ -103,6 +108,9 @@ export async function startReview(
 
   currentFileName = fileName;
   originalContent = content;
+
+  // Reset anonymization session for new document (ensures fresh numbering)
+  resetAnonymizationSession();
 
   // Show review section
   reviewSection.classList.remove('hidden');
@@ -241,107 +249,6 @@ function handleDownload(): void {
   void downloadZip(files, `${anonBaseName}_anon.zip`).catch((error: Error) => {
     log.error('Failed to download files', { error: error.message });
   });
-}
-
-/**
- * Apply anonymization to content
- */
-function applyAnonymization(
-  content: string,
-  entities: EntityWithSelection[],
-): string {
-  // Sort entities by position (descending) to replace from end to start
-  const sortedEntities = [...entities].sort((a, b) => b.start - a.start);
-
-  let result = content;
-  for (const entity of sortedEntities) {
-    const replacement = generateReplacement(entity.type);
-    result = result.slice(0, entity.start) + replacement + result.slice(entity.end);
-  }
-
-  return result;
-}
-
-/**
- * Generate replacement text for PII type
- */
-function generateReplacement(type: string): string {
-  const typeMap: Record<string, string> = {
-    PERSON: '[PERSON]',
-    ORGANIZATION: '[ORG]',
-    ORG: '[ORG]',
-    ADDRESS: '[ADDRESS]',
-    EMAIL: '[EMAIL]',
-    PHONE: '[PHONE]',
-    DATE: '[DATE]',
-    MONEY: '[MONEY]',
-    IBAN: '[IBAN]',
-    SSN: '[SSN]',
-    PASSPORT: '[PASSPORT]',
-    LICENSE: '[LICENSE]',
-    CREDIT_CARD: '[CC]',
-    IP_ADDRESS: '[IP]',
-    URL: '[URL]',
-  };
-
-  return typeMap[type.toUpperCase()] || '[REDACTED]';
-}
-
-/**
- * Generate mapping markdown document
- */
-function generateMappingMarkdown(
-  filename: string,
-  selectedEntities: EntityWithSelection[],
-  allEntities?: EntityWithSelection[],
-): string {
-  const all = allEntities || selectedEntities;
-
-  const lines = [
-    `# PII Mapping: ${filename}`,
-    '',
-    `Generated: ${new Date().toISOString()}`,
-    '',
-    '## Anonymized PII',
-    '',
-  ];
-
-  if (selectedEntities.length === 0) {
-    lines.push('No PII was anonymized in this document.');
-  } else {
-    lines.push('| Original | Replacement | Type | Confidence |');
-    lines.push('| -------- | ----------- | ---- | ---------- |');
-
-    for (const entity of selectedEntities) {
-      const escapedOriginal = entity.text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
-      const replacement = generateReplacement(entity.type);
-      const confidence = Math.round((entity.confidence || 0) * 100);
-      lines.push(`| ${escapedOriginal} | ${replacement} | ${entity.type} | ${confidence}% |`);
-    }
-  }
-
-  lines.push('');
-  lines.push('## Statistics');
-  lines.push('');
-  lines.push(`- **Total entities detected**: ${all.length}`);
-  lines.push(`- **Entities anonymized**: ${selectedEntities.length}`);
-  lines.push(`- **Entities skipped**: ${all.length - selectedEntities.length}`);
-
-  // Count by type
-  const byType: Record<string, number> = {};
-  for (const entity of selectedEntities) {
-    byType[entity.type] = (byType[entity.type] || 0) + 1;
-  }
-
-  if (Object.keys(byType).length > 0) {
-    lines.push('');
-    lines.push('### By Type');
-    for (const [type, count] of Object.entries(byType).sort((a, b) => b[1] - a[1])) {
-      lines.push(`- **${type}**: ${count}`);
-    }
-  }
-
-  return lines.join('\n');
 }
 
 /**
